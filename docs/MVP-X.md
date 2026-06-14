@@ -1,0 +1,78 @@
+# MVP-X
+
+## Purpose
+
+This document tracks likely future MVP phases and deferred product ideas beyond MVP-1.
+
+It preserves product thinking without expanding the active implementation scope too early.
+
+## Planning Rules
+
+- MVP-1 stays intentionally narrow.
+- Items here are future candidates, not active commitments.
+- Priority may change once real usage clarifies the real pain points.
+- A feature should move into its own feature document only when it becomes near-term work.
+
+## MVP-2 Candidates
+
+Priority direction:
+- extend the song domain beyond the first text-based workflow
+- support binary document handling
+- improve internal worship-team usability
+
+Likely features:
+- PDF support for songs through Supabase Storage
+- multiple sources attached to the same song
+- song source management UI
+- first installable PWA shell
+
+## MVP-3 Candidates
+
+Priority direction:
+- introduce event planning without building the whole planning domain too early
+
+Likely features:
+- celebrations or events
+- calendar-oriented views
+- sharing songs in the context of an event
+- event notes
+- optional scripture readings linked to an event
+
+## MVP-4 Candidates
+
+Priority direction:
+- enable collaboration between organizers and participants
+
+Likely features:
+- invitations to an event
+- participant-facing event access
+- controlled sharing of songs and documents
+- first real identity and access restrictions
+
+## MVP-5 Candidates
+
+Priority direction:
+- extend toward broader team coordination
+
+Likely features:
+- volunteer management
+- role assignments
+- availability workflows
+- communication and reminders
+- richer authorization model
+
+## Open Ideas
+
+Ideas already mentioned and intentionally deferred:
+- convert ChordPro to PDF
+- support additional score or document formats beyond ChordPro and PDF
+- attach scripture readings to events
+- share songs with invited participants
+- stronger visual identity once the communication lead provides direction
+
+## Promotion Criteria
+
+A future idea should leave this document only when:
+- the scope is stable enough to express as business rules
+- it is close enough to implementation to justify deeper modeling
+- its data model is concrete enough to review
