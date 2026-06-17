@@ -50,6 +50,9 @@ app/
   (admin)/
 
 src/
+  components/
+    app-top-bar.tsx
+    view-mode-toggle.tsx
   modules/
     songs/
     celebrations/
@@ -66,8 +69,6 @@ src/
     types/
     validation/
     utils/
-  components/
-    ui/
 ```
 
 Notes:
@@ -76,7 +77,7 @@ Notes:
 - Module-specific UI should live inside the owning module when it is not broadly reusable.
 - `src/infrastructure/*` owns technical adapters.
 - `src/shared/*` owns reusable primitives with no module ownership.
-- `src/components/ui/*` holds generic presentational building blocks that stay thin.
+- `src/components/*` holds thin cross-module presentation and navigation components.
 - Future modules should be created only when implementation starts, not pre-created just because they are listed here.
 
 ## Module Boundaries
@@ -86,6 +87,7 @@ Owns song data and workflows:
 - song metadata
 - publication status
 - song source formats
+- musical key validation, notation, and display-only transposition
 - search and filtering
 - future source conversion workflows
 
@@ -142,8 +144,12 @@ But the architecture must preserve future enforcement:
 - PostgreSQL is the source of truth for structured business data and metadata.
 - Supabase Storage is the source of truth for binary assets such as PDFs.
 - Supabase local will provide the development database and supporting local services.
-- Schema changes are versioned through SQL migrations.
+- Supabase local is expected to run through Docker in development.
+- The Drizzle schema is the typed application-side representation of the database.
+- Drizzle Kit generates timestamped SQL migrations into `supabase/migrations`.
+- Supabase CLI applies migrations and seed data; `drizzle-kit push` is not used.
 - Application access to PostgreSQL should go through Drizzle-backed repositories.
+- Supabase Data API roles do not receive direct table access for application data.
 - Structured records should reference stored assets by path and metadata instead of embedding binaries in tables.
 - Seed data should support local demos, tests, and mobile validation.
 
@@ -162,7 +168,7 @@ Recommended conceptual shape:
 - `song_sources` for format-specific attachments
 
 Likely responsibilities:
-- `songs` stores shared metadata such as title, slug, language, and publication status
+- `songs` stores shared metadata such as title, slug, publication status, copyright, collection number, source page URL, and editability
 - `song_sources` stores per-format metadata such as `source_type`, lifecycle state, and storage reference
 - text payloads can live in structured columns for text-based formats
 - binary payloads should live in object storage with metadata stored in PostgreSQL
@@ -171,19 +177,19 @@ Likely responsibilities:
 
 - The initial experience must work well on desktop and phone.
 - Admin surfaces can exist from day one even if every current user has access to them.
-- Public and admin navigation should already be conceptually separated.
+- Public and admin navigation is separated through a shared selection/editing mode switch.
 - UI components should remain replaceable and not contain hidden business rules.
 - The visual language should stay neat, calm, and intentionally neutral.
 - Avoid strong branding choices that would conflict with a future communication-led design direction.
 - Favor a component and token structure that can later be aligned with Figma without changing business boundaries.
 - Prefer module-local feature components over a large shared domain-components directory.
-- Reserve `src/components/ui` for generic UI primitives.
+- Reserve `src/components` for thin cross-module controls such as navigation.
 
 ## PWA Direction
 
 PWA compatibility is part of the architecture from the start, but MVP-1 keeps the scope narrow:
 - responsive layouts
-- installable-ready structure
+- local desktop and phone operation
 - manifest and icons when implementation begins
 - local phone testing on the same network
 
@@ -204,6 +210,21 @@ The preferred implementation style is a small vertical slice:
 
 This keeps the architecture honest by forcing every layer to work in local development before the next feature expands the system.
 
+## Implemented MVP-1 Slice
+
+The current codebase includes:
+- public song list and detail server-rendered pages
+- public read APIs under `/api/songs`
+- administration pages under `/admin/chants`
+- administration APIs under `/api/admin/songs`
+- explicit permissive admin authorization helper
+- Drizzle repositories and module services for public and admin use cases
+- ChordPro parsing and rendering
+- canonical musical keys with English or French display notation
+- display-only transposition that never writes back to song data
+- shared top navigation for selection and editing modes
+- Vitest coverage and a database-backed HTTP smoke test
+
 ## Current Recommendation Adjustments
 
 Based on the current project direction:
@@ -211,3 +232,4 @@ Based on the current project direction:
 - use route handlers as the default write interface
 - keep future modules documented, but only create them in code when work starts
 - place business-specific components inside their module instead of under a global `components/domain`
+- keep cross-module navigation controls under `src/components`

@@ -24,7 +24,7 @@ Likely features:
 - PDF support for songs through Supabase Storage
 - multiple sources attached to the same song
 - song source management UI
-- first installable PWA shell
+- richer PWA behavior after the installable MVP-1 shell
 
 ## MVP-3 Candidates
 
@@ -64,6 +64,14 @@ Likely features:
 ## Open Ideas
 
 Ideas already mentioned and intentionally deferred:
+- importer automatiquement l'ensemble du recueil JEM depuis les fichiers ChordPro JEMAF
+- telecharger ou actualiser a la demande les sources ChordPro officielles
+- dupliquer un chant officiel JEM vers une variante locale editable par l'eglise
+- remplacer la convention temporaire `LeMont` par la paroisse de l'utilisateur connecte
+- modeliser les paroisses, l'appartenance utilisateur-paroisse et les collections locales associees
+- rechercher les chants par auteur, paroles, themes ou index plein texte
+- modeliser les contributeurs avec des roles precis plutot qu'un champ auteur brut
+- remettre des champs langue ou titre original si un vrai besoin de traduction apparait
 - convert ChordPro to PDF
 - support additional score or document formats beyond ChordPro and PDF
 - attach scripture readings to events

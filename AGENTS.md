@@ -44,6 +44,16 @@
 - Avoid `any`, `@ts-ignore`, broad `eslint-disable`, and build-error bypasses.
 - Run relevant validation before finishing: lint, typecheck, and tests when available.
 
+## Codex Execution Notes
+- In this workspace, the default Codex sandbox shell may not expose `node`, `npm`, or `pnpm` on `PATH` even when the real WSL development environment is correctly configured.
+- If a build or test command fails with `node: command not found`, `pnpm: command not found`, `WSL ... UtilBindVsockAnyPort`, or Windows `UNC paths are not supported`, do not assume the project is broken.
+- For reliable validation from Codex on this machine, prefer running commands through the real WSL login shell, for example:
+  - `wsl.exe bash -lc "cd /home/lcordey/work/church-erp && if [ -f ~/.nvm/nvm.sh ]; then . ~/.nvm/nvm.sh; fi && pnpm build"`
+  - `wsl.exe bash -lc "cd /home/lcordey/work/church-erp && if [ -f ~/.nvm/nvm.sh ]; then . ~/.nvm/nvm.sh; fi && pnpm test"`
+  - `wsl.exe bash -lc "cd /home/lcordey/work/church-erp && if [ -f ~/.nvm/nvm.sh ]; then . ~/.nvm/nvm.sh; fi && pnpm lint && pnpm typecheck"`
+- Prefer `pnpm` directly inside WSL after sourcing `~/.nvm/nvm.sh` when present. Avoid Windows `npm.cmd` wrappers for this repo because they can fall back to `cmd.exe` and lose the Linux workspace path.
+- When reporting validation status, distinguish environment-path issues from real application failures.
+
 ## Design
 - The interface should be clean, calm, and sober.
 - Avoid locking the product into a strong brand direction before the communication lead defines it.

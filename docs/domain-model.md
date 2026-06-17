@@ -22,6 +22,8 @@ The goal is to stabilize the model before writing migrations.
 - A source belongs to exactly one song.
 - Different source types do not justify different tables at this stage.
 - Binary assets must live in storage, not in PostgreSQL rows.
+- Official external catalog entries can be stored locally as read-only songs
+  with source URLs preserved for provenance.
 
 ## Entity: `songs`
 
@@ -44,30 +46,45 @@ Represents the shared identity and metadata of a song, regardless of how the son
   - required: yes
   - notes: stable public identifier used in URLs
 
-- `language`
-  - type: `text`
-  - required: yes
-  - notes: one language only for MVP-1, for example `fr`
-
 - `status`
   - type: `song_status`
   - required: yes
   - notes: publication state of the song
-
-- `original_title`
-  - type: `text`
-  - required: no
-  - notes: useful when the displayed title is a translated or adapted version
 
 - `author`
   - type: `text`
   - required: no
   - notes: kept simple for MVP-1, even though multiple authors may exist later
 
+- `copyright`
+  - type: `text`
+  - required: no
+  - notes: copyright or rights notice displayed with externally sourced songs
+
 - `default_key`
   - type: `text`
   - required: no
-  - notes: musical key kept for future usage
+  - notes: canonical musical key such as `C`, `Bb`, or `F#m`
+
+- `collection`
+  - type: `text`
+  - required: no
+  - notes: source collection label such as `JEM` or temporary local parish collection `LeMont`
+
+- `collection_number`
+  - type: `integer`
+  - required: no
+  - notes: source collection number, positive when present
+
+- `source_page_url`
+  - type: `text`
+  - required: no
+  - notes: official source page for provenance
+
+- `is_editable`
+  - type: `boolean`
+  - required: yes
+  - notes: false for official imported songs that must not be edited directly
 
 - `created_at`
   - type: `timestamptz`
@@ -133,7 +150,7 @@ Represents one attached source for a song, such as a ChordPro document, a PDF fi
 - `external_url`
   - type: `text`
   - required: no
-  - notes: reserved for future external sources such as YouTube
+  - notes: URL for an external source, including official ChordPro files
 
 - `created_at`
   - type: `timestamptz`
@@ -205,13 +222,14 @@ Recommended constraints:
 - primary key on `id`
 - unique constraint on `slug`
 - `title` must not be empty
-- `language` must not be empty
 - `status` must use the `song_status` enum
+- `collection_number` must be positive when present
+- `(collection, collection_number)` must be unique when both are present
 
 Recommended indexes:
 - unique index on `slug`
 - index on `status`
-- optional index on `language`
+- optional index on `collection`
 
 ### `song_sources`
 
@@ -238,8 +256,16 @@ Recommended indexes:
 
 - `title` is required
 - `slug` is required and unique
-- `language` is required
 - `status` defaults to `draft`
+- `default_key`, when present, must use the supported canonical key list
+- supported keys currently cover 12 major and 12 minor display choices
+- English or French notation is a browser display preference, not persisted song data
+- temporary transposition changes rendered chords only and does not update `default_key` or ChordPro content
+- official JEM songs are imported with `is_editable = false`
+- manually created MVP-1 songs are assigned to collection `LeMont`
+- read-only songs cannot be edited or deleted directly through admin services
+- search in MVP-1 covers title and collection number
+- the public catalog can be filtered by collection through fixed checkbox options
 
 ### Song source rules
 
@@ -248,6 +274,8 @@ Recommended indexes:
 - `text_content` is required for `chordpro`
 - only one active `chordpro` source should exist per song in MVP-1
 - updating the current ChordPro source should overwrite the active source instead of creating version history
+- deleting a draft song cascades to its attached sources
+- published songs must be returned to `draft` before deletion
 
 ## Deferred Decisions
 
@@ -257,14 +285,20 @@ The following are intentionally postponed:
 - revision history
 - generated-source lineage such as ChordPro to PDF
 - translation tables for song content
+- original title and per-song language fields
+- advanced JEM import automation
+- replacing the temporary `LeMont` collection convention with the authenticated user's parish
+- searching by author, lyrics, theme, or full-text index
+- duplicating an official song into a local editable variant
 - event, calendar, and setlist relations
 
-## Recommendation For First Migration
+## Implemented First Migration
 
-The first schema migration should only create:
+The first schema migration creates:
 - the enums
 - `songs`
 - `song_sources`
 - the required constraints and indexes
 
-It should not include PDF-specific storage setup yet unless MVP-1 starts implementing PDF support, which is currently out of scope.
+It does not include PDF-specific storage setup because PDF support remains out
+of MVP-1 scope.
