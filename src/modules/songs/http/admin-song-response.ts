@@ -1,5 +1,6 @@
 import { SongSlugConflictError } from "../repositories/admin-song-repository";
 import {
+  InvalidSongPdfError,
   PublishedSongDeletionError,
   ReadOnlySongError,
 } from "../services/admin-song-management";
@@ -54,6 +55,19 @@ export function adminSongErrorResponse(error: unknown) {
         },
       },
       { status: 409 },
+    );
+  }
+
+  if (error instanceof InvalidSongPdfError) {
+    return Response.json(
+      {
+        error: {
+          code: "INVALID_PDF",
+          message:
+            "La partition doit être un fichier PDF valide de moins de 20 Mo.",
+        },
+      },
+      { status: 400 },
     );
   }
 

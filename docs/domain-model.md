@@ -249,6 +249,7 @@ Recommended indexes:
 - index on `song_id`
 - index on `source_type`
 - optional composite index on `(song_id, source_type, status)`
+- unique partial index on `(song_id, source_type)` where `status = 'active'`
 
 ## MVP-1 Validation Rules
 
@@ -270,12 +271,15 @@ Recommended indexes:
 ### Song source rules
 
 - every source belongs to one song
-- MVP-1 only creates `chordpro` sources
+- MVP-1 supports active `chordpro` and `pdf` sources
 - `text_content` is required for `chordpro`
-- only one active `chordpro` source should exist per song in MVP-1
+- `storage_path` is required for `pdf`
+- only one active source per type should exist per song in MVP-1
 - updating the current ChordPro source should overwrite the active source instead of creating version history
+- replacing a PDF archives the active PDF source and creates a new active PDF source
 - deleting a draft song cascades to its attached sources
 - published songs must be returned to `draft` before deletion
+- PDF files live in Supabase Storage, not PostgreSQL rows
 
 ## Deferred Decisions
 
@@ -300,5 +304,15 @@ The first schema migration creates:
 - `song_sources`
 - the required constraints and indexes
 
-It does not include PDF-specific storage setup because PDF support remains out
-of MVP-1 scope.
+PDF-specific storage setup is added in a later migration so the initial
+schema stays focused on structured song data.
+
+## Implemented PDF Storage Migration
+
+The PDF storage migration adds:
+- a private Supabase Storage bucket named `song-pdfs`
+- a 20 MiB PDF-only file limit
+- one active source per `(song_id, source_type)`
+
+The application serves PDFs through backend routes so browser clients do not
+receive raw storage paths or service credentials.

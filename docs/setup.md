@@ -12,8 +12,9 @@ As of this revision:
 - Supabase CLI and the local Supabase configuration are installed
 - Drizzle ORM and the PostgreSQL driver are installed
 - the songs migrations and demo seed data exist
-- `pnpm db:reset` loads 5 official read-only JEM songs and 3 editable local songs in `LeMont`
+- `pnpm db:reset` loads 5 official read-only JEM songs and 5 editable local songs in `LeMont`
 - the public songs catalog and song administration workflow are implemented
+- the private `song-pdfs` Supabase Storage bucket is configured for optional PDF scores
 - responsive desktop and phone access has been validated locally
 - local HTTPS and WSL2-to-Windows port forwarding scripts are available
 - Vitest covers the current business rules and API contracts
@@ -89,6 +90,13 @@ The project uses non-default ports to reduce conflicts with other local Supabase
 | Supabase Studio | `http://127.0.0.1:15433` |
 | Mailpit | `http://127.0.0.1:15434` |
 
+Server-side PDF storage access uses:
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+Use `pnpm db:status` after `pnpm db:start` to read the local service role key
+and place it in `.env.local`. This key must stay server-side only.
+
 ## First Local Start
 
 Prepare the complete local environment:
@@ -133,7 +141,8 @@ Use `pnpm db:stop` when the stack is no longer needed.
 
 - `src/infrastructure/database/schema.ts` is the typed Drizzle schema used by application repositories.
 - `supabase/migrations` contains the SQL migration history applied by Supabase.
-- `supabase/seed.sql` contains repeatable local demo data: 5 official read-only JEM songs and 3 editable local songs in `LeMont`.
+- `supabase/seed.sql` contains repeatable local demo data: 5 official read-only JEM songs and 5 editable local songs in `LeMont`.
+- Supabase Storage contains a private `song-pdfs` bucket for PDF score files; PostgreSQL stores only the object path and metadata.
 - `drizzle.config.ts` generates Supabase-compatible timestamped migrations.
 
 For a new schema change:

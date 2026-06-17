@@ -6,6 +6,7 @@ import type {
   PublicSongDetail,
   PublicSongSummary,
   SongCatalogRecord,
+  SongPdfFileSource,
 } from "../types/public-song";
 
 export function isPublicSong(
@@ -25,6 +26,7 @@ function toSummary(song: SongCatalogRecord): PublicSongSummary {
     collection: song.collection,
     collectionNumber: song.collectionNumber,
     sourcePageUrl: song.sourcePageUrl,
+    pdfSource: song.pdfSource,
   };
 }
 
@@ -57,4 +59,17 @@ export async function getPublicSongBySlug(
   const song = await repository.findPublishedBySlug(normalizedSlug);
 
   return song && isPublicSong(song) ? toDetail(song) : null;
+}
+
+export async function getPublicSongPdfBySlug(
+  slug: string,
+  repository: SongCatalogRepository = createSongCatalogRepository(),
+): Promise<SongPdfFileSource | null> {
+  const normalizedSlug = slug.trim().toLowerCase();
+
+  if (!normalizedSlug) {
+    return null;
+  }
+
+  return repository.findPublishedPdfBySlug(normalizedSlug);
 }

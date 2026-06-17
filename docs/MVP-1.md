@@ -46,6 +46,7 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 - page detail d'un chant publie
 - creation, modification, publication, retrait et suppression des brouillons
 - support initial du format ChordPro
+- support d'une partition PDF optionnelle par chant
 - premiers chants JEM officiels stockes en lecture seule avec provenance JEMAF
 - recherche simple par titre ou numero JEM
 - filtre du catalogue par recueil via cases a cocher
@@ -70,7 +71,6 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 
 - authentification reelle
 - groupes, roles et administration des permissions
-- support PDF des chants
 - autres formats de partitions ou de documents
 - evenements, calendrier et setlists
 - invitations a un evenement
@@ -114,7 +114,8 @@ Livre :
 - recherche publique par titre ou numero JEM
 - filtre public par recueil `JEM` ou `LeMont`
 - creation admin assignee automatiquement a la collection `LeMont`
-- donnees de seed composees de 5 chants JEM officiels et 3 chants locaux editables dans `LeMont`
+- donnees de seed composees de 5 chants JEM officiels et 5 chants locaux editables dans `LeMont`
+- partition PDF optionnelle stockee dans Supabase Storage et servie par route backend
 - migrations, seed, tests Vitest et smoke test HTTP
 - acces local depuis un telephone avec HTTPS et support WSL2
 

@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 
 import { getDatabase } from "@/src/infrastructure/database/client";
 import {
@@ -10,7 +10,9 @@ import type {
   AdminSong,
   AdminSongInput,
   AdminSongListItem,
+  AdminSongPdfInput,
 } from "../types/admin-song";
+import type { SongPdfFileSource, SongPdfSource } from "../types/public-song";
 
 export class SongSlugConflictError extends Error {
   constructor() {
@@ -26,6 +28,9 @@ export interface AdminSongRepository {
   create(input: AdminSongInput): Promise<AdminSong>;
   update(id: string, input: AdminSongInput): Promise<AdminSong | null>;
   delete(id: string): Promise<boolean>;
+  findPdfSourceById(id: string): Promise<SongPdfFileSource | null>;
+  attachPdf(id: string, input: AdminSongPdfInput): Promise<AdminSong | null>;
+  deletePdf(id: string): Promise<AdminSong | null>;
   updateStatus(
     id: string,
     status: "draft" | "published",
@@ -50,9 +55,55 @@ const adminSongSelection = {
   updatedAt: songs.updatedAt,
 };
 
+const pdfSelection = {
+  songId: songSources.songId,
+  slug: songs.slug,
+  storagePath: songSources.storagePath,
+  fileName: songSources.fileName,
+  mimeType: songSources.mimeType,
+  fileSizeBytes: songSources.fileSizeBytes,
+};
+
+type PdfSelectionRow = {
+  songId: string;
+  slug: string;
+  storagePath: string | null;
+  fileName: string | null;
+  mimeType: string | null;
+  fileSizeBytes: number | null;
+};
+
+function toPdfSource(row: PdfSelectionRow): SongPdfFileSource | null {
+  if (!row.storagePath) {
+    return null;
+  }
+
+  return {
+    storagePath: row.storagePath,
+    fileName: row.fileName,
+    mimeType: row.mimeType,
+    fileSizeBytes: row.fileSizeBytes,
+    downloadUrl: `/api/songs/${row.slug}/pdf`,
+  };
+}
+
+function toAdminPdfSource(source: SongPdfFileSource | null): SongPdfSource | null {
+  if (!source) {
+    return null;
+  }
+
+  return {
+    fileName: source.fileName,
+    mimeType: source.mimeType,
+    fileSizeBytes: source.fileSizeBytes,
+    downloadUrl: source.downloadUrl,
+  };
+}
+
 function toAdminSong(
   row: Omit<AdminSong, "chordProContent"> & {
     chordProContent: string | null;
+    pdfSource?: SongPdfSource | null;
   },
 ): AdminSong {
   if (!row.chordProContent) {
@@ -75,6 +126,7 @@ function toAdminSongListItem(song: AdminSong): AdminSongListItem {
     collectionNumber: song.collectionNumber,
     sourcePageUrl: song.sourcePageUrl,
     sourceChordProUrl: song.sourceChordProUrl,
+    pdfSource: song.pdfSource,
     isEditable: song.isEditable,
     createdAt: song.createdAt,
     updatedAt: song.updatedAt,
@@ -96,6 +148,29 @@ export function createAdminSongRepository(): AdminSongRepository {
     eq(songSources.sourceType, "chordpro"),
     eq(songSources.status, "active"),
   );
+  const activePdf = and(
+    eq(songSources.sourceType, "pdf"),
+    eq(songSources.status, "active"),
+  );
+
+  async function findActivePdfSources(songIds: string[]) {
+    if (songIds.length === 0) {
+      return new Map<string, SongPdfSource>();
+    }
+
+    const rows = await database
+      .select(pdfSelection)
+      .from(songSources)
+      .innerJoin(songs, eq(songSources.songId, songs.id))
+      .where(and(activePdf, inArray(songSources.songId, songIds)));
+
+    return new Map(
+      rows.flatMap((row) => {
+        const source = toAdminPdfSource(toPdfSource(row));
+        return source ? [[row.songId, source]] : [];
+      }),
+    );
+  }
 
   async function findById(id: string): Promise<AdminSong | null> {
     const rows = await database
@@ -105,7 +180,16 @@ export function createAdminSongRepository(): AdminSongRepository {
       .where(and(eq(songs.id, id), activeChordPro))
       .limit(1);
 
-    return rows[0] ? toAdminSong(rows[0]) : null;
+    if (!rows[0]) {
+      return null;
+    }
+
+    const pdfSources = await findActivePdfSources([rows[0].id]);
+
+    return toAdminSong({
+      ...rows[0],
+      pdfSource: pdfSources.get(rows[0].id) ?? null,
+    });
   }
 
   return {
@@ -117,7 +201,18 @@ export function createAdminSongRepository(): AdminSongRepository {
         .where(activeChordPro)
         .orderBy(asc(songs.title));
 
-      return rows.map(toAdminSong).map(toAdminSongListItem);
+      const pdfSources = await findActivePdfSources(
+        rows.map((row) => row.id),
+      );
+
+      return rows
+        .map((row) =>
+          toAdminSong({
+            ...row,
+            pdfSource: pdfSources.get(row.id) ?? null,
+          }),
+        )
+        .map(toAdminSongListItem);
     },
 
     findById,
@@ -211,6 +306,53 @@ export function createAdminSongRepository(): AdminSongRepository {
         .returning({ id: songs.id });
 
       return deletedSongs.length > 0;
+    },
+
+    async findPdfSourceById(id) {
+      const rows = await database
+        .select(pdfSelection)
+        .from(songSources)
+        .innerJoin(songs, eq(songSources.songId, songs.id))
+        .where(and(eq(songs.id, id), activePdf))
+        .limit(1);
+
+      return rows[0] ? toPdfSource(rows[0]) : null;
+    },
+
+    async attachPdf(id, input) {
+      await database.transaction(async (transaction) => {
+        await transaction
+          .update(songSources)
+          .set({
+            status: "archived",
+            updatedAt: new Date(),
+          })
+          .where(and(eq(songSources.songId, id), activePdf));
+
+        await transaction.insert(songSources).values({
+          songId: id,
+          sourceType: "pdf",
+          status: "active",
+          storagePath: input.storagePath,
+          fileName: input.fileName,
+          mimeType: input.mimeType,
+          fileSizeBytes: input.fileSizeBytes,
+        });
+      });
+
+      return findById(id);
+    },
+
+    async deletePdf(id) {
+      await database
+        .update(songSources)
+        .set({
+          status: "archived",
+          updatedAt: new Date(),
+        })
+        .where(and(eq(songSources.songId, id), activePdf));
+
+      return findById(id);
     },
 
     async updateStatus(id, status) {

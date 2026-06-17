@@ -17,6 +17,7 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 - permettre l'ouverture d'une page detail publique
 - exclure les chants brouillon des resultats publics
 - rendre les paroles et accords de la source ChordPro active
+- afficher un lien vers la partition PDF quand une source PDF active existe
 - chercher les chants publies par titre ou numero JEM
 - filtrer le catalogue sans rechargement de page
 - filtrer par recueil via des cases a cocher fixes
@@ -32,6 +33,8 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 - aucune case recueil cochee signifie que tous les recueils sont affiches
 - la page publique charge le catalogue publie puis filtre cote client pour une interaction fluide
 - l'API `GET /api/songs?q=...` conserve une recherche serveur utilisable par les futurs clients
+- l'API publique expose uniquement les metadonnees PDF utiles et une URL backend de telechargement
+- le chemin Supabase Storage interne n'est jamais expose au navigateur
 - la recherche par auteur, paroles ou themes est reportee
 
 ## Donnees concernees
@@ -50,6 +53,7 @@ Champs partages recommandes pour un chant :
 
 Pour MVP-1, le premier format supporte est :
 - une source `ChordPro` attachee au chant
+- une source `PDF` optionnelle attachee au chant
 
 Le contenu source ne doit pas etre reduit a un simple champ `lyrics` sur la table `songs` si l'on veut permettre plusieurs formats par chant.
 
@@ -60,6 +64,7 @@ Implementation actuelle :
 - service public qui revalide le statut `published`
 - endpoint `GET /api/songs` pour les resumes publics
 - endpoint `GET /api/songs/:slug` pour le detail public
+- endpoint `GET /api/songs/:slug/pdf` pour servir une partition PDF active
 - acces direct aux tables refuse aux roles Supabase Data API
 
 ## Structure UI
@@ -73,6 +78,7 @@ Implementation actuelle :
 - route publique du catalogue sur `/`
 - route publique de detail sur `/chants/:slug`
 - controle de transposition temporaire sur la page detail
+- lien `Partition PDF` sur la page detail quand une partition est disponible
 - preference persistante de notation anglaise ou francaise
 - le catalogue conserve la recherche et les filtres tant que l'utilisateur reste sur la page catalogue
 
@@ -82,6 +88,7 @@ Implementation actuelle :
 - tests unitaires sur le parsing ChordPro initial
 - tests unitaires sur la notation et la transposition
 - tests de contrat des routes API
+- tests de contrat de la route PDF publique
 - smoke test HTTP du catalogue
 - test end-to-end de navigation reporte a l'installation de Playwright
 

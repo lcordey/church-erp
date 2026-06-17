@@ -1066,6 +1066,33 @@ a {
   font-size: 0.72rem;
 }
 
+.pdf-field {
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: #fbfaf5;
+}
+
+.pdf-field__current,
+.pdf-field__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.pdf-field__current a {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.pdf-field__current small {
+  color: var(--muted);
+}
+
+.pdf-field input[type="file"] {
+  display: none;
+}
+
 .form-message {
   grid-column: 1 / -1;
   margin: 0;

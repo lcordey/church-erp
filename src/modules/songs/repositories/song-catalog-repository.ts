@@ -1,4 +1,4 @@
-import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 
 import { getDatabase } from "@/src/infrastructure/database/client";
 import {
@@ -6,11 +6,16 @@ import {
   songSources,
 } from "@/src/infrastructure/database/schema";
 
-import type { SongCatalogRecord } from "../types/public-song";
+import type {
+  SongCatalogRecord,
+  SongPdfFileSource,
+  SongPdfSource,
+} from "../types/public-song";
 
 export interface SongCatalogRepository {
   listPublished(search?: string): Promise<SongCatalogRecord[]>;
   findPublishedBySlug(slug: string): Promise<SongCatalogRecord | null>;
+  findPublishedPdfBySlug(slug: string): Promise<SongPdfFileSource | null>;
 }
 
 const selection = {
@@ -27,9 +32,55 @@ const selection = {
   chordProContent: songSources.textContent,
 };
 
+const pdfSelection = {
+  songId: songSources.songId,
+  slug: songs.slug,
+  storagePath: songSources.storagePath,
+  fileName: songSources.fileName,
+  mimeType: songSources.mimeType,
+  fileSizeBytes: songSources.fileSizeBytes,
+};
+
+type PdfSelectionRow = {
+  songId: string;
+  slug: string;
+  storagePath: string | null;
+  fileName: string | null;
+  mimeType: string | null;
+  fileSizeBytes: number | null;
+};
+
+function toPdfSource(row: PdfSelectionRow): SongPdfFileSource | null {
+  if (!row.storagePath) {
+    return null;
+  }
+
+  return {
+    storagePath: row.storagePath,
+    fileName: row.fileName,
+    mimeType: row.mimeType,
+    fileSizeBytes: row.fileSizeBytes,
+    downloadUrl: `/api/songs/${row.slug}/pdf`,
+  };
+}
+
+function toPublicPdfSource(source: SongPdfFileSource | null): SongPdfSource | null {
+  if (!source) {
+    return null;
+  }
+
+  return {
+    fileName: source.fileName,
+    mimeType: source.mimeType,
+    fileSizeBytes: source.fileSizeBytes,
+    downloadUrl: source.downloadUrl,
+  };
+}
+
 function toCatalogRecord(
   row: Omit<SongCatalogRecord, "chordProContent"> & {
     chordProContent: string | null;
+    pdfSource?: SongPdfSource | null;
   },
 ): SongCatalogRecord {
   if (!row.chordProContent) {
@@ -49,6 +100,29 @@ export function createSongCatalogRepository(): SongCatalogRepository {
     eq(songSources.sourceType, "chordpro"),
     eq(songSources.status, "active"),
   );
+  const activePdfCondition = and(
+    eq(songSources.sourceType, "pdf"),
+    eq(songSources.status, "active"),
+  );
+
+  async function findActivePdfSources(songIds: string[]) {
+    if (songIds.length === 0) {
+      return new Map<string, SongPdfSource>();
+    }
+
+    const rows = await database
+      .select(pdfSelection)
+      .from(songSources)
+      .innerJoin(songs, eq(songSources.songId, songs.id))
+      .where(and(activePdfCondition, inArray(songSources.songId, songIds)));
+
+    return new Map(
+      rows.flatMap((row) => {
+        const source = toPublicPdfSource(toPdfSource(row));
+        return source ? [[row.songId, source]] : [];
+      }),
+    );
+  }
 
   return {
     async listPublished(search) {
@@ -87,7 +161,16 @@ export function createSongCatalogRepository(): SongCatalogRepository {
           asc(songs.title),
         );
 
-      return rows.map(toCatalogRecord);
+      const pdfSources = await findActivePdfSources(
+        rows.map((row) => row.id),
+      );
+
+      return rows.map((row) =>
+        toCatalogRecord({
+          ...row,
+          pdfSource: pdfSources.get(row.id) ?? null,
+        }),
+      );
     },
 
     async findPublishedBySlug(slug) {
@@ -98,7 +181,27 @@ export function createSongCatalogRepository(): SongCatalogRepository {
         .where(and(publishedSongCondition, eq(songs.slug, slug)))
         .limit(1);
 
-      return rows[0] ? toCatalogRecord(rows[0]) : null;
+      if (!rows[0]) {
+        return null;
+      }
+
+      const pdfSources = await findActivePdfSources([rows[0].id]);
+
+      return toCatalogRecord({
+        ...rows[0],
+        pdfSource: pdfSources.get(rows[0].id) ?? null,
+      });
+    },
+
+    async findPublishedPdfBySlug(slug) {
+      const rows = await database
+        .select(pdfSelection)
+        .from(songSources)
+        .innerJoin(songs, eq(songSources.songId, songs.id))
+        .where(and(eq(songs.status, "published"), eq(songs.slug, slug), activePdfCondition))
+        .limit(1);
+
+      return rows[0] ? toPdfSource(rows[0]) : null;
     },
   };
 }

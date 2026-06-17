@@ -1,5 +1,16 @@
 export type SongPublicationStatus = "draft" | "published";
 
+export type SongPdfSource = {
+  fileName: string | null;
+  mimeType: string | null;
+  fileSizeBytes: number | null;
+  downloadUrl: string;
+};
+
+export type SongPdfFileSource = SongPdfSource & {
+  storagePath: string;
+};
+
 export type PublicSongSummary = {
   id: string;
   title: string;
@@ -10,6 +21,7 @@ export type PublicSongSummary = {
   collection: string | null;
   collectionNumber: number | null;
   sourcePageUrl: string | null;
+  pdfSource: SongPdfSource | null;
 };
 
 export type PublicSongDetail = PublicSongSummary & {

@@ -112,6 +112,7 @@ export function AdminSongForm({
   const [form, setForm] = useState(() => initialState(song));
   const [errors, setErrors] = useState<AdminSongValidationErrors>({});
   const [message, setMessage] = useState("");
+  const [isPdfPending, setIsPdfPending] = useState(false);
   const [isPending, startTransition] = useTransition();
   const isEditing = Boolean(song);
   const isReadOnly = song ? !song.isEditable : false;
@@ -245,6 +246,80 @@ export function AdminSongForm({
     router.push("/");
   }
 
+  async function uploadPdf(file: File) {
+    if (!song) {
+      return;
+    }
+
+    setIsPdfPending(true);
+    setMessage("");
+
+    const formData = new FormData();
+    formData.append("pdf", file);
+
+    try {
+      const response = await fetch(`/api/admin/songs/${song.id}/pdf`, {
+        method: "PUT",
+        body: formData,
+      });
+      const payload = (await response.json()) as ApiError & {
+        data?: AdminSong;
+      };
+
+      if (!response.ok || !payload.data) {
+        setMessage(
+          payload.error?.message ?? "Impossible d’ajouter la partition PDF.",
+        );
+        return;
+      }
+
+      onSaved?.(payload.data);
+      setMessage("Partition PDF enregistrée.");
+      router.refresh();
+    } finally {
+      setIsPdfPending(false);
+    }
+  }
+
+  async function deletePdf() {
+    if (!song) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Retirer la partition PDF de « ${song.title} » ?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsPdfPending(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/admin/songs/${song.id}/pdf`, {
+        method: "DELETE",
+      });
+      const payload = (await response.json()) as ApiError & {
+        data?: AdminSong;
+      };
+
+      if (!response.ok || !payload.data) {
+        setMessage(
+          payload.error?.message ?? "Impossible de retirer la partition PDF.",
+        );
+        return;
+      }
+
+      onSaved?.(payload.data);
+      setMessage("Partition PDF retirée.");
+      router.refresh();
+    } finally {
+      setIsPdfPending(false);
+    }
+  }
+
   return (
     <div className="admin-editor">
       <section className="admin-form-panel">
@@ -338,6 +413,64 @@ export function AdminSongForm({
               </a>
             </div>
           ) : null}
+
+          <div className="field field--wide pdf-field">
+            <span>Partition PDF</span>
+            {song?.pdfSource ? (
+              <div className="pdf-field__current">
+                <a href={song.pdfSource.downloadUrl} target="_blank">
+                  {song.pdfSource.fileName ?? "Partition PDF"}
+                </a>
+                {song.pdfSource.fileSizeBytes ? (
+                  <small>
+                    {Math.round(song.pdfSource.fileSizeBytes / 1024)} Ko
+                  </small>
+                ) : null}
+              </div>
+            ) : (
+              <p className="field__hint">
+                Aucune partition PDF n’est attachée à ce chant.
+              </p>
+            )}
+            {song ? (
+              <div className="pdf-field__actions">
+                <label className="admin-button admin-button--quiet">
+                  {isPdfPending
+                    ? "Traitement…"
+                    : song.pdfSource
+                      ? "Remplacer le PDF"
+                      : "Ajouter un PDF"}
+                  <input
+                    accept="application/pdf"
+                    disabled={isPdfPending}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+
+                      if (file) {
+                        void uploadPdf(file);
+                      }
+                    }}
+                    type="file"
+                  />
+                </label>
+                {song.pdfSource ? (
+                  <button
+                    className="admin-button admin-button--danger"
+                    disabled={isPdfPending}
+                    onClick={() => void deletePdf()}
+                    type="button"
+                  >
+                    Retirer le PDF
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <p className="field__hint">
+                Enregistre le chant avant d’ajouter une partition.
+              </p>
+            )}
+          </div>
 
           <label className="field field--wide">
             <span>Source ChordPro *</span>

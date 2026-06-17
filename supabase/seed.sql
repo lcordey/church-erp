@@ -115,6 +115,32 @@ values
     null,
     null,
     true
+  ),
+  (
+    '99999999-9999-4999-8999-999999999999',
+    'Grâce infinie',
+    'grace-infinie',
+    'published',
+    'Équipe louange',
+    'LeMont',
+    'G',
+    'LeMont',
+    null,
+    null,
+    true
+  ),
+  (
+    'abababab-abab-4bab-8bab-abababababab',
+    'Notre espérance',
+    'notre-esperance',
+    'published',
+    'Équipe louange',
+    'LeMont',
+    'A',
+    'LeMont',
+    null,
+    null,
+    true
   )
 on conflict (id) do update set
   title = excluded.title,
@@ -345,6 +371,40 @@ J'au[G]rai le re[D]gard sur [A]toi.
 {comment: Refrain}
 [Am]Que nos voix s'accordent,
 [F]Pour servir avec [G]joie.$chordpro$,
+    null
+  ),
+  (
+    '13131313-1313-4313-8313-131313131313',
+    '99999999-9999-4999-8999-999999999999',
+    'chordpro',
+    'active',
+    $chordpro${title: Grâce infinie}
+{key: G}
+
+{comment: Couplet}
+[G]Ta grâce me relève,
+[Em]Ta paix conduit mes pas.
+
+{comment: Refrain}
+[C]Nous chantons ta fidélité,
+[D]Seigneur, tu es notre joie.$chordpro$,
+    null
+  ),
+  (
+    '14141414-1414-4414-8414-141414141414',
+    'abababab-abab-4bab-8bab-abababababab',
+    'chordpro',
+    'active',
+    $chordpro${title: Notre espérance}
+{key: A}
+
+{comment: Couplet}
+[A]Dans la nuit tu restes proche,
+[F#m]Ta lumière ouvre un chemin.
+
+{comment: Refrain}
+[D]Christ est notre espérance,
+[E]Notre chant jusqu’au matin.$chordpro$,
     null
   )
 on conflict (id) do update set

@@ -1,4 +1,4 @@
-import type { SongPublicationStatus } from "./public-song";
+import type { SongPdfSource, SongPublicationStatus } from "./public-song";
 
 export type AdminSong = {
   id: string;
@@ -12,6 +12,7 @@ export type AdminSong = {
   collectionNumber: number | null;
   sourcePageUrl: string | null;
   sourceChordProUrl: string | null;
+  pdfSource: SongPdfSource | null;
   isEditable: boolean;
   chordProContent: string;
   createdAt: Date;
@@ -25,6 +26,13 @@ export type AdminSongInput = {
   copyright: string | null;
   defaultKey: string | null;
   chordProContent: string;
+};
+
+export type AdminSongPdfInput = {
+  storagePath: string;
+  fileName: string;
+  mimeType: string;
+  fileSizeBytes: number;
 };
 
 export type AdminSongListItem = Omit<AdminSong, "chordProContent">;

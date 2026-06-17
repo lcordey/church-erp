@@ -1,10 +1,24 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { deleteSongPdf, uploadSongPdf } = vi.hoisted(() => ({
+  deleteSongPdf: vi.fn(),
+  uploadSongPdf: vi.fn(),
+}));
+
+vi.mock("@/src/infrastructure/storage/song-pdf-storage", () => ({
+  deleteSongPdf,
+  getSongPdfStoragePath: (songId: string) => `songs/${songId}/score.pdf`,
+  uploadSongPdf,
+}));
 
 import type { AdminSongRepository } from "../repositories/admin-song-repository";
 import type { AdminSong, AdminSongInput } from "../types/admin-song";
 import {
+  attachSongPdf,
   createDraftSong,
+  deleteAttachedSongPdf,
   deleteDraftSong,
+  InvalidSongPdfError,
   publishSong,
   PublishedSongDeletionError,
   ReadOnlySongError,
@@ -29,6 +43,7 @@ const draftSong: AdminSong = {
   collectionNumber: null,
   sourcePageUrl: null,
   sourceChordProUrl: null,
+  pdfSource: null,
   isEditable: true,
   createdAt: new Date("2026-06-15T18:00:00Z"),
   updatedAt: new Date("2026-06-15T18:00:00Z"),
@@ -41,6 +56,9 @@ function createRepository(song: AdminSong | null = draftSong) {
     create: vi.fn(async () => draftSong),
     update: vi.fn(async () => song),
     delete: vi.fn(async () => true),
+    findPdfSourceById: vi.fn(async () => null),
+    attachPdf: vi.fn(async () => song),
+    deletePdf: vi.fn(async () => song),
     updateStatus: vi.fn(async (_id, status) =>
       song ? { ...song, status } : null,
     ),
@@ -50,6 +68,11 @@ function createRepository(song: AdminSong | null = draftSong) {
 }
 
 describe("admin song management", () => {
+  beforeEach(() => {
+    deleteSongPdf.mockReset();
+    uploadSongPdf.mockReset();
+  });
+
   it("creates a song through the draft workflow", async () => {
     const repository = createRepository();
 
@@ -104,6 +127,57 @@ describe("admin song management", () => {
       updateAdminSong(draftSong.id, input, repository),
     ).rejects.toBeInstanceOf(ReadOnlySongError);
     expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it("attaches one PDF source to a song", async () => {
+    const repository = createRepository();
+    const file = new File(["pdf"], "partition.pdf", {
+      type: "application/pdf",
+    });
+
+    await attachSongPdf(draftSong.id, file, repository);
+
+    expect(uploadSongPdf).toHaveBeenCalledWith(
+      `songs/${draftSong.id}/score.pdf`,
+      file,
+    );
+    expect(repository.attachPdf).toHaveBeenCalledWith(draftSong.id, {
+      storagePath: `songs/${draftSong.id}/score.pdf`,
+      fileName: "partition.pdf",
+      mimeType: "application/pdf",
+      fileSizeBytes: file.size,
+    });
+  });
+
+  it("rejects a non-PDF upload before storage", async () => {
+    const repository = createRepository();
+    const file = new File(["text"], "partition.txt", {
+      type: "text/plain",
+    });
+
+    await expect(
+      attachSongPdf(draftSong.id, file, repository),
+    ).rejects.toBeInstanceOf(InvalidSongPdfError);
+    expect(uploadSongPdf).not.toHaveBeenCalled();
+    expect(repository.attachPdf).not.toHaveBeenCalled();
+  });
+
+  it("deletes an attached PDF source and object", async () => {
+    const repository = createRepository();
+    repository.findPdfSourceById = vi.fn(async () => ({
+      storagePath: `songs/${draftSong.id}/score.pdf`,
+      fileName: "partition.pdf",
+      mimeType: "application/pdf",
+      fileSizeBytes: 10,
+      downloadUrl: `/api/songs/${draftSong.slug}/pdf`,
+    }));
+
+    await deleteAttachedSongPdf(draftSong.id, repository);
+
+    expect(deleteSongPdf).toHaveBeenCalledWith(
+      `songs/${draftSong.id}/score.pdf`,
+    );
+    expect(repository.deletePdf).toHaveBeenCalledWith(draftSong.id);
   });
 
   it("deletes a draft", async () => {

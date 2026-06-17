@@ -58,7 +58,7 @@ done
 catalog="$(curl --fail --silent "${base_url}/api/songs")"
 search_catalog="$(curl --fail --silent "${base_url}/api/songs?q=001")"
 home_page="$(curl --fail --silent "${base_url}/")"
-admin_page="$(curl --fail --silent "${base_url}/admin/chants")"
+admin_page="$(curl --fail --silent --location "${base_url}/admin/chants")"
 
 if [[ "${catalog}" != *'"data":['* ]]; then
   echo "Échec : le catalogue public n'a pas le format attendu."
@@ -75,7 +75,7 @@ if [[ "${home_page}" != *"Des chants prêts à être partagés"* ]]; then
   exit 1
 fi
 
-if [[ "${admin_page}" != *"Gestion interne"* ]]; then
+if [[ "${admin_page}" != *"Nouveau chant"* ]]; then
   echo "Échec : la page d'administration des chants n'est pas rendue."
   exit 1
 fi

@@ -27,6 +27,12 @@ describe("GET /api/songs", () => {
         collection: "JEM",
         collectionNumber: 1,
         sourcePageUrl: "https://jemaf.fr/chant/jem001",
+        pdfSource: {
+          fileName: "jem001.pdf",
+          mimeType: "application/pdf",
+          fileSizeBytes: 1234,
+          downloadUrl: "/api/songs/chant-publie/pdf",
+        },
       },
     ]);
 
@@ -36,6 +42,9 @@ describe("GET /api/songs", () => {
     expect(await response.json()).toEqual({
       data: [
         expect.objectContaining({
+          pdfSource: expect.objectContaining({
+            downloadUrl: "/api/songs/chant-publie/pdf",
+          }),
           slug: "chant-publie",
         }),
       ],

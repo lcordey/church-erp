@@ -21,7 +21,7 @@ Priority direction:
 - improve internal worship-team usability
 
 Likely features:
-- PDF support for songs through Supabase Storage
+- richer PDF workflows such as bulk import, OCR metadata, or generated score exports
 - multiple sources attached to the same song
 - song source management UI
 - richer PWA behavior after the installable MVP-1 shell

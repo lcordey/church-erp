@@ -49,6 +49,11 @@ export function SongDetailView({
               Source JEMAF
             </a>
           ) : null}
+          {song.pdfSource ? (
+            <a href={song.pdfSource.downloadUrl} target="_blank">
+              Partition PDF
+            </a>
+          ) : null}
           {"isEditable" in song && !song.isEditable ? (
             <span>Source officielle</span>
           ) : null}

@@ -92,11 +92,9 @@ export const songSources = pgTable(
       table.sourceType,
       table.status,
     ),
-    uniqueIndex("song_sources_one_active_chordpro_per_song")
-      .on(table.songId)
-      .where(
-        sql`${table.sourceType} = 'chordpro' and ${table.status} = 'active'`,
-      ),
+    uniqueIndex("song_sources_one_active_source_per_song_type")
+      .on(table.songId, table.sourceType)
+      .where(sql`${table.status} = 'active'`),
     check(
       "song_sources_content_matches_type",
       sql`(
