@@ -159,7 +159,7 @@ async function importPdf(sql, pdfDirectory, pdf) {
 await loadLocalEnv();
 
 const pdfDirectory = process.env.JEM_PDF_DIR || defaultPdfDirectory;
-const sql = postgres(requireEnv("DATABASE_URL"), { max: 1 });
+const sql = postgres(requireEnv("DATABASE_URL"), { max: 1, prepare: false });
 
 try {
   for (const pdf of jemPdfs) {
