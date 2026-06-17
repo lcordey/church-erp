@@ -17,6 +17,7 @@
     "phone:network": "bash scripts/windows-phone-network.sh",
     "dev:phone": "bash scripts/dev-phone.sh",
     "test:smoke": "bash scripts/smoke-test.sh",
+    "songs:import-jem-pdfs": "node scripts/import-jem-pdfs.mjs",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:status": "supabase status",

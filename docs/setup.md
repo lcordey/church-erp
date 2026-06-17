@@ -42,6 +42,7 @@ pnpm https:setup
 pnpm phone:network
 pnpm dev:phone
 pnpm test:smoke
+pnpm songs:import-jem-pdfs
 pnpm db:start
 pnpm db:status
 pnpm db:reset
@@ -94,8 +95,20 @@ Server-side PDF storage access uses:
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
-Use `pnpm db:status` after `pnpm db:start` to read the local service role key
-and place it in `.env.local`. This key must stay server-side only.
+Use `pnpm db:status` after `pnpm db:start` to read the local `Secret`
+authentication key and place it in `.env.local` as
+`SUPABASE_SERVICE_ROLE_KEY`. This key must stay server-side only.
+
+Import the local JEM PDF score files after a database reset:
+
+```bash
+pnpm songs:import-jem-pdfs
+```
+
+By default this reads the files from `/mnt/c/Users/lcordey/Downloads`. Override
+that location with `JEM_PDF_DIR=/path/to/pdfs` when needed. The import uploads
+the files to the private `song-pdfs` bucket and recreates active `pdf` sources
+for JEM 001 to JEM 005.
 
 ## First Local Start
 
