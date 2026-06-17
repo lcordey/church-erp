@@ -157,6 +157,7 @@ Use `pnpm db:stop` when the stack is no longer needed.
 - `supabase/seed.sql` contains repeatable local demo data: 5 official read-only JEM songs and 5 editable local songs in `LeMont`.
 - Supabase Storage contains a private `song-pdfs` bucket for PDF score files; PostgreSQL stores only the object path and metadata.
 - `drizzle.config.ts` generates Supabase-compatible timestamped migrations.
+- In Vercel/serverless production, use the Supabase transaction pooler connection string for `DATABASE_URL`; the Postgres client disables prepared statements for pooler compatibility.
 
 For a new schema change:
 

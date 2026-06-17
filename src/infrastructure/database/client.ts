@@ -16,6 +16,7 @@ function createDatabase() {
 
   const client = postgres(databaseUrl, {
     max: process.env.NODE_ENV === "production" ? 10 : 1,
+    prepare: false,
   });
 
   return drizzle(client, { schema });
