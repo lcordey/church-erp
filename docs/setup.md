@@ -95,6 +95,10 @@ Server-side PDF storage access uses:
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
+Local scripts such as `pnpm dev:phone` and `pnpm test:smoke` load `.env.local`
+explicitly so that an exported shell `DATABASE_URL` for a remote Supabase
+project does not accidentally override the local database.
+
 Use `pnpm db:status` after `pnpm db:start` to read the local `Secret`
 authentication key and place it in `.env.local` as
 `SUPABASE_SERVICE_ROLE_KEY`. This key must stay server-side only.

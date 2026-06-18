@@ -762,20 +762,62 @@ a {
 }
 
 .song-pdf-viewer {
-  min-height: min(82vh, 980px);
+  display: flex;
+  min-height: min(86vh, 1040px);
+  flex-direction: column;
   border: 1px solid #dedbd0;
-  background: var(--paper-strong);
+  background:
+    radial-gradient(circle at 20% 0%, rgb(255 253 247 / 18%), transparent 22rem),
+    #26313f;
   box-shadow: 0 30px 90px rgb(34 45 57 / 10%);
 }
 
-.song-pdf-viewer object {
-  display: block;
-  width: 100%;
-  min-height: min(82vh, 980px);
+.song-pdf-viewer__toolbar {
+  display: flex;
+  min-height: 66px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid rgb(255 253 247 / 14%);
+  padding: 12px 14px 12px 18px;
+  color: white;
 }
 
-.song-pdf-viewer object a {
-  margin: 32px;
+.song-pdf-viewer__toolbar > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.song-pdf-viewer__toolbar span {
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.song-pdf-viewer__toolbar small {
+  overflow: hidden;
+  color: rgb(255 253 247 / 72%);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.song-pdf-viewer__stage {
+  flex: 1;
+  padding: clamp(12px, 2.5vw, 28px);
+}
+
+.song-pdf-viewer iframe {
+  display: block;
+  width: 100%;
+  height: min(78vh, 960px);
+  border: 0;
+  border-radius: 4px;
+  background: white;
+  box-shadow: 0 18px 60px rgb(0 0 0 / 25%);
 }
 
 .empty-state {
@@ -1846,9 +1888,17 @@ a {
     flex: 1;
   }
 
-  .song-pdf-viewer,
-  .song-pdf-viewer object {
-    min-height: 70vh;
+  .song-pdf-viewer {
+    min-height: 76vh;
+  }
+
+  .song-pdf-viewer__toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .song-pdf-viewer iframe {
+    height: 68vh;
   }
 
   .setlist-player .app-top-bar {

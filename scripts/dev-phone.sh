@@ -9,6 +9,10 @@ if [[ ! -f .env.local ]]; then
   echo "Fichier .env.local créé."
 fi
 
+set -a
+source .env.local
+set +a
+
 pnpm db:start >/dev/null
 
 if command -v ss >/dev/null 2>&1 && ss -H -ltn "sport = :3000" | grep -q .; then

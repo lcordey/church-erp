@@ -82,19 +82,26 @@ export function SongDetailView({
 
       {sourceView === "pdf" && song.pdfSource ? (
         <section className="song-pdf-viewer">
-          <object
-            aria-label="Partition PDF"
-            data={song.pdfSource.downloadUrl}
-            type="application/pdf"
-          >
+          <header className="song-pdf-viewer__toolbar">
+            <div>
+              <span>Partition PDF</span>
+              <small>{song.pdfSource.fileName ?? song.title}</small>
+            </div>
             <a
               className="admin-button admin-button--primary"
               href={song.pdfSource.downloadUrl}
               target="_blank"
             >
-              Ouvrir le PDF
+              Ouvrir
             </a>
-          </object>
+          </header>
+          <div className="song-pdf-viewer__stage">
+            <iframe
+              aria-label="Partition PDF"
+              src={`${song.pdfSource.downloadUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+              title={`Partition PDF de ${song.title}`}
+            />
+          </div>
         </section>
       ) : (
         <TransposableSongSheet
