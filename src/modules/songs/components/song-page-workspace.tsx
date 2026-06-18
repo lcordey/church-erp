@@ -51,7 +51,7 @@ export function SongPageWorkspace({
       >
         <AppTopBar
           activeViewMode={mode}
-          backHref="/"
+          backHref="/worship"
           backLabel="Retour au répertoire"
           mode={mode === "edition" ? "admin" : "public"}
           onViewModeChange={updateMode}
@@ -59,7 +59,7 @@ export function SongPageWorkspace({
 
         {mode === "edition" && adminSong ? (
           <AdminSongForm
-            onDeleted={() => router.push("/")}
+            onDeleted={() => router.push("/worship")}
             onSaved={(savedSong) => {
               setAdminSong(savedSong);
               router.replace(`/chants/${savedSong.slug}?mode=edition`, {

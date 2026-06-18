@@ -9,7 +9,7 @@ export default function NotFound() {
         <p>
           Il n’existe pas, ou il n’est pas encore publié dans le répertoire.
         </p>
-        <Link className="primary-link" href="/">
+        <Link className="primary-link" href="/worship">
           Voir les chants publiés
         </Link>
       </div>

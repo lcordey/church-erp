@@ -8,7 +8,7 @@ import { getPublicSongBySlug } from "@/src/modules/songs/services/public-song-ca
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Chant · Répertoire",
+  title: "Chant · ChurchERP",
   description: "Paroles et accords d'un chant publié.",
 };
 

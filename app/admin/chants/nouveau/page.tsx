@@ -6,7 +6,7 @@ export default function NewAdminSongPage() {
     <main className="admin-page admin-page--editor">
       <div className="admin-editor-shell">
         <AppTopBar
-          backHref="/"
+          backHref="/worship"
           backLabel="Retour au répertoire"
           mode="admin"
         />

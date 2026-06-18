@@ -22,7 +22,7 @@ export default async function AdminSongPage({ params }: AdminSongPageProps) {
     <main className="admin-page admin-page--editor">
       <div className="admin-editor-shell">
         <AppTopBar
-          backHref="/"
+          backHref="/worship"
           backLabel="Retour au répertoire"
           mode="admin"
         />

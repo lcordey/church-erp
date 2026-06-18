@@ -39,8 +39,8 @@ export function AppTopBar({
               <span />
               <span />
             </div>
-            <Link className="app-top-bar__brand" href="/">
-              Répertoire de louange
+            <Link className="app-top-bar__brand" href="/worship">
+              ChurchERP
             </Link>
           </>
         )}

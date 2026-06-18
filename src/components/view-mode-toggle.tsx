@@ -37,8 +37,8 @@ export function ViewModeToggle({
   const currentMode = activeMode ?? (mode === "admin" ? "edition" : "selection");
 
   useEffect(() => {
-    router.prefetch("/");
-    router.prefetch("/?mode=edition");
+    router.prefetch("/worship");
+    router.prefetch("/worship?mode=edition");
   }, [router]);
 
   if (onModeChange) {
@@ -70,7 +70,7 @@ export function ViewModeToggle({
     <nav className="view-mode-toggle" aria-label="Mode d’affichage">
       <Link
         aria-current={currentMode === "selection" ? "page" : undefined}
-        href="/"
+        href="/worship"
         title="Mode sélection"
       >
         <EyeIcon />
@@ -78,7 +78,7 @@ export function ViewModeToggle({
       </Link>
       <Link
         aria-current={currentMode === "edition" ? "page" : undefined}
-        href="/?mode=edition"
+        href="/worship?mode=edition"
         title="Mode édition"
       >
         <EditIcon />

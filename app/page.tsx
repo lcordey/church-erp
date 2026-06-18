@@ -1,30 +1,5 @@
-import { SongsWorkspace } from "@/src/modules/songs/components/songs-workspace";
-import { listPublicSongs } from "@/src/modules/songs/services/public-song-catalog";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-type HomeProps = {
-  searchParams: Promise<{
-    collections?: string;
-    q?: string;
-  }>;
-};
-
-export default async function Home({ searchParams }: HomeProps) {
-  const { collections, q } = await searchParams;
-  const search = q?.trim() ?? "";
-  const selectedCollections =
-    collections
-      ?.split(",")
-      .map((collection) => collection.trim())
-      .filter(Boolean) ?? [];
-  const songs = await listPublicSongs();
-
-  return (
-    <SongsWorkspace
-      initialCollections={selectedCollections}
-      initialSearch={search}
-      initialSongs={songs}
-    />
-  );
+export default function HomePage() {
+  redirect("/worship");
 }

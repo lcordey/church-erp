@@ -99,7 +99,7 @@ function initialState(song?: AdminSong): FormState {
 
 export function AdminSongForm({
   song,
-  backHref = "/",
+  backHref = "/worship",
   backLabel = "Retour",
   headerActions,
   onCancel,
@@ -243,7 +243,7 @@ export function AdminSongForm({
       return;
     }
 
-    router.push("/");
+    router.push("/worship");
   }
 
   async function uploadPdf(file: File) {
