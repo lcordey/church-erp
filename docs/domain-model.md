@@ -294,7 +294,7 @@ The following are intentionally postponed:
 - replacing the temporary `LeMont` collection convention with the authenticated user's parish
 - searching by author, lyrics, theme, or full-text index
 - duplicating an official song into a local editable variant
-- event, calendar, and setlist relations
+- event and calendar relations
 
 ## Implemented First Migration
 
@@ -316,3 +316,70 @@ The PDF storage migration adds:
 
 The application serves PDFs through backend routes so browser clients do not
 receive raw storage paths or service credentials.
+
+## Entity: `setlists`
+
+Represents an ordered worship-team sequence of published songs.
+
+### Fields
+
+- `id`
+  - type: `uuid`
+  - required: yes
+  - notes: primary key
+
+- `title`
+  - type: `text`
+  - required: yes
+  - notes: displayed setlist title
+
+- `created_at`
+  - type: `timestamptz`
+  - required: yes
+
+- `updated_at`
+  - type: `timestamptz`
+  - required: yes
+
+## Entity: `setlist_items`
+
+Represents one song entry inside a setlist.
+
+### Fields
+
+- `id`
+  - type: `uuid`
+  - required: yes
+  - notes: primary key
+
+- `setlist_id`
+  - type: `uuid`
+  - required: yes
+  - notes: foreign key to `setlists.id`
+
+- `song_id`
+  - type: `uuid`
+  - required: yes
+  - notes: foreign key to `songs.id`
+
+- `position`
+  - type: `integer`
+  - required: yes
+  - notes: zero-based order inside the setlist
+
+- `created_at`
+  - type: `timestamptz`
+  - required: yes
+
+## Implemented Setlist Migration
+
+The setlist migration adds:
+- `setlists`
+- `setlist_items`
+- ordered items through a unique `(setlist_id, position)` index
+- cascade deletion from setlist to items
+- restricted deletion for songs referenced by setlists
+
+MVP setlists may only reference published songs. That rule is enforced in the
+application service layer so future authentication and authorization can refine
+who is allowed to create or edit setlists.

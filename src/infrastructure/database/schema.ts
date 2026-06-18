@@ -110,7 +110,54 @@ export const songSources = pgTable(
   ],
 );
 
+export const setlists = pgTable(
+  "setlists",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    title: text("title").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    check("setlists_title_not_blank", sql`btrim(${table.title}) <> ''`),
+  ],
+);
+
+export const setlistItems = pgTable(
+  "setlist_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    setlistId: uuid("setlist_id")
+      .notNull()
+      .references(() => setlists.id, { onDelete: "cascade" }),
+    songId: uuid("song_id")
+      .notNull()
+      .references(() => songs.id, { onDelete: "restrict" }),
+    position: integer("position").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("setlist_items_setlist_id_index").on(table.setlistId),
+    index("setlist_items_song_id_index").on(table.songId),
+    uniqueIndex("setlist_items_setlist_position_unique").on(
+      table.setlistId,
+      table.position,
+    ),
+    check("setlist_items_position_non_negative", sql`${table.position} >= 0`),
+  ],
+);
+
 export type Song = typeof songs.$inferSelect;
 export type NewSong = typeof songs.$inferInsert;
 export type SongSource = typeof songSources.$inferSelect;
 export type NewSongSource = typeof songSources.$inferInsert;
+export type Setlist = typeof setlists.$inferSelect;
+export type NewSetlist = typeof setlists.$inferInsert;
+export type SetlistItem = typeof setlistItems.$inferSelect;
+export type NewSetlistItem = typeof setlistItems.$inferInsert;

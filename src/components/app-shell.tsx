@@ -47,6 +47,10 @@ function isActivePath(pathname: string, href: string) {
     );
   }
 
+  if (href === "/setlist") {
+    return pathname === "/setlist" || pathname.startsWith("/setlist/");
+  }
+
   return pathname === href;
 }
 

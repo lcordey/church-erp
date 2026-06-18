@@ -34,7 +34,7 @@ Priority direction:
 Likely features:
 - celebrations or events
 - calendar-oriented views
-- sharing songs in the context of an event
+- sharing setlists in the context of an event
 - event notes
 - optional scripture readings linked to an event
 

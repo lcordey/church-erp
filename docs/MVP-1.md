@@ -72,7 +72,7 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 - authentification reelle
 - groupes, roles et administration des permissions
 - autres formats de partitions ou de documents
-- evenements, calendrier et setlists
+- evenements et calendrier
 - invitations a un evenement
 - partage de chants a des participants
 - lectures bibliques attachees a un evenement
@@ -116,6 +116,7 @@ Livre :
 - creation admin assignee automatiquement a la collection `LeMont`
 - donnees de seed composees de 5 chants JEM officiels et 5 chants locaux editables dans `LeMont`
 - partition PDF optionnelle stockee dans Supabase Storage et servie par route backend
+- creation, edition, suppression et lecture de setlists de chants publies
 - migrations, seed, tests Vitest et smoke test HTTP
 - acces local depuis un telephone avec HTTPS et support WSL2
 

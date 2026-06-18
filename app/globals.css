@@ -724,9 +724,306 @@ a {
   margin-top: 22px;
 }
 
+.song-source-button {
+  border-color: rgb(49 91 120 / 22%) !important;
+  color: var(--accent) !important;
+  background: rgb(220 231 233 / 45%) !important;
+}
+
+.song-source-button:hover {
+  color: white !important;
+  background: var(--accent) !important;
+}
+
+.song-source-toggle {
+  display: inline-flex;
+  margin-top: 24px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgb(255 253 247 / 78%);
+}
+
+.song-source-toggle button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 14px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  font: 800 0.72rem/1 var(--sans);
+  text-transform: uppercase;
+}
+
+.song-source-toggle button[aria-pressed="true"] {
+  color: white;
+  background: var(--accent);
+}
+
+.song-pdf-viewer {
+  min-height: min(82vh, 980px);
+  border: 1px solid #dedbd0;
+  background: var(--paper-strong);
+  box-shadow: 0 30px 90px rgb(34 45 57 / 10%);
+}
+
+.song-pdf-viewer object {
+  display: block;
+  width: 100%;
+  min-height: min(82vh, 980px);
+}
+
+.song-pdf-viewer object a {
+  margin: 32px;
+}
+
 .empty-state {
   padding: 64px 0;
   color: var(--muted);
+}
+
+.setlist-page {
+  min-height: 100vh;
+  background:
+    linear-gradient(90deg, transparent 0 49.9%, rgb(24 36 58 / 4%) 50% 50.1%, transparent 50.2%),
+    var(--paper);
+}
+
+.setlist-shell {
+  width: min(1120px, calc(100% - 40px));
+  margin: 0 auto;
+  padding-bottom: 84px;
+}
+
+.setlist-shell--editor {
+  padding-bottom: 0;
+}
+
+.setlist-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+  align-items: end;
+  gap: 48px;
+  padding: clamp(72px, 10vw, 130px) 0 54px;
+}
+
+.setlist-hero h1,
+.setlist-editor h2,
+.setlist-card h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 500;
+}
+
+.setlist-hero h1 {
+  max-width: 760px;
+  font-size: clamp(3rem, 6.5vw, 6rem);
+  line-height: 0.98;
+}
+
+.setlist-create {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  background: rgb(255 253 247 / 72%);
+}
+
+.setlist-create label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.setlist-create > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.setlist-create input,
+.setlist-editor .field input {
+  min-width: 0;
+  height: 46px;
+  border: 1px solid #d6d6d0;
+  border-radius: 4px;
+  padding: 0 13px;
+  color: var(--ink);
+  background: #fbfaf5;
+  font: 500 0.95rem/1.5 var(--sans);
+}
+
+.setlist-create button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 4px;
+  padding: 0 18px;
+  color: white;
+  background: var(--accent);
+  cursor: pointer;
+  font: 800 0.78rem/1 var(--sans);
+  text-transform: uppercase;
+}
+
+.setlist-list {
+  padding-bottom: 70px;
+}
+
+.setlist-cards {
+  display: flex;
+  flex-direction: column;
+}
+
+.setlist-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  min-height: 112px;
+  border-bottom: 1px solid var(--line);
+  padding: 22px 0;
+}
+
+.setlist-card h3 {
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.setlist-card p {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.setlist-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.setlist-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  gap: 30px;
+  padding: 34px 0 84px;
+}
+
+.setlist-editor__panel,
+.setlist-editor__catalog {
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: rgb(255 253 247 / 72%);
+}
+
+.setlist-editor__panel {
+  padding: clamp(22px, 3vw, 34px);
+}
+
+.setlist-editor__catalog {
+  position: sticky;
+  top: 104px;
+  align-self: start;
+}
+
+.setlist-editor .field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.setlist-editor__items {
+  display: flex;
+  flex-direction: column;
+}
+
+.setlist-editor__item {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  min-height: 78px;
+  border-bottom: 1px solid var(--line);
+  padding: 14px 0;
+}
+
+.setlist-editor__item > span {
+  color: var(--warm);
+  font-family: var(--display);
+  font-style: italic;
+}
+
+.setlist-editor__item div:nth-child(2) {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.setlist-editor__item small,
+.setlist-song-picker small {
+  color: var(--muted);
+}
+
+.setlist-editor__item div:last-child {
+  display: flex;
+  gap: 6px;
+}
+
+.setlist-editor__item button {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--accent);
+  background: var(--paper-strong);
+  cursor: pointer;
+}
+
+.setlist-editor__item button:disabled {
+  color: var(--line);
+  cursor: not-allowed;
+}
+
+.setlist-song-picker {
+  display: flex;
+  max-height: calc(100vh - 250px);
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.setlist-song-picker button {
+  display: flex;
+  min-height: 68px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 5px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  padding: 12px 18px;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.setlist-song-picker button:hover {
+  background: rgb(220 231 233 / 34%);
+}
+
+.setlist-player__count {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .site-footer {
@@ -1467,7 +1764,8 @@ a {
   }
 
   .catalog-shell,
-  .song-page__shell {
+  .song-page__shell,
+  .setlist-shell {
     width: min(100% - 28px, 1120px);
   }
 
@@ -1506,6 +1804,57 @@ a {
     grid-template-columns: 1fr;
     gap: 32px;
     padding: 72px 0 64px;
+  }
+
+  .setlist-hero,
+  .setlist-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .setlist-hero {
+    gap: 28px;
+    padding: 88px 0 42px;
+  }
+
+  .setlist-create > div,
+  .setlist-editor__item {
+    grid-template-columns: 1fr;
+  }
+
+  .setlist-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .setlist-card__actions {
+    justify-content: flex-start;
+  }
+
+  .setlist-editor__catalog {
+    position: static;
+  }
+
+  .setlist-song-picker {
+    max-height: none;
+  }
+
+  .song-source-toggle {
+    width: 100%;
+  }
+
+  .song-source-toggle button {
+    flex: 1;
+  }
+
+  .song-pdf-viewer,
+  .song-pdf-viewer object {
+    min-height: 70vh;
+  }
+
+  .setlist-player .app-top-bar {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-bottom: 14px;
   }
 
   .app-panel-page {

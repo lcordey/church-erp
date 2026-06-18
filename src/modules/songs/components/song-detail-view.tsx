@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useState } from "react";
 
 import type { AdminSong } from "../types/admin-song";
 import type { PublicSongDetail } from "../types/public-song";
@@ -18,6 +19,11 @@ export function SongDetailView({
   actions,
   eyebrow = "Chant publié",
 }: SongDetailViewProps) {
+  const [sourceView, setSourceView] = useState<"chordpro" | "pdf">("chordpro");
+  const collectionLabel = song.collection
+    ? `${song.collection}${song.collectionNumber ? ` ${String(song.collectionNumber).padStart(3, "0")}` : ""}`
+    : null;
+
   return (
     <section className="song-detail-view">
       <header className="song-header song-header--compact">
@@ -29,14 +35,7 @@ export function SongDetailView({
         </div>
 
         <div className="song-header__metadata">
-          {song.collection ? (
-            <span>
-              {song.collection}
-              {song.collectionNumber
-                ? ` ${String(song.collectionNumber).padStart(3, "0")}`
-                : ""}
-            </span>
-          ) : null}
+          {collectionLabel ? <span>{collectionLabel}</span> : null}
           <span>{song.author ?? "Auteur non renseigné"}</span>
           {song.defaultKey ? (
             <span>
@@ -45,13 +44,13 @@ export function SongDetailView({
           ) : null}
           {song.copyright ? <span>{song.copyright}</span> : null}
           {song.sourcePageUrl ? (
-            <a href={song.sourcePageUrl} rel="noreferrer" target="_blank">
+            <a
+              className="song-source-button"
+              href={song.sourcePageUrl}
+              rel="noreferrer"
+              target="_blank"
+            >
               Source JEMAF
-            </a>
-          ) : null}
-          {song.pdfSource ? (
-            <a href={song.pdfSource.downloadUrl} target="_blank">
-              Partition PDF
             </a>
           ) : null}
           {"isEditable" in song && !song.isEditable ? (
@@ -59,13 +58,50 @@ export function SongDetailView({
           ) : null}
         </div>
 
+        <div className="song-source-toggle" aria-label="Source du chant">
+          <button
+            aria-pressed={sourceView === "chordpro"}
+            onClick={() => setSourceView("chordpro")}
+            type="button"
+          >
+            Accords
+          </button>
+          {song.pdfSource ? (
+            <button
+              aria-pressed={sourceView === "pdf"}
+              onClick={() => setSourceView("pdf")}
+              type="button"
+            >
+              PDF
+            </button>
+          ) : null}
+        </div>
+
         {actions ? <div className="song-detail-view__actions">{actions}</div> : null}
       </header>
 
-      <TransposableSongSheet
-        content={song.chordProContent}
-        defaultKey={song.defaultKey}
-      />
+      {sourceView === "pdf" && song.pdfSource ? (
+        <section className="song-pdf-viewer">
+          <object
+            aria-label="Partition PDF"
+            data={song.pdfSource.downloadUrl}
+            type="application/pdf"
+          >
+            <a
+              className="admin-button admin-button--primary"
+              href={song.pdfSource.downloadUrl}
+              target="_blank"
+            >
+              Ouvrir le PDF
+            </a>
+          </object>
+        </section>
+      ) : (
+        <TransposableSongSheet
+          content={song.chordProContent}
+          defaultKey={song.defaultKey}
+        />
+      )}
     </section>
   );
 }
