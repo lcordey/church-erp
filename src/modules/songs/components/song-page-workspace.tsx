@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
 
@@ -28,19 +28,22 @@ export function SongPageWorkspace({
   const [adminSong, setAdminSong] = useState(initialAdminSong);
   const readableSong = adminSong ?? song;
 
-  function updateMode(nextMode: "selection" | "edition") {
-    if (nextMode === "edition" && !adminSong) {
-      return;
-    }
+  const updateMode = useCallback(
+    (nextMode: "selection" | "edition") => {
+      if (nextMode === "edition" && !adminSong) {
+        return;
+      }
 
-    setMode(nextMode);
-    router.replace(
-      nextMode === "edition"
-        ? `/chants/${readableSong.slug}?mode=edition`
-        : `/chants/${readableSong.slug}`,
-      { scroll: false },
-    );
-  }
+      setMode(nextMode);
+      router.replace(
+        nextMode === "edition"
+          ? `/chants/${readableSong.slug}?mode=edition`
+          : `/chants/${readableSong.slug}`,
+        { scroll: false },
+      );
+    },
+    [adminSong, readableSong.slug, router],
+  );
 
   return (
     <main className={mode === "edition" ? "admin-page admin-page--editor" : "song-page"}>

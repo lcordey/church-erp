@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 
+import { AppTopBar } from "@/src/components/app-top-bar";
+
+import { SongCatalog } from "@/src/modules/songs/components/song-catalog";
 import type { PublicSongSummary } from "@/src/modules/songs/types/public-song";
 
 import type { SetlistDetail } from "../types/setlist";
@@ -37,7 +40,6 @@ export function SetlistEditor({
 }: SetlistEditorProps) {
   const router = useRouter();
   const [title, setTitle] = useState(initialSetlist.title);
-  const [search, setSearch] = useState("");
   const [songIds, setSongIds] = useState(
     initialSetlist.items.map((item) => item.song.id),
   );
@@ -46,10 +48,6 @@ export function SetlistEditor({
   const songsById = useMemo(
     () => new Map(availableSongs.map((song) => [song.id, song])),
     [availableSongs],
-  );
-  const normalizedSearch = search.trim().toLowerCase();
-  const filteredSongs = availableSongs.filter((song) =>
-    songLabel(song).toLowerCase().includes(normalizedSearch),
   );
 
   function moveSong(index: number, direction: -1 | 1) {
@@ -67,7 +65,7 @@ export function SetlistEditor({
     });
   }
 
-  async function saveSetlist() {
+  const saveSetlist = useCallback(async () => {
     setMessage("");
 
     const response = await fetch(`/api/setlists/${initialSetlist.id}`, {
@@ -91,39 +89,43 @@ export function SetlistEditor({
 
     setMessage("Setlist enregistrée.");
     router.refresh();
-  }
+  }, [initialSetlist.id, router, songIds, title]);
+
+  const headerActions = useMemo(
+    () => (
+      <>
+        <Link
+          className="admin-button admin-button--primary"
+          href={`/setlist/${initialSetlist.id}/play`}
+        >
+          Jouer
+        </Link>
+        <button
+          className="admin-button"
+          disabled={isPending}
+          onClick={() => {
+            startTransition(() => {
+              void saveSetlist();
+            });
+          }}
+          type="button"
+        >
+          Enregistrer
+        </button>
+      </>
+    ),
+    [initialSetlist.id, isPending, saveSetlist, startTransition],
+  );
 
   return (
     <main className="setlist-page">
       <div className="setlist-shell setlist-shell--editor">
-        <header className="app-top-bar">
-          <div className="app-top-bar__identity">
-            <Link className="app-top-bar__back" href="/setlist">
-              <span aria-hidden="true">←</span>
-              Retour aux setlists
-            </Link>
-          </div>
-          <div className="app-top-bar__actions">
-            <Link
-              className="admin-button admin-button--primary"
-              href={`/setlist/${initialSetlist.id}/play`}
-            >
-              Jouer
-            </Link>
-            <button
-              className="admin-button"
-              disabled={isPending}
-              onClick={() => {
-                startTransition(() => {
-                  void saveSetlist();
-                });
-              }}
-              type="button"
-            >
-              Enregistrer
-            </button>
-          </div>
-        </header>
+        <AppTopBar
+          actions={headerActions}
+          backHref="/setlist"
+          backLabel="Retour"
+          mode="public"
+        />
 
         <section className="setlist-editor">
           <div className="setlist-editor__panel">
@@ -204,35 +206,25 @@ export function SetlistEditor({
 
             {message ? <p className="form-message">{message}</p> : null}
           </div>
+        </section>
 
-          <aside className="setlist-editor__catalog">
-            <form
-              className="catalog-search"
-              onSubmit={(event) => event.preventDefault()}
-            >
-              <label htmlFor="setlist-song-search">Ajouter un chant</label>
-              <div className="catalog-search__row">
-                <input
-                  id="setlist-song-search"
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Titre ou recueil"
-                  value={search}
-                />
-              </div>
-            </form>
-            <div className="setlist-song-picker">
-              {filteredSongs.map((song) => (
-                <button
-                  key={song.id}
-                  onClick={() => setSongIds((current) => [...current, song.id])}
-                  type="button"
-                >
-                  <strong>{song.title}</strong>
-                  <small>{songLabel(song)}</small>
-                </button>
-              ))}
-            </div>
-          </aside>
+        <section
+          aria-labelledby="setlist-song-catalog-title"
+          className="catalog-section setlist-editor__catalog-section"
+        >
+          <SongCatalog
+            heading="Ajouter un chant"
+            headingId="setlist-song-catalog-title"
+            emptyMessage="Aucun chant ne correspond à cette recherche."
+            onOpenSong={(song) =>
+              setSongIds((current) => [...current, song.id])
+            }
+            searchInputId="setlist-song-search"
+            searchPlaceholder="Titre ou numéro JEM"
+            showOpenIndicator={false}
+            songs={availableSongs}
+            syncUrl={false}
+          />
         </section>
       </div>
     </main>

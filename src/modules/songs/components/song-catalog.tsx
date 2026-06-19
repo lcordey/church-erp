@@ -11,8 +11,17 @@ type SongCatalogProps = {
   initialSearch?: string;
   activeMode?: "selection" | "edition";
   activeSongSlug?: string | null;
+  heading?: string;
+  headingId?: string;
+  emptyMessage?: string;
+  onAddToSetlist?: (song: PublicSongSummary) => void;
   onEditSong?: (song: PublicSongSummary) => void;
   onOpenSong?: (song: PublicSongSummary) => void;
+  searchInputId?: string;
+  searchLabel?: string;
+  searchPlaceholder?: string;
+  showOpenIndicator?: boolean;
+  syncUrl?: boolean;
 };
 
 function normalizeSearch(value: string): string {
@@ -66,8 +75,17 @@ export function SongCatalog({
   initialSearch = "",
   activeMode = "selection",
   activeSongSlug = null,
+  heading = "Chants publiés",
+  headingId = "catalog-title",
+  emptyMessage = "Aucun chant ne correspond à cette recherche.",
+  onAddToSetlist,
   onEditSong,
   onOpenSong,
+  searchInputId = "song-search",
+  searchLabel = "Recherche",
+  searchPlaceholder = "Titre ou numéro JEM",
+  showOpenIndicator = true,
+  syncUrl = true,
 }: SongCatalogProps) {
   const collections = useMemo(
     () =>
@@ -98,6 +116,10 @@ export function SongCatalog({
   );
 
   useEffect(() => {
+    if (!syncUrl) {
+      return;
+    }
+
     const url = new URL(window.location.href);
 
     if (search.trim()) {
@@ -113,7 +135,7 @@ export function SongCatalog({
     }
 
     window.history.replaceState(null, "", `${url.pathname}${url.search}`);
-  }, [collections.length, search, selectedCollections]);
+  }, [collections.length, search, selectedCollections, syncUrl]);
 
   function updateSearch(value: string) {
     setSearch(value);
@@ -131,7 +153,7 @@ export function SongCatalog({
     <>
       <div className="catalog-section__heading">
         <div>
-          <h2 id="catalog-title">Chants publiés</h2>
+          <h2 id={headingId}>{heading}</h2>
         </div>
         <div className="catalog-section__heading-actions">
           <span>
@@ -144,13 +166,13 @@ export function SongCatalog({
         className="catalog-search"
         onSubmit={(event) => event.preventDefault()}
       >
-        <label htmlFor="song-search">Recherche</label>
+        <label htmlFor={searchInputId}>{searchLabel}</label>
         <div className="catalog-search__row">
           <input
-            id="song-search"
+            id={searchInputId}
             name="q"
             onChange={(event) => updateSearch(event.target.value)}
-            placeholder="Titre ou numéro JEM"
+            placeholder={searchPlaceholder}
             value={search}
           />
           {search ? (
@@ -184,15 +206,17 @@ export function SongCatalog({
               isActive={activeSongSlug === song.slug}
               key={song.id}
               mode={activeMode}
+              onAddToSetlist={onAddToSetlist}
               onEdit={onEditSong}
               onOpen={onOpenSong}
+              showOpenIndicator={showOpenIndicator}
               song={song}
             />
           ))}
         </div>
       ) : (
         <div className="empty-state">
-          <p>Aucun chant ne correspond à cette recherche.</p>
+          <p>{emptyMessage}</p>
         </div>
       )}
     </>

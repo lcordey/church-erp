@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { AppTopBar } from "@/src/components/app-top-bar";
+
 import type { SetlistDetail, SetlistSummary } from "../types/setlist";
 
 type SetlistIndexProps = {
@@ -77,6 +79,8 @@ export function SetlistIndex({ initialSetlists }: SetlistIndexProps) {
   return (
     <main className="setlist-page">
       <div className="setlist-shell">
+        <AppTopBar mode="public" />
+
         <section className="setlist-hero">
           <div>
             <p className="eyebrow">Setlist</p>

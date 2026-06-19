@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 
+import { useAppHeader } from "./app-header-context";
 import { ViewModeToggle } from "./view-mode-toggle";
 
 type AppTopBarProps = {
@@ -24,28 +24,9 @@ export function AppTopBar({
   onViewModeChange,
   showViewModeToggle = Boolean(onViewModeChange),
 }: AppTopBarProps) {
-  return (
-    <header className="app-top-bar">
-      <div className="app-top-bar__identity">
-        {backHref && backLabel ? (
-          <Link className="app-top-bar__back" href={backHref}>
-            <span aria-hidden="true">←</span>
-            {backLabel}
-          </Link>
-        ) : (
-          <>
-            <div className="site-mark" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </div>
-            <Link className="app-top-bar__brand" href="/worship">
-              ChurchERP
-            </Link>
-          </>
-        )}
-      </div>
-      <div className="app-top-bar__actions">
+  const headerActions = useMemo(
+    () => (
+      <>
         {actions}
         {showViewModeToggle ? (
           <ViewModeToggle
@@ -54,7 +35,22 @@ export function AppTopBar({
             onModeChange={onViewModeChange}
           />
         ) : null}
-      </div>
-    </header>
+      </>
+    ),
+    [actions, activeViewMode, mode, onViewModeChange, showViewModeToggle],
   );
+
+  const headerConfig = useMemo(
+    () => ({
+      mode,
+      backHref,
+      backLabel,
+      actions: headerActions,
+    }),
+    [backHref, backLabel, headerActions, mode],
+  );
+
+  useAppHeader(headerConfig);
+
+  return null;
 }

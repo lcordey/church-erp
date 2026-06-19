@@ -34,6 +34,7 @@ export function TransposableSongSheet({
     : defaultKey
       ? transposeChord(defaultKey, manualOffset)
       : null;
+  const isResetDisabled = transposeBy === 0 && manualOffset === 0;
 
   function shift(step: number) {
     if (!canonicalDefaultKey) {
@@ -82,24 +83,27 @@ export function TransposableSongSheet({
             </strong>
           )}
           <button
+            className="transpose-toolbar__reset"
+            aria-label="Réinitialiser la transposition"
+            disabled={isResetDisabled}
+            onClick={() => {
+              setSelectedKey(canonicalDefaultKey ?? "");
+              setManualOffset(0);
+            }}
+            type="button"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M19 8a7 7 0 1 0 1.4 7.2" />
+              <path d="M19 4v5h-5" />
+            </svg>
+          </button>
+          <button
             aria-label="Monter d’un demi-ton"
             onClick={() => shift(1)}
             type="button"
           >
             +
           </button>
-          {(transposeBy !== 0 || manualOffset !== 0) && (
-            <button
-              className="transpose-toolbar__reset"
-              onClick={() => {
-                setSelectedKey(canonicalDefaultKey ?? "");
-                setManualOffset(0);
-              }}
-              type="button"
-            >
-              Réinitialiser
-            </button>
-          )}
         </div>
       </div>
 
