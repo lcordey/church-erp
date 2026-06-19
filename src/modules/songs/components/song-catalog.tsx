@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import {
+  getSongCollectionLabel,
+  getSongCollectionSearchTerms,
+} from "../collections/song-collection";
 import type { PublicSongSummary } from "../types/public-song";
 import { SongCard } from "./song-card";
 
@@ -49,9 +53,9 @@ function matchesSearch(song: PublicSongSummary, search: string): boolean {
   const searchableText = normalizeSearch(
     [
       song.title,
-      song.collection,
+      song.collection ? getSongCollectionSearchTerms(song.collection).join(" ") : "",
       song.collection && song.collectionNumber
-        ? `${song.collection} ${song.collectionNumber}`
+        ? `${getSongCollectionSearchTerms(song.collection).join(" ")} ${song.collectionNumber}`
         : "",
       collectionNumber,
       song.collectionNumber?.toString() ?? "",
@@ -62,7 +66,7 @@ function matchesSearch(song: PublicSongSummary, search: string): boolean {
 }
 
 function getCollectionLabel(collection: string): string {
-  return collection === "JEM" ? "Jem" : collection;
+  return getSongCollectionLabel(collection);
 }
 
 function isCollection(value: string | null): value is string {
@@ -83,7 +87,7 @@ export function SongCatalog({
   onOpenSong,
   searchInputId = "song-search",
   searchLabel = "Recherche",
-  searchPlaceholder = "Titre ou numéro JEM",
+  searchPlaceholder = "Titre ou numéro de recueil",
   showOpenIndicator = true,
   syncUrl = true,
 }: SongCatalogProps) {

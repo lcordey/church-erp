@@ -9,6 +9,7 @@ import {
   formatMusicalKey,
   musicalKeys,
 } from "../music/musical-key";
+import { formatSongCollectionLabel } from "../collections/song-collection";
 import type { AdminSong } from "../types/admin-song";
 import type {
   AdminSongField,
@@ -400,7 +401,7 @@ export function AdminSongForm({
             <div className="field field--readonly">
               <span>Recueil</span>
               <strong>
-                {song.collection} {String(song.collectionNumber).padStart(3, "0")}
+                {formatSongCollectionLabel(song.collection, song.collectionNumber)}
               </strong>
             </div>
           ) : null}

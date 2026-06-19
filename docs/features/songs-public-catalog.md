@@ -13,12 +13,12 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 ## Perimetre
 
 - lister les chants publies
-- afficher le titre, le slug, les metadonnees utiles a la navigation et les informations JEM quand elles existent
+- afficher le titre, le slug, les metadonnees utiles a la navigation et les informations de recueil quand elles existent
 - permettre l'ouverture d'une page detail publique
 - exclure les chants brouillon des resultats publics
 - rendre les paroles et accords de la source ChordPro active
 - afficher un lien vers la partition PDF quand une source PDF active existe
-- chercher les chants publies par titre ou numero JEM
+- chercher les chants publies par titre ou numero de recueil
 - filtrer le catalogue sans rechargement de page
 - filtrer par recueil via des cases a cocher fixes
 
@@ -27,14 +27,16 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 - seuls les chants avec le statut `published` sont visibles publiquement
 - les chants brouillon n'apparaissent jamais dans le catalogue public
 - l'acces public est strictement en lecture seule
-- la recherche MVP-1 couvre le titre, `JEM 1`, `1` et `001`
-- le filtre par recueil propose les collections presentes, actuellement `JEM` et `LeMont`
+- la recherche MVP-1 couvre le titre, le code de recueil, le numero brut et le numero zero-pad
+- le filtre par recueil propose les collections presentes dans le seed courant, y compris les recueils JEMAF importes et `LeMont`
 - le filtre par recueil n'est pas un champ libre
 - aucune case recueil cochee signifie que tous les recueils sont affiches
+- a l'ouverture du repertoire sans filtre URL, les recueils `JEM`, `JEMK` et `LeMont` sont coches par defaut
 - la page publique charge le catalogue publie puis filtre cote client pour une interaction fluide
 - l'API `GET /api/songs?q=...` conserve une recherche serveur utilisable par les futurs clients
 - l'API publique expose uniquement les metadonnees PDF utiles et une URL backend de telechargement
 - le chemin Supabase Storage interne n'est jamais expose au navigateur
+- le seed local du catalogue public reste rejouable hors ligne meme si le snapshot JEMAF a ete collecte depuis le reseau
 - la recherche par auteur, paroles ou themes est reportee
 
 ## Donnees concernees

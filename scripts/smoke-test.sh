@@ -74,7 +74,7 @@ if [[ "${catalog}" != *'"data":['* ]]; then
 fi
 
 if [[ "${search_catalog}" != *"jem-001-jaime-leternel"* ]]; then
-  echo "Échec : la recherche par numéro JEM ne retourne pas JEM001."
+  echo "Échec : la recherche par numéro de recueil ne retourne pas JEM001."
   exit 1
 fi
 

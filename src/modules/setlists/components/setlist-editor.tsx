@@ -220,7 +220,7 @@ export function SetlistEditor({
               setSongIds((current) => [...current, song.id])
             }
             searchInputId="setlist-song-search"
-            searchPlaceholder="Titre ou numéro JEM"
+            searchPlaceholder="Titre ou numéro de recueil"
             showOpenIndicator={false}
             songs={availableSongs}
             syncUrl={false}

@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 
+import { formatSongCollectionLabel } from "../collections/song-collection";
 import type { AdminSong } from "../types/admin-song";
 import type { PublicSongDetail } from "../types/public-song";
 import { MusicalKeyText } from "./musical-key-text";
@@ -20,9 +21,10 @@ export function SongDetailView({
   eyebrow = "Chant publié",
 }: SongDetailViewProps) {
   const [sourceView, setSourceView] = useState<"chordpro" | "pdf">("chordpro");
-  const collectionLabel = song.collection
-    ? `${song.collection}${song.collectionNumber ? ` ${String(song.collectionNumber).padStart(3, "0")}` : ""}`
-    : null;
+  const collectionLabel = formatSongCollectionLabel(
+    song.collection,
+    song.collectionNumber,
+  );
 
   return (
     <section className="song-detail-view">

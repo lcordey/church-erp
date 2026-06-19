@@ -28,7 +28,7 @@ publier automatiquement et supprimer des chants depuis leur ecran d'edition.
 - un chant publie doit d'abord etre retire du catalogue avant suppression ; l'interface peut enchainer ce retrait puis la suppression dans la meme action
 - un meme chant pourra a terme posseder plusieurs sources dans plusieurs formats
 - un chant MVP-1 possede au maximum une source ChordPro active et une source PDF active
-- les chants officiels JEM importes ne sont pas editables directement
+- les chants officiels JEMAF importes ne sont pas editables directement
 - le verrouillage d'edition est applique cote service, pas seulement dans l'interface
 - les chants crees manuellement dans MVP-1 sont automatiquement rattaches a la collection locale `LeMont`
 - le choix de collection n'est pas visible dans le formulaire tant qu'il depend implicitement de l'eglise courante
@@ -36,6 +36,7 @@ publier automatiquement et supprimer des chants depuis leur ecran d'edition.
 - le template ChordPro de creation montre une structure type avec intro, couplet, refrain et pont
 - le template ChordPro montre les repetitions via des commentaires visibles, par exemple `x2`
 - le slug public reste gere automatiquement depuis le titre et n'est pas expose dans le formulaire
+- les chants JEMAF seedes localement proviennent d'un snapshot JEMAF versionne puis rejoue hors ligne
 - les accords saisis dans ChordPro doivent utiliser la notation anglaise et commencer par `A`, `B`, `C`, `D`, `E`, `F` ou `G`
 - les alterations anglaises `#` et `b`, les suffixes mineurs et les basses slash comme `Bb`, `C#m` ou `F/A` sont acceptes
 - les notes francaises comme `Do`, `Re`, `Ré`, `Mi`, `Fa`, `Sol`, `La` ou `Si` sont refusees dans les accords

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+import { formatSongCollectionLabel } from "../collections/song-collection";
 import type { PublicSongSummary } from "../types/public-song";
 import { MusicalKeyText } from "./musical-key-text";
 
@@ -52,9 +53,10 @@ export function SongCard({
   const hasQuickActions = mode === "selection" && Boolean(onEdit || onAddToSetlist);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const collectionLabel = song.collectionNumber
-    ? `${song.collection} ${String(song.collectionNumber).padStart(3, "0")}`
-    : song.collection;
+  const collectionLabel = formatSongCollectionLabel(
+    song.collection,
+    song.collectionNumber,
+  );
 
   useEffect(() => {
     if (!isMenuOpen) {

@@ -47,8 +47,9 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 - creation, modification, publication, retrait et suppression des brouillons
 - support initial du format ChordPro
 - support d'une partition PDF optionnelle par chant
-- premiers chants JEM officiels stockes en lecture seule avec provenance JEMAF
-- recherche simple par titre ou numero JEM
+- chants officiels JEMAF stockes en lecture seule avec provenance JEMAF
+- snapshot local de recueils JEMAF regenerable puis rejouable hors ligne
+- recherche simple par titre ou numero de recueil
 - filtre du catalogue par recueil via cases a cocher
 - collection locale temporaire `LeMont` pour les chants propres a l'eglise
 - recherche fluide cote client sur la page catalogue
@@ -62,7 +63,7 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 
 ### Qualite locale
 - migrations de base de donnees
-- donnees de seed
+- donnees de seed reproductibles hors ligne
 - tests unitaires sur les regles metier utiles
 - smoke test HTTP sur les parcours principaux
 - tests navigateur Playwright a ajouter
@@ -110,11 +111,11 @@ Livre :
 - action enregistrer et publier
 - publication, retrait et suppression securisee des brouillons
 - champs YAGNI retires du modele MVP-1: langue et titre original
-- copyright, numero de recueil, URL officielle et verrouillage d'edition pour les chants JEM
-- recherche publique par titre ou numero JEM
-- filtre public par recueil `JEM` ou `LeMont`
+- copyright, numero de recueil, URL officielle et verrouillage d'edition pour les chants officiels JEMAF
+- recherche publique par titre ou numero de recueil
+- filtre public par recueil, incluant les recueils JEMAF importes et `LeMont`
 - creation admin assignee automatiquement a la collection `LeMont`
-- donnees de seed composees de 5 chants JEM officiels et 5 chants locaux editables dans `LeMont`
+- donnees de seed composees d'un snapshot local du catalogue public JEMAF et de chants locaux editables `LeMont`
 - partition PDF optionnelle stockee dans Supabase Storage et servie par route backend
 - creation, edition, suppression et lecture de setlists de chants publies
 - migrations, seed, tests Vitest et smoke test HTTP

@@ -12,7 +12,7 @@ As of this revision:
 - Supabase CLI and the local Supabase configuration are installed
 - Drizzle ORM and the PostgreSQL driver are installed
 - the songs migrations and demo seed data exist
-- `pnpm db:reset` loads 5 official read-only JEM songs and 5 editable local songs in `LeMont`
+- `pnpm db:reset` loads a generated offline snapshot of the public JEMAF catalog plus 5 editable local songs in `LeMont`
 - the public songs catalog and song administration workflow are implemented
 - the private `song-pdfs` Supabase Storage bucket is configured for optional PDF scores
 - responsive desktop and phone access has been validated locally
@@ -42,6 +42,9 @@ pnpm https:setup
 pnpm phone:network
 pnpm dev:phone
 pnpm test:smoke
+pnpm songs:sync-jemaf
+pnpm songs:render-seed
+pnpm songs:import-pdfs
 pnpm songs:import-jem-pdfs
 pnpm db:start
 pnpm db:status
@@ -103,16 +106,41 @@ Use `pnpm db:status` after `pnpm db:start` to read the local `Secret`
 authentication key and place it in `.env.local` as
 `SUPABASE_SERVICE_ROLE_KEY`. This key must stay server-side only.
 
-Import the local JEM PDF score files after a database reset:
+Import or refresh the local JEM PDF score files manually when needed:
 
 ```bash
-pnpm songs:import-jem-pdfs
+pnpm songs:import-pdfs
 ```
 
-By default this reads the files from `/mnt/c/Users/lcordey/Downloads`. Override
-that location with `JEM_PDF_DIR=/path/to/pdfs` when needed. The import uploads
-the files to the private `song-pdfs` bucket and recreates active `pdf` sources
-for JEM 001 to JEM 005.
+By default this reads the files from `/home/lcordey/work/download_for_church_erp`.
+Override that location with `SONG_PDF_DIR=/path/to/pdfs` when needed. The import
+uploads the files to the private `song-pdfs` bucket and recreates active `pdf`
+sources for the matching JEM songs already present in the seed.
+
+Refresh the local JEMAF snapshot and regenerate `supabase/seed.sql`:
+
+```bash
+pnpm songs:sync-jemaf
+```
+
+This command fetches the configured public JEMAF collections,
+stores the result in `supabase/generated/jemaf-catalog.json`, and rewrites
+`supabase/seed.sql` so that future `pnpm db:reset` runs are fully offline.
+
+By default the sync covers the public JEMAF collections currently supported by
+the importer: `JEM`, `JEMK`, `AF`, and `ATG`.
+
+To limit the refresh to a subset while keeping the same script:
+
+```bash
+JEMAF_COLLECTIONS=jemk,af pnpm songs:sync-jemaf
+```
+
+If a snapshot already exists and only the SQL seed needs to be rebuilt:
+
+```bash
+pnpm songs:render-seed
+```
 
 ## First Local Start
 
@@ -126,14 +154,20 @@ This command creates `.env.local` when needed, starts Supabase, recreates the
 development database, applies every migration, and loads the demo seed.
 
 `pnpm local:setup` is destructive for local business data because it runs
-`pnpm db:reset`. Use it for first setup or when intentionally returning to the
-seed state. For normal daily work, use `pnpm db:start` or `pnpm dev:phone`.
+`pnpm db:reset`. The reset now also imports the local JEM PDFs into Supabase
+Storage after the SQL seed is applied. Use it for first setup or when
+intentionally returning to the seed state. For normal daily work, use
+`pnpm db:start` or `pnpm dev:phone`.
 
 Start the application for desktop-only development:
 
 ```bash
 pnpm dev
 ```
+
+Like `pnpm dev:phone`, this command loads `.env.local` explicitly before
+starting Next.js so that an exported shell `DATABASE_URL` or `SUPABASE_URL`
+cannot accidentally point the app at a different environment.
 
 Run all local quality checks:
 
@@ -158,7 +192,8 @@ Use `pnpm db:stop` when the stack is no longer needed.
 
 - `src/infrastructure/database/schema.ts` is the typed Drizzle schema used by application repositories.
 - `supabase/migrations` contains the SQL migration history applied by Supabase.
-- `supabase/seed.sql` contains repeatable local demo data: 5 official read-only JEM songs and 5 editable local songs in `LeMont`.
+- `supabase/generated/jemaf-catalog.json` stores the JEMAF snapshot used for local resets.
+- `supabase/seed.sql` contains repeatable local demo data generated from the JEMAF snapshot plus the hand-written local songs in `LeMont`.
 - Supabase Storage contains a private `song-pdfs` bucket for PDF score files; PostgreSQL stores only the object path and metadata.
 - `drizzle.config.ts` generates Supabase-compatible timestamped migrations.
 - In Vercel/serverless production, use the Supabase transaction pooler connection string for `DATABASE_URL`; the Postgres client disables prepared statements for pooler compatibility.
@@ -169,6 +204,17 @@ For a new schema change:
 2. Run `pnpm db:generate --name=<short_change_name>`.
 3. Review the generated SQL before applying it.
 4. Run `pnpm db:reset` to validate the full migration history and seed.
+
+For a JEMAF refresh:
+
+1. Run `pnpm songs:sync-jemaf`.
+2. Review the diff in `supabase/generated/jemaf-catalog.json` and `supabase/seed.sql`.
+3. Run `pnpm db:reset` to validate the regenerated seed.
+
+For JEM PDFs:
+
+1. Place the JEM PDFs in `/home/lcordey/work/download_for_church_erp`, or set `SONG_PDF_DIR`.
+2. Run `pnpm db:reset` or `pnpm songs:import-pdfs`.
 
 Never use `drizzle-kit push` for project schema changes. Committed migrations
 must remain the reproducible source of database changes.

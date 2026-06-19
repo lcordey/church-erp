@@ -3,6 +3,8 @@ import { listPublicSongs } from "@/src/modules/songs/services/public-song-catalo
 
 export const dynamic = "force-dynamic";
 
+const defaultVisibleCollections = ["JEM", "JEMK", "LeMont"];
+
 type WorshipPageProps = {
   searchParams: Promise<{
     collections?: string;
@@ -13,12 +15,18 @@ type WorshipPageProps = {
 export default async function WorshipPage({ searchParams }: WorshipPageProps) {
   const { collections, q } = await searchParams;
   const search = q?.trim() ?? "";
-  const selectedCollections =
-    collections
-      ?.split(",")
-      .map((collection) => collection.trim())
-      .filter(Boolean) ?? [];
   const songs = await listPublicSongs();
+  const availableCollections = new Set(
+    songs.map((song) => song.collection).filter(Boolean),
+  );
+  const selectedCollections = collections
+    ? collections
+        .split(",")
+        .map((collection) => collection.trim())
+        .filter(Boolean)
+    : defaultVisibleCollections.filter((collection) =>
+        availableCollections.has(collection),
+      );
 
   return (
     <SongsWorkspace
