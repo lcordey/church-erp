@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 
 import { AppHeaderProvider, AppShellHeader } from "./app-header-context";
+import { PwaInstallPrompt } from "./pwa-install-prompt";
 
 type AppShellProps = {
   children: ReactNode;
@@ -117,6 +118,7 @@ export function AppShell({ children }: AppShellProps) {
             onToggleMenu={() => setIsOpen((current) => !current)}
           />
           {children}
+          <PwaInstallPrompt />
         </div>
       </div>
     </AppHeaderProvider>

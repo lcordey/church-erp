@@ -1,16 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import {
-  getSongCollectionLabel,
-  getSongCollectionSearchTerms,
-} from "../collections/song-collection";
-import type { PublicSongSummary } from "../types/public-song";
+import { getSongCollectionLabel } from "../collections/song-collection";
+import type { PublicSongCatalogPage, PublicSongSummary } from "../types/public-song";
 import { SongCard } from "./song-card";
 
 type SongCatalogProps = {
-  songs: PublicSongSummary[];
+  initialCatalog: PublicSongCatalogPage;
   initialCollections?: string[];
   initialSearch?: string;
   activeMode?: "selection" | "edition";
@@ -28,54 +25,13 @@ type SongCatalogProps = {
   syncUrl?: boolean;
 };
 
-function normalizeSearch(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLowerCase();
-}
-
-function formatCollectionNumber(song: PublicSongSummary): string {
-  if (!song.collectionNumber) {
-    return "";
-  }
-
-  return String(song.collectionNumber).padStart(3, "0");
-}
-
-function matchesSearch(song: PublicSongSummary, search: string): boolean {
-  if (!search) {
-    return true;
-  }
-
-  const collectionNumber = formatCollectionNumber(song);
-  const searchableText = normalizeSearch(
-    [
-      song.title,
-      song.collection ? getSongCollectionSearchTerms(song.collection).join(" ") : "",
-      song.collection && song.collectionNumber
-        ? `${getSongCollectionSearchTerms(song.collection).join(" ")} ${song.collectionNumber}`
-        : "",
-      collectionNumber,
-      song.collectionNumber?.toString() ?? "",
-    ].join(" "),
-  );
-
-  return searchableText.includes(search);
-}
-
 function getCollectionLabel(collection: string): string {
   return getSongCollectionLabel(collection);
 }
 
-function isCollection(value: string | null): value is string {
-  return Boolean(value);
-}
-
 export function SongCatalog({
   initialCollections,
-  songs,
+  initialCatalog,
   initialSearch = "",
   activeMode = "selection",
   activeSongSlug = null,
@@ -91,33 +47,21 @@ export function SongCatalog({
   showOpenIndicator = true,
   syncUrl = true,
 }: SongCatalogProps) {
-  const collections = useMemo(
-    () =>
-      Array.from(new Set(songs.map((song) => song.collection).filter(isCollection))),
-    [songs],
-  );
+  const [catalog, setCatalog] = useState(initialCatalog);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const collections = catalog.collections;
   const [search, setSearch] = useState(initialSearch);
   const [selectedCollections, setSelectedCollections] = useState<string[]>(
     () =>
       initialCollections?.length
         ? initialCollections.filter((collection) =>
-            collections.includes(collection),
+            initialCatalog.collections.includes(collection),
           )
         : [],
   );
-  const normalizedSearch = normalizeSearch(search);
-  const filteredSongs = useMemo(
-    () =>
-      songs.filter(
-        (song) =>
-          matchesSearch(song, normalizedSearch) &&
-          (selectedCollections.length === 0 ||
-            Boolean(
-              song.collection && selectedCollections.includes(song.collection),
-            )),
-      ),
-    [songs, normalizedSearch, selectedCollections],
-  );
+  const hasMounted = useRef(false);
+  const pageSize = catalog.limit;
+  const loadedCount = catalog.songs.length;
 
   useEffect(() => {
     if (!syncUrl) {
@@ -141,6 +85,50 @@ export function SongCatalog({
     window.history.replaceState(null, "", `${url.pathname}${url.search}`);
   }, [collections.length, search, selectedCollections, syncUrl]);
 
+  useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      const url = new URL("/api/songs", window.location.origin);
+
+      if (search.trim()) {
+        url.searchParams.set("q", search.trim());
+      }
+
+      if (selectedCollections.length > 0) {
+        url.searchParams.set("collections", selectedCollections.join(","));
+      }
+
+      url.searchParams.set("limit", String(pageSize));
+      url.searchParams.set("offset", "0");
+
+      void fetch(url, { signal: controller.signal })
+        .then(async (response) => {
+          const payload = (await response.json().catch(() => null)) as
+            | { data?: PublicSongCatalogPage }
+            | null;
+
+          if (response.ok && payload?.data) {
+            setCatalog(payload.data);
+          }
+        })
+        .catch((error: unknown) => {
+          if (error instanceof DOMException && error.name === "AbortError") {
+            return;
+          }
+        });
+    }, 250);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [pageSize, search, selectedCollections]);
+
   function updateSearch(value: string) {
     setSearch(value);
   }
@@ -153,6 +141,46 @@ export function SongCatalog({
     });
   }
 
+  async function loadMore() {
+    if (isLoadingMore) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+    const url = new URL("/api/songs", window.location.origin);
+
+    if (search.trim()) {
+      url.searchParams.set("q", search.trim());
+    }
+
+    if (selectedCollections.length > 0) {
+      url.searchParams.set("collections", selectedCollections.join(","));
+    }
+
+    url.searchParams.set("limit", String(pageSize));
+    url.searchParams.set("offset", String(loadedCount));
+
+    try {
+      const response = await fetch(url);
+      const payload = (await response.json().catch(() => null)) as
+        | { data?: PublicSongCatalogPage }
+        | null;
+
+      if (!response.ok || !payload?.data) {
+        return;
+      }
+
+      const nextCatalog = payload.data;
+
+      setCatalog((current) => ({
+        ...nextCatalog,
+        songs: [...current.songs, ...nextCatalog.songs],
+      }));
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }
+
   return (
     <>
       <div className="catalog-section__heading">
@@ -161,7 +189,7 @@ export function SongCatalog({
         </div>
         <div className="catalog-section__heading-actions">
           <span>
-            {filteredSongs.length} {filteredSongs.length > 1 ? "chants" : "chant"}
+            {catalog.total} {catalog.total > 1 ? "chants" : "chant"}
           </span>
         </div>
       </div>
@@ -202,9 +230,9 @@ export function SongCatalog({
         </fieldset>
       </form>
 
-      {filteredSongs.length > 0 ? (
+      {catalog.songs.length > 0 ? (
         <div className="song-list">
-          {filteredSongs.map((song, index) => (
+          {catalog.songs.map((song, index) => (
             <SongCard
               index={index}
               isActive={activeSongSlug === song.slug}
@@ -223,6 +251,21 @@ export function SongCatalog({
           <p>{emptyMessage}</p>
         </div>
       )}
+
+      {catalog.hasMore ? (
+        <div className="catalog-pagination">
+          <button
+            disabled={isLoadingMore}
+            onClick={() => void loadMore()}
+            type="button"
+          >
+            {isLoadingMore ? "Chargement..." : "Afficher 20 chants de plus"}
+          </button>
+          <span>
+            {loadedCount} sur {catalog.total}
+          </span>
+        </div>
+      ) : null}
     </>
   );
 }

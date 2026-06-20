@@ -6,20 +6,20 @@ import { useMemo, useState } from "react";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
 
-import type { PublicSongSummary } from "../types/public-song";
+import type { PublicSongCatalogPage, PublicSongSummary } from "../types/public-song";
 import { SongCatalog } from "./song-catalog";
 import type { SetlistDetail, SetlistSummary } from "@/src/modules/setlists/types/setlist";
 
 type SongsWorkspaceProps = {
   initialCollections?: string[];
   initialSearch?: string;
-  initialSongs: PublicSongSummary[];
+  initialCatalog: PublicSongCatalogPage;
 };
 
 export function SongsWorkspace({
   initialCollections,
   initialSearch = "",
-  initialSongs,
+  initialCatalog,
 }: SongsWorkspaceProps) {
   const router = useRouter();
   const [setlistMessage, setSetlistMessage] = useState("");
@@ -136,12 +136,12 @@ export function SongsWorkspace({
         <div className="catalog-workspace">
           <section className="catalog-section" aria-labelledby="catalog-title">
             <SongCatalog
+              initialCatalog={initialCatalog}
               initialCollections={initialCollections}
               initialSearch={initialSearch}
               onAddToSetlist={openSetlistDialog}
               onEditSong={(song) => router.push(`/admin/chants/${song.id}`)}
               onOpenSong={openSong}
-              songs={initialSongs}
             />
           </section>
         </div>

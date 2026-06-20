@@ -24,6 +24,15 @@ export type PublicSongSummary = {
   pdfSource: SongPdfSource | null;
 };
 
+export type PublicSongCatalogPage = {
+  songs: PublicSongSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+  collections: string[];
+};
+
 export type PublicSongDetail = PublicSongSummary & {
   chordProContent: string;
 };

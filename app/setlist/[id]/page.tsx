@@ -12,7 +12,7 @@ type SetlistEditPageProps = {
 
 export default async function SetlistEditPage({ params }: SetlistEditPageProps) {
   const { id } = await params;
-  const [setlist, songs] = await Promise.all([
+  const [setlist, catalog] = await Promise.all([
     getSetlist(id),
     listPublicSongs(),
   ]);
@@ -21,5 +21,5 @@ export default async function SetlistEditPage({ params }: SetlistEditPageProps) 
     notFound();
   }
 
-  return <SetlistEditor availableSongs={songs} initialSetlist={setlist} />;
+  return <SetlistEditor initialCatalog={catalog} initialSetlist={setlist} />;
 }

@@ -15,24 +15,22 @@ type WorshipPageProps = {
 export default async function WorshipPage({ searchParams }: WorshipPageProps) {
   const { collections, q } = await searchParams;
   const search = q?.trim() ?? "";
-  const songs = await listPublicSongs();
-  const availableCollections = new Set(
-    songs.map((song) => song.collection).filter(Boolean),
-  );
   const selectedCollections = collections
     ? collections
         .split(",")
         .map((collection) => collection.trim())
         .filter(Boolean)
-    : defaultVisibleCollections.filter((collection) =>
-        availableCollections.has(collection),
-      );
+    : defaultVisibleCollections;
+  const catalog = await listPublicSongs({
+    collections: selectedCollections,
+    search,
+  });
 
   return (
     <SongsWorkspace
       initialCollections={selectedCollections}
       initialSearch={search}
-      initialSongs={songs}
+      initialCatalog={catalog}
     />
   );
 }

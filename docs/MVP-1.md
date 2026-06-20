@@ -59,7 +59,7 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 ### Mobile et compatibilite PWA
 - interface responsive pour telephone
 - test local dans le navigateur d'un telephone
-- direction compatible avec une future installation PWA
+- installation PWA de base avec prompt navigateur quand disponible
 
 ### Qualite locale
 - migrations de base de donnees
@@ -98,7 +98,7 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 1. catalogue public des chants en ChordPro - livre
 2. administration des chants - livre
 3. acces et verifications mobile - livre
-4. premiere couche PWA - prochaine etape
+4. premiere couche PWA - livre
 
 ## Etat actuel
 
@@ -122,7 +122,6 @@ Livre :
 - acces local depuis un telephone avec HTTPS et support WSL2
 
 Restant pour terminer MVP-1 :
-- manifest et icones PWA
 - validation d'installabilite
 - tests navigateur Playwright des parcours principaux
 

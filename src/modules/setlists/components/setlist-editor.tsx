@@ -7,12 +7,15 @@ import { useCallback, useMemo, useState, useTransition } from "react";
 import { AppTopBar } from "@/src/components/app-top-bar";
 
 import { SongCatalog } from "@/src/modules/songs/components/song-catalog";
-import type { PublicSongSummary } from "@/src/modules/songs/types/public-song";
+import type {
+  PublicSongCatalogPage,
+  PublicSongSummary,
+} from "@/src/modules/songs/types/public-song";
 
 import type { SetlistDetail } from "../types/setlist";
 
 type SetlistEditorProps = {
-  availableSongs: PublicSongSummary[];
+  initialCatalog: PublicSongCatalogPage;
   initialSetlist: SetlistDetail;
 };
 
@@ -35,7 +38,7 @@ function songLabel(song: PublicSongSummary) {
 }
 
 export function SetlistEditor({
-  availableSongs,
+  initialCatalog,
   initialSetlist,
 }: SetlistEditorProps) {
   const router = useRouter();
@@ -43,12 +46,24 @@ export function SetlistEditor({
   const [songIds, setSongIds] = useState(
     initialSetlist.items.map((item) => item.song.id),
   );
+  const [knownSongs, setKnownSongs] = useState<PublicSongSummary[]>(() => [
+    ...initialSetlist.items.map((item) => item.song),
+    ...initialCatalog.songs,
+  ]);
   const [message, setMessage] = useState("");
   const [isPending, startTransition] = useTransition();
   const songsById = useMemo(
-    () => new Map(availableSongs.map((song) => [song.id, song])),
-    [availableSongs],
+    () => new Map(knownSongs.map((song) => [song.id, song])),
+    [knownSongs],
   );
+
+  function rememberSong(song: PublicSongSummary) {
+    setKnownSongs((current) =>
+      current.some((knownSong) => knownSong.id === song.id)
+        ? current
+        : [...current, song],
+    );
+  }
 
   function moveSong(index: number, direction: -1 | 1) {
     setSongIds((current) => {
@@ -213,16 +228,17 @@ export function SetlistEditor({
           className="catalog-section setlist-editor__catalog-section"
         >
           <SongCatalog
+            initialCatalog={initialCatalog}
             heading="Ajouter un chant"
             headingId="setlist-song-catalog-title"
             emptyMessage="Aucun chant ne correspond à cette recherche."
-            onOpenSong={(song) =>
-              setSongIds((current) => [...current, song.id])
-            }
+            onOpenSong={(song) => {
+              rememberSong(song);
+              setSongIds((current) => [...current, song.id]);
+            }}
             searchInputId="setlist-song-search"
             searchPlaceholder="Titre ou numéro de recueil"
             showOpenIndicator={false}
-            songs={availableSongs}
             syncUrl={false}
           />
         </section>

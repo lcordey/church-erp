@@ -21,6 +21,7 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 - chercher les chants publies par titre ou numero de recueil
 - filtrer le catalogue sans rechargement de page
 - filtrer par recueil via des cases a cocher fixes
+- charger les chants par pages de 20 resultats
 
 ## Regles metier
 
@@ -32,8 +33,10 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 - le filtre par recueil n'est pas un champ libre
 - aucune case recueil cochee signifie que tous les recueils sont affiches
 - a l'ouverture du repertoire sans filtre URL, les recueils `JEM`, `JEMK` et `LeMont` sont coches par defaut
-- la page publique charge le catalogue publie puis filtre cote client pour une interaction fluide
-- l'API `GET /api/songs?q=...` conserve une recherche serveur utilisable par les futurs clients
+- la page publique charge uniquement la premiere page de resultats
+- la recherche et le filtre par recueil sont appliques cote serveur avant pagination
+- l'API `GET /api/songs?q=...&collections=...&limit=20&offset=0` expose le catalogue public pagine
+- la pagination MVP-1 utilise `limit` et `offset`; un curseur pourra remplacer ce mecanisme si le catalogue devient tres volumineux
 - l'API publique expose uniquement les metadonnees PDF utiles et une URL backend de telechargement
 - le chemin Supabase Storage interne n'est jamais expose au navigateur
 - le seed local du catalogue public reste rejouable hors ligne meme si le snapshot JEMAF a ete collecte depuis le reseau
@@ -75,6 +78,7 @@ Implementation actuelle :
 - un champ de recherche sobre en haut du catalogue
 - des cases a cocher pour les recueils disponibles
 - un compteur de resultats qui suit le filtre courant
+- un bouton permet de charger les 20 chants suivants quand d'autres resultats existent
 - l'ouverture d'un chant depuis le catalogue navigue vers sa page detail
 - un bouton `Nouveau chant` reste accessible dans le header du catalogue
 - route publique du catalogue sur `/`
@@ -111,4 +115,4 @@ Implementation actuelle :
 - edition admin
 - recherche avancee
 - recherche par paroles, auteur ou theme
-- pagination sauf si elle devient necessaire tout de suite
+- pagination avancee par curseur

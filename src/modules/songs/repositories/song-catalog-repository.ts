@@ -1,4 +1,4 @@
-import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, asc, count, eq, ilike, inArray, or, sql } from "drizzle-orm";
 
 import { getDatabase } from "@/src/infrastructure/database/client";
 import {
@@ -13,7 +13,16 @@ import type {
 } from "../types/public-song";
 
 export interface SongCatalogRepository {
-  listPublished(search?: string): Promise<SongCatalogRecord[]>;
+  listPublished(options?: {
+    collections?: string[];
+    limit?: number;
+    offset?: number;
+    search?: string;
+  }): Promise<{
+    songs: SongCatalogRecord[];
+    total: number;
+    collections: string[];
+  }>;
   findPublishedBySlug(slug: string): Promise<SongCatalogRecord | null>;
   findPublishedPdfBySlug(slug: string): Promise<SongPdfFileSource | null>;
 }
@@ -124,53 +133,84 @@ export function createSongCatalogRepository(): SongCatalogRepository {
     );
   }
 
-  return {
-    async listPublished(search) {
-      const normalizedSearch = search?.trim();
-      const searchCondition = normalizedSearch
-        ? or(
-            ilike(songs.title, `%${normalizedSearch}%`),
-            ilike(
-              sql`concat(${songs.collection}, ' ', ${songs.collectionNumber})`,
-              `%${normalizedSearch}%`,
-            ),
-            ilike(
-              sql`cast(${songs.collectionNumber} as text)`,
-              normalizedSearch,
-            ),
-            ilike(
-              sql`lpad(cast(${songs.collectionNumber} as text), 3, '0')`,
-              normalizedSearch,
-            ),
-          )
+  function buildListCondition(options?: {
+    collections?: string[];
+    search?: string;
+  }) {
+    const normalizedSearch = options?.search?.trim();
+    const selectedCollections = options?.collections?.filter(Boolean) ?? [];
+    const searchCondition = normalizedSearch
+      ? or(
+          ilike(songs.title, `%${normalizedSearch}%`),
+          ilike(
+            sql`concat(${songs.collection}, ' ', ${songs.collectionNumber})`,
+            `%${normalizedSearch}%`,
+          ),
+          ilike(
+            sql`cast(${songs.collectionNumber} as text)`,
+            normalizedSearch,
+          ),
+          ilike(
+            sql`lpad(cast(${songs.collectionNumber} as text), 3, '0')`,
+            normalizedSearch,
+          ),
+        )
+      : undefined;
+    const collectionCondition =
+      selectedCollections.length > 0
+        ? inArray(songs.collection, selectedCollections)
         : undefined;
+
+    return and(publishedSongCondition, searchCondition, collectionCondition);
+  }
+
+  return {
+    async listPublished(options) {
+      const limit = options?.limit ?? 20;
+      const offset = options?.offset ?? 0;
+      const listCondition = buildListCondition(options);
 
       const rows = await database
         .select(selection)
         .from(songs)
         .innerJoin(songSources, eq(songSources.songId, songs.id))
-        .where(
-          searchCondition
-            ? and(publishedSongCondition, searchCondition)
-            : publishedSongCondition,
-        )
+        .where(listCondition)
         .orderBy(
           sql`${songs.collection} is null`,
           asc(songs.collection),
           asc(songs.collectionNumber),
           asc(songs.title),
-        );
+        )
+        .limit(limit)
+        .offset(offset);
+      const totalRows = await database
+        .select({ value: count() })
+        .from(songs)
+        .innerJoin(songSources, eq(songSources.songId, songs.id))
+        .where(listCondition);
+      const collectionRows = await database
+        .selectDistinct({ collection: songs.collection })
+        .from(songs)
+        .innerJoin(songSources, eq(songSources.songId, songs.id))
+        .where(publishedSongCondition)
+        .orderBy(asc(songs.collection));
 
       const pdfSources = await findActivePdfSources(
         rows.map((row) => row.id),
       );
 
-      return rows.map((row) =>
-        toCatalogRecord({
-          ...row,
-          pdfSource: pdfSources.get(row.id) ?? null,
-        }),
-      );
+      return {
+        songs: rows.map((row) =>
+          toCatalogRecord({
+            ...row,
+            pdfSource: pdfSources.get(row.id) ?? null,
+          }),
+        ),
+        total: totalRows[0]?.value ?? 0,
+        collections: collectionRows
+          .map((row) => row.collection)
+          .filter((collection): collection is string => Boolean(collection)),
+      };
     },
 
     async findPublishedBySlug(slug) {

@@ -3,11 +3,22 @@ import {
   type SongCatalogRepository,
 } from "../repositories/song-catalog-repository";
 import type {
+  PublicSongCatalogPage,
   PublicSongDetail,
   PublicSongSummary,
   SongCatalogRecord,
   SongPdfFileSource,
 } from "../types/public-song";
+
+export const PUBLIC_SONG_PAGE_SIZE = 20;
+const MAX_PUBLIC_SONG_PAGE_SIZE = 50;
+
+export type PublicSongCatalogQuery = {
+  collections?: string[];
+  limit?: number;
+  offset?: number;
+  search?: string;
+};
 
 export function isPublicSong(
   song: Pick<SongCatalogRecord, "status">,
@@ -38,12 +49,32 @@ function toDetail(song: SongCatalogRecord): PublicSongDetail {
 }
 
 export async function listPublicSongs(
-  search = "",
+  query: PublicSongCatalogQuery | string = {},
   repository: SongCatalogRepository = createSongCatalogRepository(),
-): Promise<PublicSongSummary[]> {
-  const songs = await repository.listPublished(search);
+): Promise<PublicSongCatalogPage> {
+  const options =
+    typeof query === "string" ? { search: query } : query;
+  const limit = Math.min(
+    Math.max(Math.trunc(options.limit ?? PUBLIC_SONG_PAGE_SIZE), 1),
+    MAX_PUBLIC_SONG_PAGE_SIZE,
+  );
+  const offset = Math.max(Math.trunc(options.offset ?? 0), 0);
+  const result = await repository.listPublished({
+    collections: options.collections?.map((collection) => collection.trim()).filter(Boolean),
+    limit,
+    offset,
+    search: options.search?.trim() ?? "",
+  });
+  const songs = result.songs.filter(isPublicSong).map(toSummary);
 
-  return songs.filter(isPublicSong).map(toSummary);
+  return {
+    songs,
+    total: result.total,
+    limit,
+    offset,
+    hasMore: offset + songs.length < result.total,
+    collections: result.collections,
+  };
 }
 
 export async function getPublicSongBySlug(
