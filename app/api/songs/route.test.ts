@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { listPublicSongs } = vi.hoisted(() => ({
-  listPublicSongs: vi.fn(),
+const { listPublicSongResults } = vi.hoisted(() => ({
+  listPublicSongResults: vi.fn(),
 }));
 
 vi.mock("@/src/modules/songs/services/public-song-catalog", () => ({
-  listPublicSongs,
+  listPublicSongResults,
   PUBLIC_SONG_PAGE_SIZE: 20,
 }));
 
@@ -13,11 +13,11 @@ import { GET } from "./route";
 
 describe("GET /api/songs", () => {
   beforeEach(() => {
-    listPublicSongs.mockReset();
+    listPublicSongResults.mockReset();
   });
 
   it("returns the public song summaries", async () => {
-    listPublicSongs.mockResolvedValue({
+    listPublicSongResults.mockResolvedValue({
       songs: [
         {
           id: "11111111-1111-4111-8111-111111111111",
@@ -41,7 +41,6 @@ describe("GET /api/songs", () => {
       limit: 20,
       offset: 0,
       hasMore: false,
-      collections: ["JEM"],
     });
 
     const response = await GET(
@@ -51,7 +50,9 @@ describe("GET /api/songs", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
+    const body = await response.json();
+
+    expect(body).toEqual({
       data: expect.objectContaining({
         songs: [
           expect.objectContaining({
@@ -64,7 +65,8 @@ describe("GET /api/songs", () => {
         total: 1,
       }),
     });
-    expect(listPublicSongs).toHaveBeenCalledWith({
+    expect(body.data).not.toHaveProperty("collections");
+    expect(listPublicSongResults).toHaveBeenCalledWith({
       collections: ["JEM", "LeMont"],
       limit: 20,
       offset: 40,

@@ -53,6 +53,12 @@ export const songs = pgTable(
       ),
     index("songs_status_index").on(table.status),
     index("songs_collection_index").on(table.collection),
+    index("songs_published_catalog_order_index")
+      .on(table.collection, table.collectionNumber, table.title)
+      .where(sql`${table.status} = 'published'`),
+    index("songs_published_title_unaccent_trigram_index")
+      .using("gin", sql`immutable_unaccent(lower(${table.title})) gin_trgm_ops`)
+      .where(sql`${table.status} = 'published'`),
     check("songs_title_not_blank", sql`btrim(${table.title}) <> ''`),
     check("songs_slug_not_blank", sql`btrim(${table.slug}) <> ''`),
     check(
@@ -92,6 +98,11 @@ export const songSources = pgTable(
       table.sourceType,
       table.status,
     ),
+    index("song_sources_active_chordpro_song_id_index")
+      .on(table.songId)
+      .where(
+        sql`${table.sourceType} = 'chordpro' and ${table.status} = 'active'`,
+      ),
     uniqueIndex("song_sources_one_active_source_per_song_type")
       .on(table.songId, table.sourceType)
       .where(sql`${table.status} = 'active'`),

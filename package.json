@@ -21,6 +21,8 @@
     "songs:render-seed": "node scripts/sync-jemaf-catalog.mjs render",
     "songs:import-pdfs": "node scripts/import-song-pdfs.mjs",
     "songs:import-jem-pdfs": "node scripts/import-song-pdfs.mjs",
+    "songs:render-glorious": "node scripts/import-glorious-catalog.mjs snapshot",
+    "songs:import-glorious": "node scripts/import-glorious-catalog.mjs",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:status": "supabase status",

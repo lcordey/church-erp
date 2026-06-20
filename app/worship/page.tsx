@@ -3,7 +3,7 @@ import { listPublicSongs } from "@/src/modules/songs/services/public-song-catalo
 
 export const dynamic = "force-dynamic";
 
-const defaultVisibleCollections = ["JEM", "JEMK", "LeMont"];
+const defaultVisibleCollections = ["JEM", "JEMK", "LeMont", "Glorious"];
 
 type WorshipPageProps = {
   searchParams: Promise<{

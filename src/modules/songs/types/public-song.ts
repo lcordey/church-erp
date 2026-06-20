@@ -24,12 +24,15 @@ export type PublicSongSummary = {
   pdfSource: SongPdfSource | null;
 };
 
-export type PublicSongCatalogPage = {
+export type PublicSongCatalogResults = {
   songs: PublicSongSummary[];
   total: number;
   limit: number;
   offset: number;
   hasMore: boolean;
+};
+
+export type PublicSongCatalogPage = PublicSongCatalogResults & {
   collections: string[];
 };
 

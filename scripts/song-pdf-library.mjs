@@ -6,6 +6,7 @@ export const projectRoot = process.cwd();
 export const envFiles = [".env.local", ".env"];
 export const generatedDir = path.join(projectRoot, "supabase", "generated");
 export const jemafSnapshotPath = path.join(generatedDir, "jemaf-catalog.json");
+export const gloriousSnapshotPath = path.join(generatedDir, "glorious-catalog.json");
 export const defaultPdfDirectory = "/home/lcordey/work/download_for_church_erp";
 export const songPdfBucket = "song-pdfs";
 export const songPdfMimeType = "application/pdf";

@@ -1,9 +1,12 @@
 import {
+  createPublishedSongCollectionRepository,
   createSongCatalogRepository,
+  type PublishedSongCollectionRepository,
   type SongCatalogRepository,
 } from "../repositories/song-catalog-repository";
 import type {
   PublicSongCatalogPage,
+  PublicSongCatalogResults,
   PublicSongDetail,
   PublicSongSummary,
   SongCatalogRecord,
@@ -48,10 +51,10 @@ function toDetail(song: SongCatalogRecord): PublicSongDetail {
   };
 }
 
-export async function listPublicSongs(
+export async function listPublicSongResults(
   query: PublicSongCatalogQuery | string = {},
   repository: SongCatalogRepository = createSongCatalogRepository(),
-): Promise<PublicSongCatalogPage> {
+): Promise<PublicSongCatalogResults> {
   const options =
     typeof query === "string" ? { search: query } : query;
   const limit = Math.min(
@@ -73,7 +76,28 @@ export async function listPublicSongs(
     limit,
     offset,
     hasMore: offset + songs.length < result.total,
-    collections: result.collections,
+  };
+}
+
+export async function listPublicSongCollections(
+  repository: PublishedSongCollectionRepository = createPublishedSongCollectionRepository(),
+): Promise<string[]> {
+  return repository.listPublishedCollections();
+}
+
+export async function listPublicSongs(
+  query: PublicSongCatalogQuery | string = {},
+  repository: SongCatalogRepository = createSongCatalogRepository(),
+  collectionRepository: PublishedSongCollectionRepository = createPublishedSongCollectionRepository(),
+): Promise<PublicSongCatalogPage> {
+  const [results, collections] = await Promise.all([
+    listPublicSongResults(query, repository),
+    listPublicSongCollections(collectionRepository),
+  ]);
+
+  return {
+    ...results,
+    collections,
   };
 }
 

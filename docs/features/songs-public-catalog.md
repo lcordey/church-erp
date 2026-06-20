@@ -29,13 +29,15 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 - les chants brouillon n'apparaissent jamais dans le catalogue public
 - l'acces public est strictement en lecture seule
 - la recherche MVP-1 couvre le titre, le code de recueil, le numero brut et le numero zero-pad
+- la recherche par titre ignore les accents entre formes accentuees et non accentuees d'un meme titre
 - le filtre par recueil propose les collections presentes dans le seed courant, y compris les recueils JEMAF importes et `LeMont`
 - le filtre par recueil n'est pas un champ libre
 - aucune case recueil cochee signifie que tous les recueils sont affiches
-- a l'ouverture du repertoire sans filtre URL, les recueils `JEM`, `JEMK` et `LeMont` sont coches par defaut
+- a l'ouverture du repertoire sans filtre URL, les recueils `JEM`, `JEMK`, `LeMont` et `Glorious` sont coches par defaut
 - la page publique charge uniquement la premiere page de resultats
 - la recherche et le filtre par recueil sont appliques cote serveur avant pagination
-- l'API `GET /api/songs?q=...&collections=...&limit=20&offset=0` expose le catalogue public pagine
+- les recueils disponibles sont charges au rendu initial, puis conserves cote client pendant les recherches
+- l'API `GET /api/songs?q=...&collections=...&limit=20&offset=0` expose uniquement les resultats publics pages: `songs`, `total`, `limit`, `offset`, `hasMore`
 - la pagination MVP-1 utilise `limit` et `offset`; un curseur pourra remplacer ce mecanisme si le catalogue devient tres volumineux
 - l'API publique expose uniquement les metadonnees PDF utiles et une URL backend de telechargement
 - le chemin Supabase Storage interne n'est jamais expose au navigateur
@@ -78,6 +80,8 @@ Implementation actuelle :
 - un champ de recherche sobre en haut du catalogue
 - des cases a cocher pour les recueils disponibles
 - un compteur de resultats qui suit le filtre courant
+- les resultats deja affiches restent visibles pendant le chargement d'un nouveau filtre
+- le filtre par recueil declenche une mise a jour immediate; la recherche texte utilise un court debounce
 - un bouton permet de charger les 20 chants suivants quand d'autres resultats existent
 - l'ouverture d'un chant depuis le catalogue navigue vers sa page detail
 - un bouton `Nouveau chant` reste accessible dans le header du catalogue

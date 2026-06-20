@@ -12,19 +12,33 @@ import type {
   SongPdfSource,
 } from "../types/public-song";
 
+type SongCatalogListOptions = {
+  collections?: string[];
+  limit?: number;
+  offset?: number;
+  search?: string;
+};
+
+export function getSongCatalogIdentifierSearch(
+  search: string,
+): string | null {
+  const normalizedSearch = search.trim().toLowerCase();
+  const compactSearch = normalizedSearch.replace(/[^a-z0-9]+/g, "");
+
+  return /\d/.test(compactSearch) ? compactSearch : null;
+}
+
 export interface SongCatalogRepository {
-  listPublished(options?: {
-    collections?: string[];
-    limit?: number;
-    offset?: number;
-    search?: string;
-  }): Promise<{
+  listPublished(options?: SongCatalogListOptions): Promise<{
     songs: SongCatalogRecord[];
     total: number;
-    collections: string[];
   }>;
   findPublishedBySlug(slug: string): Promise<SongCatalogRecord | null>;
   findPublishedPdfBySlug(slug: string): Promise<SongPdfFileSource | null>;
+}
+
+export interface PublishedSongCollectionRepository {
+  listPublishedCollections(): Promise<string[]>;
 }
 
 const selection = {
@@ -102,6 +116,14 @@ function toCatalogRecord(
   };
 }
 
+function isMissingUnaccentError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return /unaccent/i.test(error.message);
+}
+
 export function createSongCatalogRepository(): SongCatalogRepository {
   const database = getDatabase();
   const publishedSongCondition = and(
@@ -133,19 +155,21 @@ export function createSongCatalogRepository(): SongCatalogRepository {
     );
   }
 
-  function buildListCondition(options?: {
-    collections?: string[];
-    search?: string;
-  }) {
+  function buildListCondition(
+    options: SongCatalogListOptions | undefined,
+    accentInsensitiveTitleSearch: boolean,
+  ) {
     const normalizedSearch = options?.search?.trim();
+    const normalizedSearchLower = normalizedSearch?.toLowerCase();
+    const identifierSearch = normalizedSearch
+      ? getSongCatalogIdentifierSearch(normalizedSearch)
+      : null;
     const selectedCollections = options?.collections?.filter(Boolean) ?? [];
     const searchCondition = normalizedSearch
       ? or(
-          ilike(songs.title, `%${normalizedSearch}%`),
-          ilike(
-            sql`concat(${songs.collection}, ' ', ${songs.collectionNumber})`,
-            `%${normalizedSearch}%`,
-          ),
+          accentInsensitiveTitleSearch
+            ? sql`immutable_unaccent(lower(${songs.title})) like concat('%', immutable_unaccent(${normalizedSearchLower ?? ""}), '%')`
+            : ilike(songs.title, `%${normalizedSearch}%`),
           ilike(
             sql`cast(${songs.collectionNumber} as text)`,
             normalizedSearch,
@@ -154,6 +178,18 @@ export function createSongCatalogRepository(): SongCatalogRepository {
             sql`lpad(cast(${songs.collectionNumber} as text), 3, '0')`,
             normalizedSearch,
           ),
+          ...(identifierSearch
+            ? [
+                ilike(
+                  sql`regexp_replace(lower(concat(${songs.collection}, cast(${songs.collectionNumber} as text))), '[^a-z0-9]+', '', 'g')`,
+                  `${identifierSearch}%`,
+                ),
+                ilike(
+                  sql`regexp_replace(lower(concat(${songs.collection}, lpad(cast(${songs.collectionNumber} as text), 3, '0'))), '[^a-z0-9]+', '', 'g')`,
+                  `${identifierSearch}%`,
+                ),
+              ]
+            : []),
         )
       : undefined;
     const collectionCondition =
@@ -168,48 +204,61 @@ export function createSongCatalogRepository(): SongCatalogRepository {
     async listPublished(options) {
       const limit = options?.limit ?? 20;
       const offset = options?.offset ?? 0;
-      const listCondition = buildListCondition(options);
+      const runListQuery = async (accentInsensitiveTitleSearch: boolean) => {
+        const listCondition = buildListCondition(
+          options,
+          accentInsensitiveTitleSearch,
+        );
 
-      const rows = await database
-        .select(selection)
-        .from(songs)
-        .innerJoin(songSources, eq(songSources.songId, songs.id))
-        .where(listCondition)
-        .orderBy(
-          sql`${songs.collection} is null`,
-          asc(songs.collection),
-          asc(songs.collectionNumber),
-          asc(songs.title),
-        )
-        .limit(limit)
-        .offset(offset);
-      const totalRows = await database
-        .select({ value: count() })
-        .from(songs)
-        .innerJoin(songSources, eq(songSources.songId, songs.id))
-        .where(listCondition);
-      const collectionRows = await database
-        .selectDistinct({ collection: songs.collection })
-        .from(songs)
-        .innerJoin(songSources, eq(songSources.songId, songs.id))
-        .where(publishedSongCondition)
-        .orderBy(asc(songs.collection));
+        const rows = await database
+          .select(selection)
+          .from(songs)
+          .innerJoin(songSources, eq(songSources.songId, songs.id))
+          .where(listCondition)
+          .orderBy(
+            sql`${songs.collection} is null`,
+            asc(songs.collection),
+            asc(songs.collectionNumber),
+            asc(songs.title),
+          )
+          .limit(limit)
+          .offset(offset);
+        const totalRows = await database
+          .select({ value: count() })
+          .from(songs)
+          .innerJoin(songSources, eq(songSources.songId, songs.id))
+          .where(listCondition);
+
+        return {
+          rows,
+          totalRows,
+        };
+      };
+
+      let queryResult;
+
+      try {
+        queryResult = await runListQuery(true);
+      } catch (error) {
+        if (!isMissingUnaccentError(error)) {
+          throw error;
+        }
+
+        queryResult = await runListQuery(false);
+      }
 
       const pdfSources = await findActivePdfSources(
-        rows.map((row) => row.id),
+        queryResult.rows.map((row) => row.id),
       );
 
       return {
-        songs: rows.map((row) =>
+        songs: queryResult.rows.map((row) =>
           toCatalogRecord({
             ...row,
             pdfSource: pdfSources.get(row.id) ?? null,
           }),
         ),
-        total: totalRows[0]?.value ?? 0,
-        collections: collectionRows
-          .map((row) => row.collection)
-          .filter((collection): collection is string => Boolean(collection)),
+        total: queryResult.totalRows[0]?.value ?? 0,
       };
     },
 
@@ -242,6 +291,30 @@ export function createSongCatalogRepository(): SongCatalogRepository {
         .limit(1);
 
       return rows[0] ? toPdfSource(rows[0]) : null;
+    },
+  };
+}
+
+export function createPublishedSongCollectionRepository(): PublishedSongCollectionRepository {
+  const database = getDatabase();
+  const publishedSongCondition = and(
+    eq(songs.status, "published"),
+    eq(songSources.sourceType, "chordpro"),
+    eq(songSources.status, "active"),
+  );
+
+  return {
+    async listPublishedCollections() {
+      const collectionRows = await database
+        .selectDistinct({ collection: songs.collection })
+        .from(songs)
+        .innerJoin(songSources, eq(songSources.songId, songs.id))
+        .where(publishedSongCondition)
+        .orderBy(asc(songs.collection));
+
+      return collectionRows
+        .map((row) => row.collection)
+        .filter((collection): collection is string => Boolean(collection));
     },
   };
 }

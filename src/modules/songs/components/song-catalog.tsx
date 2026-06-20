@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-
 import { getSongCollectionLabel } from "../collections/song-collection";
 import type { PublicSongCatalogPage, PublicSongSummary } from "../types/public-song";
 import { SongCard } from "./song-card";
+import { useSongCatalogQuery } from "./use-song-catalog-query";
 
 type SongCatalogProps = {
   initialCatalog: PublicSongCatalogPage;
@@ -47,139 +46,24 @@ export function SongCatalog({
   showOpenIndicator = true,
   syncUrl = true,
 }: SongCatalogProps) {
-  const [catalog, setCatalog] = useState(initialCatalog);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const collections = catalog.collections;
-  const [search, setSearch] = useState(initialSearch);
-  const [selectedCollections, setSelectedCollections] = useState<string[]>(
-    () =>
-      initialCollections?.length
-        ? initialCollections.filter((collection) =>
-            initialCatalog.collections.includes(collection),
-          )
-        : [],
-  );
-  const hasMounted = useRef(false);
+  const {
+    availableCollections,
+    catalog,
+    isFetching,
+    isLoadingMore,
+    loadMore,
+    search,
+    selectedCollections,
+    toggleCollection,
+    updateSearch,
+  } = useSongCatalogQuery({
+    initialCatalog,
+    initialCollections,
+    initialSearch,
+    syncUrl,
+  });
   const pageSize = catalog.limit;
   const loadedCount = catalog.songs.length;
-
-  useEffect(() => {
-    if (!syncUrl) {
-      return;
-    }
-
-    const url = new URL(window.location.href);
-
-    if (search.trim()) {
-      url.searchParams.set("q", search.trim());
-    } else {
-      url.searchParams.delete("q");
-    }
-
-    if (selectedCollections.length > 0) {
-      url.searchParams.set("collections", selectedCollections.join(","));
-    } else {
-      url.searchParams.delete("collections");
-    }
-
-    window.history.replaceState(null, "", `${url.pathname}${url.search}`);
-  }, [collections.length, search, selectedCollections, syncUrl]);
-
-  useEffect(() => {
-    if (!hasMounted.current) {
-      hasMounted.current = true;
-      return;
-    }
-
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => {
-      const url = new URL("/api/songs", window.location.origin);
-
-      if (search.trim()) {
-        url.searchParams.set("q", search.trim());
-      }
-
-      if (selectedCollections.length > 0) {
-        url.searchParams.set("collections", selectedCollections.join(","));
-      }
-
-      url.searchParams.set("limit", String(pageSize));
-      url.searchParams.set("offset", "0");
-
-      void fetch(url, { signal: controller.signal })
-        .then(async (response) => {
-          const payload = (await response.json().catch(() => null)) as
-            | { data?: PublicSongCatalogPage }
-            | null;
-
-          if (response.ok && payload?.data) {
-            setCatalog(payload.data);
-          }
-        })
-        .catch((error: unknown) => {
-          if (error instanceof DOMException && error.name === "AbortError") {
-            return;
-          }
-        });
-    }, 250);
-
-    return () => {
-      controller.abort();
-      window.clearTimeout(timer);
-    };
-  }, [pageSize, search, selectedCollections]);
-
-  function updateSearch(value: string) {
-    setSearch(value);
-  }
-
-  function toggleCollection(collection: string) {
-    setSelectedCollections((current) => {
-      return current.includes(collection)
-        ? current.filter((item) => item !== collection)
-        : [...current, collection];
-    });
-  }
-
-  async function loadMore() {
-    if (isLoadingMore) {
-      return;
-    }
-
-    setIsLoadingMore(true);
-    const url = new URL("/api/songs", window.location.origin);
-
-    if (search.trim()) {
-      url.searchParams.set("q", search.trim());
-    }
-
-    if (selectedCollections.length > 0) {
-      url.searchParams.set("collections", selectedCollections.join(","));
-    }
-
-    url.searchParams.set("limit", String(pageSize));
-    url.searchParams.set("offset", String(loadedCount));
-
-    try {
-      const response = await fetch(url);
-      const payload = (await response.json().catch(() => null)) as
-        | { data?: PublicSongCatalogPage }
-        | null;
-
-      if (!response.ok || !payload?.data) {
-        return;
-      }
-
-      const nextCatalog = payload.data;
-
-      setCatalog((current) => ({
-        ...nextCatalog,
-        songs: [...current.songs, ...nextCatalog.songs],
-      }));
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }
 
   return (
     <>
@@ -188,6 +72,7 @@ export function SongCatalog({
           <h2 id={headingId}>{heading}</h2>
         </div>
         <div className="catalog-section__heading-actions">
+          {isFetching ? <span aria-live="polite">Mise à jour...</span> : null}
           <span>
             {catalog.total} {catalog.total > 1 ? "chants" : "chant"}
           </span>
@@ -216,7 +101,7 @@ export function SongCatalog({
         <fieldset className="catalog-collections">
           <legend>Recueils</legend>
           <div className="catalog-collections__options">
-            {collections.map((collection) => (
+            {availableCollections.map((collection) => (
               <label key={collection}>
                 <input
                   checked={selectedCollections.includes(collection)}
@@ -231,7 +116,7 @@ export function SongCatalog({
       </form>
 
       {catalog.songs.length > 0 ? (
-        <div className="song-list">
+        <div className="song-list" data-fetching={isFetching ? "true" : "false"}>
           {catalog.songs.map((song, index) => (
             <SongCard
               index={index}
@@ -255,11 +140,11 @@ export function SongCatalog({
       {catalog.hasMore ? (
         <div className="catalog-pagination">
           <button
-            disabled={isLoadingMore}
+            disabled={isLoadingMore || isFetching}
             onClick={() => void loadMore()}
             type="button"
           >
-            {isLoadingMore ? "Chargement..." : "Afficher 20 chants de plus"}
+            {isLoadingMore ? "Chargement..." : `Afficher ${pageSize} chants de plus`}
           </button>
           <span>
             {loadedCount} sur {catalog.total}

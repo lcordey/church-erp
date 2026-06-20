@@ -1,5 +1,5 @@
 import {
-  listPublicSongs,
+  listPublicSongResults,
   PUBLIC_SONG_PAGE_SIZE,
 } from "@/src/modules/songs/services/public-song-catalog";
 
@@ -24,7 +24,7 @@ function parseCollections(value: string | null): string[] {
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const catalog = await listPublicSongs({
+  const catalog = await listPublicSongResults({
     collections: parseCollections(url.searchParams.get("collections")),
     limit: parsePositiveInteger(
       url.searchParams.get("limit"),

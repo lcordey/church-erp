@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import type { SongCatalogRepository } from "../repositories/song-catalog-repository";
+import type {
+  PublishedSongCollectionRepository,
+  SongCatalogRepository,
+} from "../repositories/song-catalog-repository";
 import type { SongCatalogRecord } from "../types/public-song";
 import {
   getPublicSongBySlug,
   isPublicSong,
+  listPublicSongResults,
   listPublicSongs,
 } from "./public-song-catalog";
 
@@ -56,9 +60,6 @@ function createRepository(
       return {
         songs: filteredSongs.slice(offset, offset + limit),
         total: filteredSongs.length,
-        collections: Array.from(
-          new Set(songs.map((song) => song.collection).filter(Boolean)),
-        ) as string[],
       };
     },
     async findPublishedBySlug(slug) {
@@ -76,6 +77,23 @@ function createRepository(
   };
 }
 
+function createCollectionRepository(
+  songs: SongCatalogRecord[],
+): PublishedSongCollectionRepository {
+  return {
+    async listPublishedCollections() {
+      return Array.from(
+        new Set(
+          songs
+            .filter((song) => song.status === "published")
+            .map((song) => song.collection)
+            .filter(Boolean),
+        ),
+      ) as string[];
+    },
+  };
+}
+
 describe("public song catalog", () => {
   it("only treats published songs as public", () => {
     expect(isPublicSong(publishedSong)).toBe(true);
@@ -86,6 +104,7 @@ describe("public song catalog", () => {
     const catalog = await listPublicSongs(
       {},
       createRepository([publishedSong, draftSong]),
+      createCollectionRepository([publishedSong, draftSong]),
     );
 
     expect(catalog.songs).toEqual([
@@ -112,7 +131,7 @@ describe("public song catalog", () => {
   });
 
   it("passes pagination and filter options to the repository", async () => {
-    const catalog = await listPublicSongs(
+    const catalog = await listPublicSongResults(
       {
         collections: ["JEM"],
         limit: 1,
@@ -133,6 +152,42 @@ describe("public song catalog", () => {
     expect(catalog.songs).toHaveLength(1);
     expect(catalog.total).toBe(1);
     expect(catalog.hasMore).toBe(false);
+  });
+
+  it("bounds public page size", async () => {
+    const catalog = await listPublicSongResults(
+      { limit: 500 },
+      createRepository([publishedSong]),
+    );
+
+    expect(catalog.limit).toBe(50);
+  });
+
+  it("keeps collection lookup out of paginated result queries", async () => {
+    let collectionQueryCount = 0;
+    const collectionRepository: PublishedSongCollectionRepository = {
+      async listPublishedCollections() {
+        collectionQueryCount += 1;
+        return ["JEM"];
+      },
+    };
+
+    await listPublicSongResults({}, createRepository([publishedSong]));
+    await listPublicSongResults(
+      { collections: ["JEM"], search: "chant" },
+      createRepository([publishedSong]),
+    );
+
+    expect(collectionQueryCount).toBe(0);
+
+    const catalog = await listPublicSongs(
+      {},
+      createRepository([publishedSong]),
+      collectionRepository,
+    );
+
+    expect(catalog.collections).toEqual(["JEM"]);
+    expect(collectionQueryCount).toBe(1);
   });
 
   it("returns no public detail for a draft", async () => {

@@ -216,6 +216,27 @@ For JEM PDFs:
 1. Place the JEM PDFs in `/home/lcordey/work/download_for_church_erp`, or set `SONG_PDF_DIR`.
 2. Run `pnpm db:reset` or `pnpm songs:import-pdfs`.
 
+For the local Glorious catalog:
+
+1. Place the canonical ChordPro files in `/home/lcordey/work/download_for_church_erp/Glorious_ChordPro/canonical`.
+2. Place the PDF files in `/home/lcordey/work/download_for_church_erp/Glorious`.
+3. Run `pnpm songs:import-glorious`.
+
+This import is idempotent and targets the local database and local Supabase
+Storage.
+
+To version the Glorious song metadata and ChordPro sources in the repository
+seed, generate the snapshot and re-render the seed:
+
+```bash
+pnpm songs:render-glorious
+pnpm songs:render-seed
+```
+
+This updates `supabase/generated/glorious-catalog.json` and folds those songs
+into `supabase/seed.sql`. PDF binaries still remain outside SQL and must be
+uploaded separately through `pnpm songs:import-glorious`.
+
 Never use `drizzle-kit push` for project schema changes. Committed migrations
 must remain the reproducible source of database changes.
 
