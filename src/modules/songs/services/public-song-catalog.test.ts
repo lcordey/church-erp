@@ -24,6 +24,7 @@ const publishedSong: SongCatalogRecord = {
   collectionNumber: 1,
   sourcePageUrl: "https://jemaf.fr/chant/jem001",
   pdfSource: null,
+  musicXmlSource: null,
   chordProContent: "[D]Paroles",
 };
 
@@ -74,6 +75,15 @@ function createRepository(
           }
         : null;
     },
+    async findPublishedMusicXmlBySlug(slug) {
+      const song = songs.find((song) => song.slug === slug);
+      return song?.musicXmlSource
+        ? {
+            ...song.musicXmlSource,
+            content: "<score-partwise />",
+          }
+        : null;
+    },
   };
 }
 
@@ -119,6 +129,7 @@ describe("public song catalog", () => {
         collectionNumber: publishedSong.collectionNumber,
         sourcePageUrl: publishedSong.sourcePageUrl,
         pdfSource: null,
+        musicXmlSource: null,
       },
     ]);
     expect(catalog.songs[0]).not.toHaveProperty("chordProContent");

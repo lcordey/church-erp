@@ -8,6 +8,8 @@ import {
 
 import type {
   SongCatalogRecord,
+  SongMusicXmlFileSource,
+  SongMusicXmlSource,
   SongPdfFileSource,
   SongPdfSource,
 } from "../types/public-song";
@@ -35,6 +37,9 @@ export interface SongCatalogRepository {
   }>;
   findPublishedBySlug(slug: string): Promise<SongCatalogRecord | null>;
   findPublishedPdfBySlug(slug: string): Promise<SongPdfFileSource | null>;
+  findPublishedMusicXmlBySlug(
+    slug: string,
+  ): Promise<SongMusicXmlFileSource | null>;
 }
 
 export interface PublishedSongCollectionRepository {
@@ -64,6 +69,19 @@ const pdfSelection = {
   fileSizeBytes: songSources.fileSizeBytes,
 };
 
+const musicXmlSelection = {
+  songId: songSources.songId,
+  slug: songs.slug,
+  fileName: songSources.fileName,
+  mimeType: songSources.mimeType,
+  fileSizeBytes: songSources.fileSizeBytes,
+};
+
+const musicXmlFileSelection = {
+  ...musicXmlSelection,
+  content: songSources.textContent,
+};
+
 type PdfSelectionRow = {
   songId: string;
   slug: string;
@@ -71,6 +89,18 @@ type PdfSelectionRow = {
   fileName: string | null;
   mimeType: string | null;
   fileSizeBytes: number | null;
+};
+
+type MusicXmlSelectionRow = {
+  songId: string;
+  slug: string;
+  fileName: string | null;
+  mimeType: string | null;
+  fileSizeBytes: number | null;
+};
+
+type MusicXmlFileSelectionRow = MusicXmlSelectionRow & {
+  content: string | null;
 };
 
 function toPdfSource(row: PdfSelectionRow): SongPdfFileSource | null {
@@ -100,10 +130,36 @@ function toPublicPdfSource(source: SongPdfFileSource | null): SongPdfSource | nu
   };
 }
 
+function toMusicXmlSource(row: MusicXmlSelectionRow): SongMusicXmlSource {
+  return {
+    fileName: row.fileName,
+    mimeType: row.mimeType,
+    fileSizeBytes: row.fileSizeBytes,
+    downloadUrl: `/api/songs/${row.slug}/musicxml`,
+  };
+}
+
+function toMusicXmlFileSource(
+  row: MusicXmlFileSelectionRow,
+): SongMusicXmlFileSource | null {
+  if (!row.content) {
+    return null;
+  }
+
+  return {
+    content: row.content,
+    fileName: row.fileName,
+    mimeType: row.mimeType,
+    fileSizeBytes: row.fileSizeBytes,
+    downloadUrl: `/api/songs/${row.slug}/musicxml`,
+  };
+}
+
 function toCatalogRecord(
   row: Omit<SongCatalogRecord, "chordProContent"> & {
     chordProContent: string | null;
     pdfSource?: SongPdfSource | null;
+    musicXmlSource?: SongMusicXmlSource | null;
   },
 ): SongCatalogRecord {
   if (!row.chordProContent) {
@@ -135,6 +191,10 @@ export function createSongCatalogRepository(): SongCatalogRepository {
     eq(songSources.sourceType, "pdf"),
     eq(songSources.status, "active"),
   );
+  const activeMusicXmlCondition = and(
+    eq(songSources.sourceType, "musicxml"),
+    eq(songSources.status, "active"),
+  );
 
   async function findActivePdfSources(songIds: string[]) {
     if (songIds.length === 0) {
@@ -152,6 +212,22 @@ export function createSongCatalogRepository(): SongCatalogRepository {
         const source = toPublicPdfSource(toPdfSource(row));
         return source ? [[row.songId, source]] : [];
       }),
+    );
+  }
+
+  async function findActiveMusicXmlSources(songIds: string[]) {
+    if (songIds.length === 0) {
+      return new Map<string, SongMusicXmlSource>();
+    }
+
+    const rows = await database
+      .select(musicXmlSelection)
+      .from(songSources)
+      .innerJoin(songs, eq(songSources.songId, songs.id))
+      .where(and(activeMusicXmlCondition, inArray(songSources.songId, songIds)));
+
+    return new Map(
+      rows.map((row) => [row.songId, toMusicXmlSource(row)]),
     );
   }
 
@@ -250,12 +326,16 @@ export function createSongCatalogRepository(): SongCatalogRepository {
       const pdfSources = await findActivePdfSources(
         queryResult.rows.map((row) => row.id),
       );
+      const musicXmlSources = await findActiveMusicXmlSources(
+        queryResult.rows.map((row) => row.id),
+      );
 
       return {
         songs: queryResult.rows.map((row) =>
           toCatalogRecord({
             ...row,
             pdfSource: pdfSources.get(row.id) ?? null,
+            musicXmlSource: musicXmlSources.get(row.id) ?? null,
           }),
         ),
         total: queryResult.totalRows[0]?.value ?? 0,
@@ -275,10 +355,12 @@ export function createSongCatalogRepository(): SongCatalogRepository {
       }
 
       const pdfSources = await findActivePdfSources([rows[0].id]);
+      const musicXmlSources = await findActiveMusicXmlSources([rows[0].id]);
 
       return toCatalogRecord({
         ...rows[0],
         pdfSource: pdfSources.get(rows[0].id) ?? null,
+        musicXmlSource: musicXmlSources.get(rows[0].id) ?? null,
       });
     },
 
@@ -291,6 +373,23 @@ export function createSongCatalogRepository(): SongCatalogRepository {
         .limit(1);
 
       return rows[0] ? toPdfSource(rows[0]) : null;
+    },
+
+    async findPublishedMusicXmlBySlug(slug) {
+      const rows = await database
+        .select(musicXmlFileSelection)
+        .from(songSources)
+        .innerJoin(songs, eq(songSources.songId, songs.id))
+        .where(
+          and(
+            eq(songs.status, "published"),
+            eq(songs.slug, slug),
+            activeMusicXmlCondition,
+          ),
+        )
+        .limit(1);
+
+      return rows[0] ? toMusicXmlFileSource(rows[0]) : null;
     },
   };
 }

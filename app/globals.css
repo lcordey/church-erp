@@ -171,6 +171,30 @@ body:has(.app-shell) {
   transform: translateX(4px);
 }
 
+.app-sidebar__session {
+  padding: 18px 10px 0;
+  border-top: 1px solid rgb(24 36 58 / 10%);
+}
+
+.app-sidebar__session a,
+.app-sidebar__session button {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid rgb(49 91 120 / 18%);
+  border-radius: 6px;
+  padding: 0 12px;
+  color: var(--accent);
+  background: rgb(255 253 247 / 76%);
+  cursor: pointer;
+  font: 800 0.78rem/1 var(--sans);
+}
+
+.app-sidebar__session a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .app-shell__backdrop {
   display: none;
 }
@@ -486,6 +510,43 @@ a {
   color: var(--muted);
   font-size: 1rem;
   line-height: 1.8;
+}
+
+.login-panel {
+  max-width: 560px;
+}
+
+.login-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.login-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.login-form label span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.login-form input {
+  min-height: 46px;
+  border: 1px solid #c9cbc7;
+  border-radius: 4px;
+  padding: 0 13px;
+  color: var(--ink);
+  background: var(--paper-strong);
+  font: 600 1rem/1 var(--sans);
+}
+
+.login-form .admin-button {
+  justify-self: start;
 }
 
 .settings-section {
@@ -1134,6 +1195,57 @@ a {
   border: 0;
   border-radius: 4px;
   background: white;
+  box-shadow: 0 18px 60px rgb(0 0 0 / 25%);
+}
+
+.song-score-viewer {
+  display: flex;
+  min-height: min(86vh, 1040px);
+  flex-direction: column;
+  border: 1px solid #dedbd0;
+  background:
+    radial-gradient(circle at 20% 0%, rgb(255 253 247 / 18%), transparent 22rem),
+    #26313f;
+  box-shadow: 0 30px 90px rgb(34 45 57 / 10%);
+}
+
+.song-score-viewer__stage {
+  flex: 1;
+  padding: clamp(12px, 2.5vw, 28px);
+}
+
+.song-score-viewer__score {
+  min-height: min(78vh, 960px);
+  overflow: auto;
+  border-radius: 4px 4px 0 0;
+  padding-top: 34px;
+  background: #fffdf7;
+  box-shadow: 0 18px 60px rgb(0 0 0 / 25%);
+}
+
+.song-score-viewer__score:last-child {
+  border-radius: 4px;
+}
+
+.song-score-viewer__score > svg {
+  display: block;
+  min-width: 760px;
+}
+
+.song-score-viewer__status {
+  margin: 0 0 12px;
+  color: rgb(255 253 247 / 78%);
+  font-size: 0.86rem;
+}
+
+.song-score-viewer__sheet-footer {
+  border-top: 1px solid #ece5d7;
+  border-radius: 0 0 4px 4px;
+  padding: 14px clamp(18px, 4vw, 42px) clamp(18px, 3vw, 26px);
+  color: var(--muted);
+  background: #fffdf7;
+  font-size: 0.76rem;
+  line-height: 1.45;
   box-shadow: 0 18px 60px rgb(0 0 0 / 25%);
 }
 
@@ -2072,6 +2184,18 @@ a {
   stroke-width: 2.4;
 }
 
+.transpose-toolbar--score {
+  margin: 0;
+  border-width: 0 0 1px;
+  border-color: rgb(255 253 247 / 14%);
+  color: white;
+  background: rgb(255 253 247 / 7%);
+}
+
+.transpose-toolbar--score small {
+  color: rgb(255 253 247 / 68%);
+}
+
 @keyframes card-enter {
   from {
     opacity: 0;
@@ -2209,7 +2333,8 @@ a {
     flex: 1;
   }
 
-  .song-pdf-viewer {
+  .song-pdf-viewer,
+  .song-score-viewer {
     min-height: 76vh;
   }
 
@@ -2220,6 +2345,10 @@ a {
 
   .song-pdf-viewer iframe {
     height: 68vh;
+  }
+
+  .song-score-viewer__score {
+    min-height: 68vh;
   }
 
   .app-shell__header-inner {

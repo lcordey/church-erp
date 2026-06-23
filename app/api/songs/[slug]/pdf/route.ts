@@ -1,4 +1,9 @@
 import {
+  authenticationRequiredResponse,
+  AuthenticationRequiredError,
+  requireAuthenticatedRequest,
+} from "@/src/infrastructure/auth/require-admin";
+import {
   downloadSongPdf,
   StorageObjectNotFoundError,
 } from "@/src/infrastructure/storage/song-pdf-storage";
@@ -26,6 +31,16 @@ function contentDisposition(fileName: string | null, slug: string) {
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
+  try {
+    requireAuthenticatedRequest(_request);
+  } catch (error) {
+    if (error instanceof AuthenticationRequiredError) {
+      return authenticationRequiredResponse();
+    }
+
+    throw error;
+  }
+
   const { slug } = await params;
   const pdfSource = await getPublicSongPdfBySlug(slug);
 

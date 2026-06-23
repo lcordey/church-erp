@@ -17,7 +17,8 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 - permettre l'ouverture d'une page detail publique
 - exclure les chants brouillon des resultats publics
 - rendre les paroles et accords de la source ChordPro active
-- afficher un lien vers la partition PDF quand une source PDF active existe
+- afficher un lien vers la partition PDF aux utilisateurs connectes quand une source PDF active existe
+- afficher et ouvrir une partition MusicXML aux utilisateurs connectes quand une source MusicXML active existe
 - chercher les chants publies par titre ou numero de recueil
 - filtrer le catalogue sans rechargement de page
 - filtrer par recueil via des cases a cocher fixes
@@ -28,6 +29,9 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 - seuls les chants avec le statut `published` sont visibles publiquement
 - les chants brouillon n'apparaissent jamais dans le catalogue public
 - l'acces public est strictement en lecture seule
+- les visiteurs non connectes peuvent consulter uniquement les paroles et accords
+- les routes PDF et MusicXML exigent une session authentifiee cote serveur
+- tous les utilisateurs authentifies sont administrateurs pendant MVP-1
 - la recherche MVP-1 couvre le titre, le code de recueil, le numero brut et le numero zero-pad
 - la recherche par titre ignore les accents entre formes accentuees et non accentuees d'un meme titre
 - le filtre par recueil propose les collections presentes dans le seed courant, y compris les recueils JEMAF importes et `LeMont`
@@ -40,6 +44,7 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 - l'API `GET /api/songs?q=...&collections=...&limit=20&offset=0` expose uniquement les resultats publics pages: `songs`, `total`, `limit`, `offset`, `hasMore`
 - la pagination MVP-1 utilise `limit` et `offset`; un curseur pourra remplacer ce mecanisme si le catalogue devient tres volumineux
 - l'API publique expose uniquement les metadonnees PDF utiles et une URL backend de telechargement
+- l'API publique expose uniquement les metadonnees MusicXML utiles et une URL backend de lecture
 - le chemin Supabase Storage interne n'est jamais expose au navigateur
 - le seed local du catalogue public reste rejouable hors ligne meme si le snapshot JEMAF a ete collecte depuis le reseau
 - la recherche par auteur, paroles ou themes est reportee
@@ -61,6 +66,7 @@ Champs partages recommandes pour un chant :
 Pour MVP-1, le premier format supporte est :
 - une source `ChordPro` attachee au chant
 - une source `PDF` optionnelle attachee au chant
+- une source `MusicXML` optionnelle attachee au chant
 
 Le contenu source ne doit pas etre reduit a un simple champ `lyrics` sur la table `songs` si l'on veut permettre plusieurs formats par chant.
 
@@ -72,6 +78,7 @@ Implementation actuelle :
 - endpoint `GET /api/songs` pour les resumes publics
 - endpoint `GET /api/songs/:slug` pour le detail public
 - endpoint `GET /api/songs/:slug/pdf` pour servir une partition PDF active
+- endpoint `GET /api/songs/:slug/musicxml` pour servir une partition MusicXML active
 - acces direct aux tables refuse aux roles Supabase Data API
 
 ## Structure UI
@@ -88,7 +95,8 @@ Implementation actuelle :
 - route publique du catalogue sur `/`
 - route publique de detail sur `/chants/:slug`
 - controle de transposition temporaire sur la page detail
-- lien `Partition PDF` sur la page detail quand une partition est disponible
+- lien `PDF` sur la page detail connectee quand une partition est disponible
+- mode `Partition` sur la page detail connectee quand une partition MusicXML est disponible
 - preference persistante de notation anglaise ou francaise
 - le catalogue conserve la recherche et les filtres tant que l'utilisateur reste sur la page catalogue
 
@@ -99,6 +107,7 @@ Implementation actuelle :
 - tests unitaires sur la notation et la transposition
 - tests de contrat des routes API
 - tests de contrat de la route PDF publique
+- tests de contrat de la route MusicXML publique
 - smoke test HTTP du catalogue
 - test end-to-end de navigation reporte a l'installation de Playwright
 
@@ -115,7 +124,8 @@ Implementation actuelle :
 
 ## Hors perimetre
 
-- authentification
+- comptes utilisateurs persistants et recuperation de mot de passe
+- groupes, roles et permissions fines
 - edition admin
 - recherche avancee
 - recherche par paroles, auteur ou theme

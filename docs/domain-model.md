@@ -98,7 +98,7 @@ Represents the shared identity and metadata of a song, regardless of how the son
 
 ## Entity: `song_sources`
 
-Represents one attached source for a song, such as a ChordPro document, a PDF file, or a future YouTube link.
+Represents one attached source for a song, such as a ChordPro document, a MusicXML score, a PDF file, or a future YouTube link.
 
 ### Fields
 
@@ -115,7 +115,7 @@ Represents one attached source for a song, such as a ChordPro document, a PDF fi
 - `source_type`
   - type: `song_source_type`
   - required: yes
-  - notes: identifies the source family such as `chordpro`, `pdf`, or `youtube`
+  - notes: identifies the source family such as `chordpro`, `musicxml`, `pdf`, or `youtube`
 
 - `status`
   - type: `song_source_status`
@@ -125,7 +125,7 @@ Represents one attached source for a song, such as a ChordPro document, a PDF fi
 - `text_content`
   - type: `text`
   - required: no
-  - notes: used for text-based formats such as `chordpro`
+  - notes: used for text-based formats such as `chordpro` and `musicxml`
 
 - `storage_path`
   - type: `text`
@@ -180,12 +180,14 @@ No more states are needed in MVP-1.
 
 Recommended values:
 - `chordpro`
+- `musicxml`
 - `pdf`
 - `youtube`
 
 Reasoning:
 - `chordpro` is needed now
-- `pdf` is already a planned near-future format
+- `musicxml` is used for rendered score display from structured notation
+- `pdf` is used for attached score documents
 - `youtube` is already a plausible future source and costs almost nothing to reserve
 
 Adding a new enum value later is straightforward through a migration.
@@ -242,6 +244,7 @@ Recommended constraints:
 
 Recommended conditional checks:
 - if `source_type = 'chordpro'`, then `text_content` is required
+- if `source_type = 'musicxml'`, then `text_content` is required
 - if `source_type = 'pdf'`, then `storage_path` is required
 - if `source_type = 'youtube'`, then `external_url` is required
 
@@ -271,15 +274,17 @@ Recommended indexes:
 ### Song source rules
 
 - every source belongs to one song
-- MVP-1 supports active `chordpro` and `pdf` sources
-- `text_content` is required for `chordpro`
+- MVP-1 supports active `chordpro`, `musicxml` and `pdf` sources
+- `text_content` is required for `chordpro` and `musicxml`
 - `storage_path` is required for `pdf`
 - only one active source per type should exist per song in MVP-1
 - updating the current ChordPro source should overwrite the active source instead of creating version history
 - replacing a PDF archives the active PDF source and creates a new active PDF source
+- replacing a MusicXML score archives the active MusicXML source and creates a new active MusicXML source
 - deleting a draft song cascades to its attached sources
 - published songs must be returned to `draft` before deletion
 - PDF files live in Supabase Storage, not PostgreSQL rows
+- MusicXML files are structured text and live in PostgreSQL `text_content`
 
 ## Deferred Decisions
 

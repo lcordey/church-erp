@@ -114,6 +114,7 @@ export function AdminSongForm({
   const [errors, setErrors] = useState<AdminSongValidationErrors>({});
   const [message, setMessage] = useState("");
   const [isPdfPending, setIsPdfPending] = useState(false);
+  const [isMusicXmlPending, setIsMusicXmlPending] = useState(false);
   const [isPending, startTransition] = useTransition();
   const isEditing = Boolean(song);
   const isReadOnly = song ? !song.isEditable : false;
@@ -321,6 +322,80 @@ export function AdminSongForm({
     }
   }
 
+  async function uploadMusicXml(file: File) {
+    if (!song) {
+      return;
+    }
+
+    setIsMusicXmlPending(true);
+    setMessage("");
+
+    const formData = new FormData();
+    formData.append("musicxml", file);
+
+    try {
+      const response = await fetch(`/api/admin/songs/${song.id}/musicxml`, {
+        method: "PUT",
+        body: formData,
+      });
+      const payload = (await response.json()) as ApiError & {
+        data?: AdminSong;
+      };
+
+      if (!response.ok || !payload.data) {
+        setMessage(
+          payload.error?.message ?? "Impossible d’ajouter la partition.",
+        );
+        return;
+      }
+
+      onSaved?.(payload.data);
+      setMessage("Partition enregistrée.");
+      router.refresh();
+    } finally {
+      setIsMusicXmlPending(false);
+    }
+  }
+
+  async function deleteMusicXml() {
+    if (!song) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Retirer la partition MusicXML de « ${song.title} » ?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsMusicXmlPending(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/admin/songs/${song.id}/musicxml`, {
+        method: "DELETE",
+      });
+      const payload = (await response.json()) as ApiError & {
+        data?: AdminSong;
+      };
+
+      if (!response.ok || !payload.data) {
+        setMessage(
+          payload.error?.message ?? "Impossible de retirer la partition.",
+        );
+        return;
+      }
+
+      onSaved?.(payload.data);
+      setMessage("Partition retirée.");
+      router.refresh();
+    } finally {
+      setIsMusicXmlPending(false);
+    }
+  }
+
   return (
     <div className="admin-editor">
       <section className="admin-form-panel">
@@ -463,6 +538,64 @@ export function AdminSongForm({
                     type="button"
                   >
                     Retirer le PDF
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <p className="field__hint">
+                Enregistre le chant avant d’ajouter une partition.
+              </p>
+            )}
+          </div>
+
+          <div className="field field--wide pdf-field">
+            <span>Partition</span>
+            {song?.musicXmlSource ? (
+              <div className="pdf-field__current">
+                <a href={song.musicXmlSource.downloadUrl} target="_blank">
+                  {song.musicXmlSource.fileName ?? "Partition MusicXML"}
+                </a>
+                {song.musicXmlSource.fileSizeBytes ? (
+                  <small>
+                    {Math.round(song.musicXmlSource.fileSizeBytes / 1024)} Ko
+                  </small>
+                ) : null}
+              </div>
+            ) : (
+              <p className="field__hint">
+                Aucune partition MusicXML n’est attachée à ce chant.
+              </p>
+            )}
+            {song ? (
+              <div className="pdf-field__actions">
+                <label className="admin-button admin-button--quiet">
+                  {isMusicXmlPending
+                    ? "Traitement…"
+                    : song.musicXmlSource
+                      ? "Remplacer la partition"
+                      : "Ajouter une partition"}
+                  <input
+                    accept=".musicxml,.xml,application/vnd.recordare.musicxml+xml,application/xml,text/xml"
+                    disabled={isMusicXmlPending}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+
+                      if (file) {
+                        void uploadMusicXml(file);
+                      }
+                    }}
+                    type="file"
+                  />
+                </label>
+                {song.musicXmlSource ? (
+                  <button
+                    className="admin-button admin-button--danger"
+                    disabled={isMusicXmlPending}
+                    onClick={() => void deleteMusicXml()}
+                    type="button"
+                  >
+                    Retirer la partition
                   </button>
                 ) : null}
               </div>

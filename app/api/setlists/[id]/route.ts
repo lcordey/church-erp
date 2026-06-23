@@ -16,9 +16,13 @@ type RouteContext = {
 
 export async function GET(_request: Request, { params }: RouteContext) {
   const { id } = await params;
-  const setlist = await getSetlist(id);
 
-  return setlist ? Response.json({ data: setlist }) : setlistNotFoundResponse();
+  try {
+    const setlist = await getSetlist(id);
+    return setlist ? Response.json({ data: setlist }) : setlistNotFoundResponse();
+  } catch (error) {
+    return setlistErrorResponse(error);
+  }
 }
 
 export async function PUT(request: Request, { params }: RouteContext) {

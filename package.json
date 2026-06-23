@@ -23,6 +23,7 @@
     "songs:import-jem-pdfs": "node scripts/import-song-pdfs.mjs",
     "songs:render-glorious": "node scripts/import-glorious-catalog.mjs snapshot",
     "songs:import-glorious": "node scripts/import-glorious-catalog.mjs",
+    "songs:import-glorious-musicxml": "node scripts/import-glorious-musicxml.mjs",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:status": "supabase status",
@@ -32,6 +33,7 @@
   "dependencies": {
     "drizzle-orm": "^0.45.2",
     "next": "16.2.9",
+    "opensheetmusicdisplay": "^2.0.0",
     "postgres": "^3.4.9",
     "react": "19.2.4",
     "react-dom": "19.2.4"

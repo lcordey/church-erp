@@ -17,6 +17,7 @@ publier automatiquement et supprimer des chants depuis leur ecran d'edition.
 - publier automatiquement a l'enregistrement
 - supprimer definitivement un chant depuis son ecran d'edition
 - ajouter, remplacer ou retirer une partition PDF attachee au chant
+- ajouter, remplacer ou retirer une partition MusicXML attachee au chant
 - consulter les metadonnees utiles cote administration
 - consulter les chants officiels importes en lecture seule
 
@@ -27,7 +28,7 @@ publier automatiquement et supprimer des chants depuis leur ecran d'edition.
 - enregistrer un chant editable publie automatiquement sa version courante
 - un chant publie doit d'abord etre retire du catalogue avant suppression ; l'interface peut enchainer ce retrait puis la suppression dans la meme action
 - un meme chant pourra a terme posseder plusieurs sources dans plusieurs formats
-- un chant MVP-1 possede au maximum une source ChordPro active et une source PDF active
+- un chant MVP-1 possede au maximum une source ChordPro active, une source PDF active et une source MusicXML active
 - les chants officiels JEMAF importes ne sont pas editables directement
 - le verrouillage d'edition est applique cote service, pas seulement dans l'interface
 - les chants crees manuellement dans MVP-1 sont automatiquement rattaches a la collection locale `LeMont`
@@ -62,6 +63,7 @@ Direction de modele recommandee :
 Pour MVP-1 :
 - une source `ChordPro` active est requise pour publier
 - une source `PDF` active est optionnelle
+- une source `MusicXML` active est optionnelle et stockee comme contenu texte en base
 
 Champs possibles plus tard, non requis maintenant :
 - `tempo`
@@ -78,6 +80,7 @@ Implementation actuelle :
 - repository Drizzle avec transaction pour creer le chant et sa source
 - endpoints sous `/api/admin/songs`
 - endpoints PDF sous `/api/admin/songs/:id/pdf`
+- endpoints MusicXML sous `/api/admin/songs/:id/musicxml`
 - stockage PDF dans le bucket prive Supabase Storage `song-pdfs`
 - helper d'autorisation explicite et permissif pendant le MVP-1
 - conflits de slug retournes avec un statut HTTP `409`
@@ -100,6 +103,7 @@ Implementation actuelle :
 - template ChordPro base sur des directives nommees comme `{start_of_verse: Couplet 1}`
 - validation bloquante des accords ChordPro avec message sous le champ source
 - section `Partition PDF` pour ajouter, remplacer ou retirer le fichier attache
+- section `Partition` pour ajouter, remplacer ou retirer le fichier MusicXML attache
 
 Routes :
 - `/admin/chants/nouveau`
@@ -129,6 +133,7 @@ Contraintes UI :
 - tests unitaires sur la validation et les regles de publication
 - tests API sur la creation, le changement de publication et la suppression
 - tests API sur l'ajout, le remplacement et la suppression de partition PDF
+- tests API sur l'ajout, le remplacement et la suppression de partition MusicXML
 - verification HTTP reelle du parcours creation, modification, publication, retrait et suppression
 - test navigateur automatise reporte a l'installation de Playwright
 

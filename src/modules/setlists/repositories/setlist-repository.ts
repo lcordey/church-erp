@@ -9,6 +9,7 @@ import {
 } from "@/src/infrastructure/database/schema";
 import type {
   PublicSongDetail,
+  SongMusicXmlSource,
   SongPdfSource,
 } from "@/src/modules/songs/types/public-song";
 
@@ -29,6 +30,10 @@ const activeChordProCondition = and(
 );
 const activePdfCondition = and(
   eq(songSources.sourceType, "pdf"),
+  eq(songSources.status, "active"),
+);
+const activeMusicXmlCondition = and(
+  eq(songSources.sourceType, "musicxml"),
   eq(songSources.status, "active"),
 );
 const publishedSongCondition = eq(songs.status, "published");
@@ -80,6 +85,14 @@ type PdfRow = {
   storagePath: string | null;
 };
 
+type MusicXmlRow = {
+  songId: string;
+  slug: string;
+  fileName: string | null;
+  mimeType: string | null;
+  fileSizeBytes: number | null;
+};
+
 function toSummary(row: SetlistRow, songCount: number): SetlistSummary {
   return {
     id: row.id,
@@ -103,9 +116,19 @@ function toPdfSource(row: PdfRow): SongPdfSource | null {
   };
 }
 
+function toMusicXmlSource(row: MusicXmlRow): SongMusicXmlSource {
+  return {
+    fileName: row.fileName,
+    mimeType: row.mimeType,
+    fileSizeBytes: row.fileSizeBytes,
+    downloadUrl: `/api/songs/${row.slug}/musicxml`,
+  };
+}
+
 function toSongDetail(
   row: SetlistItemRow,
   pdfSource: SongPdfSource | null,
+  musicXmlSource: SongMusicXmlSource | null,
 ): PublicSongDetail {
   if (!row.chordProContent) {
     throw new Error(`Published song "${row.slug}" has no active ChordPro source.`);
@@ -122,6 +145,7 @@ function toSongDetail(
     collectionNumber: row.collectionNumber,
     sourcePageUrl: row.sourcePageUrl,
     pdfSource,
+    musicXmlSource,
     chordProContent: row.chordProContent,
   };
 }
@@ -157,6 +181,30 @@ export function createSetlistRepository(): SetlistRepository {
     );
   }
 
+  async function findActiveMusicXmlSources(songIds: string[]) {
+    if (songIds.length === 0) {
+      return new Map<string, SongMusicXmlSource>();
+    }
+
+    const rows = await database
+      .select({
+        songId: songSources.songId,
+        slug: songs.slug,
+        fileName: songSources.fileName,
+        mimeType: songSources.mimeType,
+        fileSizeBytes: songSources.fileSizeBytes,
+      })
+      .from(songSources)
+      .innerJoin(songs, eq(songSources.songId, songs.id))
+      .where(
+        and(activeMusicXmlCondition, inArray(songSources.songId, songIds)),
+      );
+
+    return new Map(
+      rows.map((row) => [row.songId, toMusicXmlSource(row)]),
+    );
+  }
+
   async function loadDetail(row: SetlistRow): Promise<SetlistDetail> {
     const itemRows = await database
       .select(setlistItemSelection)
@@ -172,13 +220,20 @@ export function createSetlistRepository(): SetlistRepository {
       )
       .orderBy(asc(setlistItems.position));
     const pdfSources = await findActivePdfSources(itemRows.map((item) => item.id));
+    const musicXmlSources = await findActiveMusicXmlSources(
+      itemRows.map((item) => item.id),
+    );
 
     return {
       ...toSummary(row, itemRows.length),
       items: itemRows.map((item) => ({
         id: item.itemId,
         position: item.position,
-        song: toSongDetail(item, pdfSources.get(item.id) ?? null),
+        song: toSongDetail(
+          item,
+          pdfSources.get(item.id) ?? null,
+          musicXmlSources.get(item.id) ?? null,
+        ),
       })),
     };
   }

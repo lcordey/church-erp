@@ -7,20 +7,25 @@ import { formatSongCollectionLabel } from "../collections/song-collection";
 import type { AdminSong } from "../types/admin-song";
 import type { PublicSongDetail } from "../types/public-song";
 import { MusicalKeyText } from "./musical-key-text";
+import { MusicXmlScoreViewer } from "./music-xml-score-viewer";
 import { TransposableSongSheet } from "./transposable-song-sheet";
 
 type SongDetailViewProps = {
   song: PublicSongDetail | AdminSong;
   actions?: ReactNode;
+  canAccessScores?: boolean;
   eyebrow?: string;
 };
 
 export function SongDetailView({
   song,
   actions,
+  canAccessScores = false,
   eyebrow = "Chant publié",
 }: SongDetailViewProps) {
-  const [sourceView, setSourceView] = useState<"chordpro" | "pdf">("chordpro");
+  const [sourceView, setSourceView] = useState<
+    "chordpro" | "pdf" | "musicxml"
+  >("chordpro");
   const collectionLabel = formatSongCollectionLabel(
     song.collection,
     song.collectionNumber,
@@ -68,7 +73,7 @@ export function SongDetailView({
           >
             Accords
           </button>
-          {song.pdfSource ? (
+          {canAccessScores && song.pdfSource ? (
             <button
               aria-pressed={sourceView === "pdf"}
               onClick={() => setSourceView("pdf")}
@@ -77,12 +82,21 @@ export function SongDetailView({
               PDF
             </button>
           ) : null}
+          {canAccessScores && song.musicXmlSource ? (
+            <button
+              aria-pressed={sourceView === "musicxml"}
+              onClick={() => setSourceView("musicxml")}
+              type="button"
+            >
+              Partition
+            </button>
+          ) : null}
         </div>
 
         {actions ? <div className="song-detail-view__actions">{actions}</div> : null}
       </header>
 
-      {sourceView === "pdf" && song.pdfSource ? (
+      {canAccessScores && sourceView === "pdf" && song.pdfSource ? (
         <section className="song-pdf-viewer">
           <header className="song-pdf-viewer__toolbar">
             <div>
@@ -104,6 +118,29 @@ export function SongDetailView({
               title={`Partition PDF de ${song.title}`}
             />
           </div>
+        </section>
+      ) : canAccessScores && sourceView === "musicxml" && song.musicXmlSource ? (
+        <section className="song-score-viewer">
+          <header className="song-pdf-viewer__toolbar">
+            <div>
+              <span>Partition</span>
+              <small>{song.musicXmlSource.fileName ?? song.title}</small>
+            </div>
+            <a
+              className="admin-button admin-button--primary"
+              href={song.musicXmlSource.downloadUrl}
+              target="_blank"
+            >
+              Ouvrir
+            </a>
+          </header>
+          <MusicXmlScoreViewer
+            key={song.id}
+            copyright={song.copyright}
+            defaultKey={song.defaultKey}
+            sourceUrl={song.musicXmlSource.downloadUrl}
+            title={song.title}
+          />
         </section>
       ) : (
         <TransposableSongSheet

@@ -9,8 +9,12 @@ import {
 import { validateAdminSongInput } from "@/src/modules/songs/validation/admin-song-input";
 
 export async function GET() {
-  const songs = await listAdminSongs();
-  return Response.json({ data: songs });
+  try {
+    const songs = await listAdminSongs();
+    return Response.json({ data: songs });
+  } catch (error) {
+    return adminSongErrorResponse(error);
+  }
 }
 
 export async function POST(request: Request) {

@@ -35,6 +35,7 @@ describe("GET /api/songs", () => {
             fileSizeBytes: 1234,
             downloadUrl: "/api/songs/chant-publie/pdf",
           },
+          musicXmlSource: null,
         },
       ],
       total: 1,

@@ -11,13 +11,20 @@ vi.mock("@/src/infrastructure/storage/song-pdf-storage", () => ({
   uploadSongPdf,
 }));
 
+vi.mock("@/src/infrastructure/auth/require-admin", () => ({
+  requireAdminAccess: () => ({ accessMode: "mvp-admin" }),
+}));
+
 import type { AdminSongRepository } from "../repositories/admin-song-repository";
 import type { AdminSong, AdminSongInput } from "../types/admin-song";
 import {
+  attachSongMusicXml,
   attachSongPdf,
   createDraftSong,
+  deleteAttachedSongMusicXml,
   deleteAttachedSongPdf,
   deleteDraftSong,
+  InvalidSongMusicXmlError,
   InvalidSongPdfError,
   publishSong,
   PublishedSongDeletionError,
@@ -44,6 +51,7 @@ const draftSong: AdminSong = {
   sourcePageUrl: null,
   sourceChordProUrl: null,
   pdfSource: null,
+  musicXmlSource: null,
   isEditable: true,
   createdAt: new Date("2026-06-15T18:00:00Z"),
   updatedAt: new Date("2026-06-15T18:00:00Z"),
@@ -59,6 +67,8 @@ function createRepository(song: AdminSong | null = draftSong) {
     findPdfSourceById: vi.fn(async () => null),
     attachPdf: vi.fn(async () => song),
     deletePdf: vi.fn(async () => song),
+    attachMusicXml: vi.fn(async () => song),
+    deleteMusicXml: vi.fn(async () => song),
     updateStatus: vi.fn(async (_id, status) =>
       song ? { ...song, status } : null,
     ),
@@ -178,6 +188,43 @@ describe("admin song management", () => {
       `songs/${draftSong.id}/score.pdf`,
     );
     expect(repository.deletePdf).toHaveBeenCalledWith(draftSong.id);
+  });
+
+  it("attaches one MusicXML source to a song", async () => {
+    const repository = createRepository();
+    const content = `<score-partwise version="4.0"></score-partwise>`;
+    const file = new File([content], "partition.musicxml", {
+      type: "application/vnd.recordare.musicxml+xml",
+    });
+
+    await attachSongMusicXml(draftSong.id, file, repository);
+
+    expect(repository.attachMusicXml).toHaveBeenCalledWith(draftSong.id, {
+      content,
+      fileName: "partition.musicxml",
+      mimeType: "application/vnd.recordare.musicxml+xml",
+      fileSizeBytes: file.size,
+    });
+  });
+
+  it("rejects a non-MusicXML upload before persistence", async () => {
+    const repository = createRepository();
+    const file = new File(["text"], "partition.txt", {
+      type: "text/plain",
+    });
+
+    await expect(
+      attachSongMusicXml(draftSong.id, file, repository),
+    ).rejects.toBeInstanceOf(InvalidSongMusicXmlError);
+    expect(repository.attachMusicXml).not.toHaveBeenCalled();
+  });
+
+  it("deletes an attached MusicXML source", async () => {
+    const repository = createRepository();
+
+    await deleteAttachedSongMusicXml(draftSong.id, repository);
+
+    expect(repository.deleteMusicXml).toHaveBeenCalledWith(draftSong.id);
   });
 
   it("deletes a draft", async () => {

@@ -11,6 +11,17 @@ export type SongPdfFileSource = SongPdfSource & {
   storagePath: string;
 };
 
+export type SongMusicXmlSource = {
+  fileName: string | null;
+  mimeType: string | null;
+  fileSizeBytes: number | null;
+  downloadUrl: string;
+};
+
+export type SongMusicXmlFileSource = SongMusicXmlSource & {
+  content: string;
+};
+
 export type PublicSongSummary = {
   id: string;
   title: string;
@@ -22,6 +33,7 @@ export type PublicSongSummary = {
   collectionNumber: number | null;
   sourcePageUrl: string | null;
   pdfSource: SongPdfSource | null;
+  musicXmlSource: SongMusicXmlSource | null;
 };
 
 export type PublicSongCatalogResults = {

@@ -36,6 +36,7 @@ function createDetail(input: SetlistInput): SetlistDetail {
         collectionNumber: null,
         sourcePageUrl: null,
         pdfSource: null,
+        musicXmlSource: null,
         chordProContent: "[C]Paroles",
       },
     })),

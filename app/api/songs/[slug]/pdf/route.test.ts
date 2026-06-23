@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  authSessionCookieName,
+  createAuthSessionToken,
+} from "@/src/infrastructure/auth/session";
+
 const { downloadSongPdf, getPublicSongPdfBySlug } = vi.hoisted(() => ({
   downloadSongPdf: vi.fn(),
   getPublicSongPdfBySlug: vi.fn(),
@@ -22,6 +27,14 @@ vi.mock("@/src/modules/songs/services/public-song-catalog", () => ({
 
 import { GET } from "./route";
 
+function authenticatedRequest() {
+  return new Request("http://localhost", {
+    headers: {
+      cookie: `${authSessionCookieName}=${createAuthSessionToken()}`,
+    },
+  });
+}
+
 describe("GET /api/songs/:slug/pdf", () => {
   beforeEach(() => {
     downloadSongPdf.mockReset();
@@ -42,7 +55,7 @@ describe("GET /api/songs/:slug/pdf", () => {
       }),
     );
 
-    const response = await GET(new Request("http://localhost"), {
+    const response = await GET(authenticatedRequest(), {
       params: Promise.resolve({ slug: "chant" }),
     });
 
@@ -57,11 +70,20 @@ describe("GET /api/songs/:slug/pdf", () => {
   it("returns 404 when no PDF source exists", async () => {
     getPublicSongPdfBySlug.mockResolvedValue(null);
 
-    const response = await GET(new Request("http://localhost"), {
+    const response = await GET(authenticatedRequest(), {
       params: Promise.resolve({ slug: "chant" }),
     });
 
     expect(response.status).toBe(404);
     expect(downloadSongPdf).not.toHaveBeenCalled();
+  });
+
+  it("requires authentication", async () => {
+    const response = await GET(new Request("http://localhost"), {
+      params: Promise.resolve({ slug: "chant" }),
+    });
+
+    expect(response.status).toBe(401);
+    expect(getPublicSongPdfBySlug).not.toHaveBeenCalled();
   });
 });

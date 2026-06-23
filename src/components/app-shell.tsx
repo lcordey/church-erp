@@ -10,6 +10,7 @@ import { PwaInstallPrompt } from "./pwa-install-prompt";
 
 type AppShellProps = {
   children: ReactNode;
+  isAuthenticated: boolean;
 };
 
 type NavigationItem = {
@@ -57,7 +58,7 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href;
 }
 
-export function AppShell({ children }: AppShellProps) {
+export function AppShell({ children, isAuthenticated }: AppShellProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -100,6 +101,16 @@ export function AppShell({ children }: AppShellProps) {
               );
             })}
           </nav>
+
+          <div className="app-sidebar__session">
+            {isAuthenticated ? (
+              <form action="/api/auth/logout" method="post">
+                <button type="submit">Se déconnecter</button>
+              </form>
+            ) : (
+              <Link href="/login">Se connecter</Link>
+            )}
+          </div>
         </aside>
 
         {isOpen ? (

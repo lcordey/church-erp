@@ -12,12 +12,14 @@ import { SongDetailView } from "./song-detail-view";
 
 type SongPageWorkspaceProps = {
   adminSong: AdminSong | null;
+  canAccessScores: boolean;
   initialMode: "selection" | "edition";
   song: PublicSongDetail;
 };
 
 export function SongPageWorkspace({
   adminSong: initialAdminSong,
+  canAccessScores,
   initialMode,
   song,
 }: SongPageWorkspaceProps) {
@@ -73,7 +75,7 @@ export function SongPageWorkspace({
             song={adminSong}
           />
         ) : (
-          <SongDetailView song={readableSong} />
+          <SongDetailView canAccessScores={canAccessScores} song={readableSong} />
         )}
       </div>
     </main>

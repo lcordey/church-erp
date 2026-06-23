@@ -34,7 +34,7 @@ async function assertPublishedSongs(
 export async function listSetlists(
   repository: SetlistRepository = createSetlistRepository(),
 ): Promise<SetlistSummary[]> {
-  requireAdminAccess();
+  await requireAdminAccess();
   return repository.listAll();
 }
 
@@ -42,7 +42,7 @@ export async function getSetlist(
   id: string,
   repository: SetlistRepository = createSetlistRepository(),
 ): Promise<SetlistDetail | null> {
-  requireAdminAccess();
+  await requireAdminAccess();
   return repository.findById(id);
 }
 
@@ -50,7 +50,7 @@ export async function createSetlist(
   input: SetlistInput,
   repository: SetlistRepository = createSetlistRepository(),
 ): Promise<SetlistDetail> {
-  requireAdminAccess();
+  await requireAdminAccess();
   const normalizedInput = normalizeInput(input);
   await assertPublishedSongs(normalizedInput.songIds, repository);
 
@@ -62,7 +62,7 @@ export async function updateSetlist(
   input: SetlistInput,
   repository: SetlistRepository = createSetlistRepository(),
 ): Promise<SetlistDetail | null> {
-  requireAdminAccess();
+  await requireAdminAccess();
   const normalizedInput = normalizeInput(input);
   await assertPublishedSongs(normalizedInput.songIds, repository);
 
@@ -73,6 +73,6 @@ export async function deleteSetlist(
   id: string,
   repository: SetlistRepository = createSetlistRepository(),
 ): Promise<boolean> {
-  requireAdminAccess();
+  await requireAdminAccess();
   return repository.delete(id);
 }

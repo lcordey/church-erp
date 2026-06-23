@@ -1,4 +1,8 @@
-import type { SongPdfSource, SongPublicationStatus } from "./public-song";
+import type {
+  SongMusicXmlSource,
+  SongPdfSource,
+  SongPublicationStatus,
+} from "./public-song";
 
 export type AdminSong = {
   id: string;
@@ -13,6 +17,7 @@ export type AdminSong = {
   sourcePageUrl: string | null;
   sourceChordProUrl: string | null;
   pdfSource: SongPdfSource | null;
+  musicXmlSource: SongMusicXmlSource | null;
   isEditable: boolean;
   chordProContent: string;
   createdAt: Date;
@@ -30,6 +35,13 @@ export type AdminSongInput = {
 
 export type AdminSongPdfInput = {
   storagePath: string;
+  fileName: string;
+  mimeType: string;
+  fileSizeBytes: number;
+};
+
+export type AdminSongMusicXmlInput = {
+  content: string;
   fileName: string;
   mimeType: string;
   fileSizeBytes: number;

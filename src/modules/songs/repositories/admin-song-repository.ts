@@ -10,9 +10,14 @@ import type {
   AdminSong,
   AdminSongInput,
   AdminSongListItem,
+  AdminSongMusicXmlInput,
   AdminSongPdfInput,
 } from "../types/admin-song";
-import type { SongPdfFileSource, SongPdfSource } from "../types/public-song";
+import type {
+  SongMusicXmlSource,
+  SongPdfFileSource,
+  SongPdfSource,
+} from "../types/public-song";
 
 export class SongSlugConflictError extends Error {
   constructor() {
@@ -31,6 +36,11 @@ export interface AdminSongRepository {
   findPdfSourceById(id: string): Promise<SongPdfFileSource | null>;
   attachPdf(id: string, input: AdminSongPdfInput): Promise<AdminSong | null>;
   deletePdf(id: string): Promise<AdminSong | null>;
+  attachMusicXml(
+    id: string,
+    input: AdminSongMusicXmlInput,
+  ): Promise<AdminSong | null>;
+  deleteMusicXml(id: string): Promise<AdminSong | null>;
   updateStatus(
     id: string,
     status: "draft" | "published",
@@ -64,10 +74,26 @@ const pdfSelection = {
   fileSizeBytes: songSources.fileSizeBytes,
 };
 
+const musicXmlSelection = {
+  songId: songSources.songId,
+  slug: songs.slug,
+  fileName: songSources.fileName,
+  mimeType: songSources.mimeType,
+  fileSizeBytes: songSources.fileSizeBytes,
+};
+
 type PdfSelectionRow = {
   songId: string;
   slug: string;
   storagePath: string | null;
+  fileName: string | null;
+  mimeType: string | null;
+  fileSizeBytes: number | null;
+};
+
+type MusicXmlSelectionRow = {
+  songId: string;
+  slug: string;
   fileName: string | null;
   mimeType: string | null;
   fileSizeBytes: number | null;
@@ -100,10 +126,20 @@ function toAdminPdfSource(source: SongPdfFileSource | null): SongPdfSource | nul
   };
 }
 
+function toMusicXmlSource(row: MusicXmlSelectionRow): SongMusicXmlSource {
+  return {
+    fileName: row.fileName,
+    mimeType: row.mimeType,
+    fileSizeBytes: row.fileSizeBytes,
+    downloadUrl: `/api/songs/${row.slug}/musicxml`,
+  };
+}
+
 function toAdminSong(
   row: Omit<AdminSong, "chordProContent"> & {
     chordProContent: string | null;
     pdfSource?: SongPdfSource | null;
+    musicXmlSource?: SongMusicXmlSource | null;
   },
 ): AdminSong {
   if (!row.chordProContent) {
@@ -127,6 +163,7 @@ function toAdminSongListItem(song: AdminSong): AdminSongListItem {
     sourcePageUrl: song.sourcePageUrl,
     sourceChordProUrl: song.sourceChordProUrl,
     pdfSource: song.pdfSource,
+    musicXmlSource: song.musicXmlSource,
     isEditable: song.isEditable,
     createdAt: song.createdAt,
     updatedAt: song.updatedAt,
@@ -152,6 +189,10 @@ export function createAdminSongRepository(): AdminSongRepository {
     eq(songSources.sourceType, "pdf"),
     eq(songSources.status, "active"),
   );
+  const activeMusicXml = and(
+    eq(songSources.sourceType, "musicxml"),
+    eq(songSources.status, "active"),
+  );
 
   async function findActivePdfSources(songIds: string[]) {
     if (songIds.length === 0) {
@@ -172,6 +213,22 @@ export function createAdminSongRepository(): AdminSongRepository {
     );
   }
 
+  async function findActiveMusicXmlSources(songIds: string[]) {
+    if (songIds.length === 0) {
+      return new Map<string, SongMusicXmlSource>();
+    }
+
+    const rows = await database
+      .select(musicXmlSelection)
+      .from(songSources)
+      .innerJoin(songs, eq(songSources.songId, songs.id))
+      .where(and(activeMusicXml, inArray(songSources.songId, songIds)));
+
+    return new Map(
+      rows.map((row) => [row.songId, toMusicXmlSource(row)]),
+    );
+  }
+
   async function findById(id: string): Promise<AdminSong | null> {
     const rows = await database
       .select(adminSongSelection)
@@ -185,10 +242,12 @@ export function createAdminSongRepository(): AdminSongRepository {
     }
 
     const pdfSources = await findActivePdfSources([rows[0].id]);
+    const musicXmlSources = await findActiveMusicXmlSources([rows[0].id]);
 
     return toAdminSong({
       ...rows[0],
       pdfSource: pdfSources.get(rows[0].id) ?? null,
+      musicXmlSource: musicXmlSources.get(rows[0].id) ?? null,
     });
   }
 
@@ -204,12 +263,16 @@ export function createAdminSongRepository(): AdminSongRepository {
       const pdfSources = await findActivePdfSources(
         rows.map((row) => row.id),
       );
+      const musicXmlSources = await findActiveMusicXmlSources(
+        rows.map((row) => row.id),
+      );
 
       return rows
         .map((row) =>
           toAdminSong({
             ...row,
             pdfSource: pdfSources.get(row.id) ?? null,
+            musicXmlSource: musicXmlSources.get(row.id) ?? null,
           }),
         )
         .map(toAdminSongListItem);
@@ -351,6 +414,42 @@ export function createAdminSongRepository(): AdminSongRepository {
           updatedAt: new Date(),
         })
         .where(and(eq(songSources.songId, id), activePdf));
+
+      return findById(id);
+    },
+
+    async attachMusicXml(id, input) {
+      await database.transaction(async (transaction) => {
+        await transaction
+          .update(songSources)
+          .set({
+            status: "archived",
+            updatedAt: new Date(),
+          })
+          .where(and(eq(songSources.songId, id), activeMusicXml));
+
+        await transaction.insert(songSources).values({
+          songId: id,
+          sourceType: "musicxml",
+          status: "active",
+          textContent: input.content,
+          fileName: input.fileName,
+          mimeType: input.mimeType,
+          fileSizeBytes: input.fileSizeBytes,
+        });
+      });
+
+      return findById(id);
+    },
+
+    async deleteMusicXml(id) {
+      await database
+        .update(songSources)
+        .set({
+          status: "archived",
+          updatedAt: new Date(),
+        })
+        .where(and(eq(songSources.songId, id), activeMusicXml));
 
       return findById(id);
     },

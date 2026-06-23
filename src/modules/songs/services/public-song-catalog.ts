@@ -10,6 +10,7 @@ import type {
   PublicSongDetail,
   PublicSongSummary,
   SongCatalogRecord,
+  SongMusicXmlFileSource,
   SongPdfFileSource,
 } from "../types/public-song";
 
@@ -41,6 +42,7 @@ function toSummary(song: SongCatalogRecord): PublicSongSummary {
     collectionNumber: song.collectionNumber,
     sourcePageUrl: song.sourcePageUrl,
     pdfSource: song.pdfSource,
+    musicXmlSource: song.musicXmlSource,
   };
 }
 
@@ -127,4 +129,17 @@ export async function getPublicSongPdfBySlug(
   }
 
   return repository.findPublishedPdfBySlug(normalizedSlug);
+}
+
+export async function getPublicSongMusicXmlBySlug(
+  slug: string,
+  repository: SongCatalogRepository = createSongCatalogRepository(),
+): Promise<SongMusicXmlFileSource | null> {
+  const normalizedSlug = slug.trim().toLowerCase();
+
+  if (!normalizedSlug) {
+    return null;
+  }
+
+  return repository.findPublishedMusicXmlBySlug(normalizedSlug);
 }

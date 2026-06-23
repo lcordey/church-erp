@@ -47,6 +47,7 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 - creation, modification, publication, retrait et suppression des brouillons
 - support initial du format ChordPro
 - support d'une partition PDF optionnelle par chant
+- support d'une partition MusicXML optionnelle par chant
 - chants officiels JEMAF stockes en lecture seule avec provenance JEMAF
 - snapshot local de recueils JEMAF regenerable puis rejouable hors ligne
 - recherche simple par titre ou numero de recueil
@@ -70,9 +71,9 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 
 ## Hors perimetre explicite
 
-- authentification reelle
+- comptes utilisateurs persistants et recuperation de mot de passe
 - groupes, roles et administration des permissions
-- autres formats de partitions ou de documents
+- autres formats de partitions ou de documents hors PDF et MusicXML
 - evenements et calendrier
 - invitations a un evenement
 - partage de chants a des participants
@@ -87,6 +88,9 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 ## Regles produit du MVP-1
 
 - les visiteurs publics ne peuvent lire que les chants publies
+- les visiteurs non connectes ne peuvent consulter que les accords et paroles
+- les PDF, MusicXML, setlists et actions admin exigent le login MVP
+- chaque utilisateur connecte est temporairement traite comme administrateur
 - les utilisateurs internes peuvent creer et modifier des chants
 - toutes les ecritures passent par des frontieres serveur
 - les cas d'usage publics et admin doivent rester distingues meme si la meme personne peut actuellement tout faire
@@ -117,6 +121,7 @@ Livre :
 - creation admin assignee automatiquement a la collection `LeMont`
 - donnees de seed composees d'un snapshot local du catalogue public JEMAF et de chants locaux editables `LeMont`
 - partition PDF optionnelle stockee dans Supabase Storage et servie par route backend
+- partition MusicXML optionnelle stockee en base et rendue en mode `Partition`
 - creation, edition, suppression et lecture de setlists de chants publies
 - migrations, seed, tests Vitest et smoke test HTTP
 - acces local depuis un telephone avec HTTPS et support WSL2

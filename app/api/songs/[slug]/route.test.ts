@@ -27,6 +27,7 @@ describe("GET /api/songs/:slug", () => {
       collectionNumber: null,
       sourcePageUrl: null,
       pdfSource: null,
+      musicXmlSource: null,
       chordProContent: "[D]Paroles",
     });
 

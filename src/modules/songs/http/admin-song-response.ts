@@ -1,5 +1,11 @@
+import {
+  authenticationRequiredResponse,
+  AuthenticationRequiredError,
+} from "@/src/infrastructure/auth/require-admin";
+
 import { SongSlugConflictError } from "../repositories/admin-song-repository";
 import {
+  InvalidSongMusicXmlError,
   InvalidSongPdfError,
   PublishedSongDeletionError,
   ReadOnlySongError,
@@ -32,6 +38,10 @@ export function songNotFoundResponse() {
 }
 
 export function adminSongErrorResponse(error: unknown) {
+  if (error instanceof AuthenticationRequiredError) {
+    return authenticationRequiredResponse();
+  }
+
   if (error instanceof ReadOnlySongError) {
     return Response.json(
       {
@@ -65,6 +75,19 @@ export function adminSongErrorResponse(error: unknown) {
           code: "INVALID_PDF",
           message:
             "La partition doit être un fichier PDF valide de moins de 20 Mo.",
+        },
+      },
+      { status: 400 },
+    );
+  }
+
+  if (error instanceof InvalidSongMusicXmlError) {
+    return Response.json(
+      {
+        error: {
+          code: "INVALID_MUSICXML",
+          message:
+            "La partition doit être un fichier MusicXML valide de moins de 5 Mo.",
         },
       },
       { status: 400 },

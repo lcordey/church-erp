@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 import { AppShell } from "@/src/components/app-shell";
+import { getCurrentActor } from "@/src/infrastructure/auth/require-admin";
 import { MusicNotationProvider } from "@/src/modules/songs/components/music-notation-provider";
 
 import "./globals.css";
@@ -31,16 +32,18 @@ export const viewport: Viewport = {
   themeColor: "#315b78",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const actor = await getCurrentActor();
+
   return (
     <html lang="fr">
       <body>
         <MusicNotationProvider>
-          <AppShell>{children}</AppShell>
+          <AppShell isAuthenticated={actor !== null}>{children}</AppShell>
         </MusicNotationProvider>
       </body>
     </html>

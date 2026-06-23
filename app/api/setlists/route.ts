@@ -9,8 +9,12 @@ import {
 import { validateSetlistInput } from "@/src/modules/setlists/validation/setlist-input";
 
 export async function GET() {
-  const setlists = await listSetlists();
-  return Response.json({ data: setlists });
+  try {
+    const setlists = await listSetlists();
+    return Response.json({ data: setlists });
+  } catch (error) {
+    return setlistErrorResponse(error);
+  }
 }
 
 export async function POST(request: Request) {

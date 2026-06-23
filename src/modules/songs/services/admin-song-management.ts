@@ -17,11 +17,20 @@ import type {
 
 const songPdfMimeType = "application/pdf";
 const maxSongPdfSizeBytes = 20 * 1024 * 1024;
+const acceptedSongMusicXmlMimeTypes = new Set([
+  "application/vnd.recordare.musicxml+xml",
+  "application/octet-stream",
+  "application/xml",
+  "text/xml",
+  "text/plain",
+  "",
+]);
+const maxSongMusicXmlSizeBytes = 5 * 1024 * 1024;
 
 export async function listAdminSongs(
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSongListItem[]> {
-  requireAdminAccess();
+  await requireAdminAccess();
   return repository.listAll();
 }
 
@@ -29,7 +38,7 @@ export async function getAdminSong(
   id: string,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong | null> {
-  requireAdminAccess();
+  await requireAdminAccess();
   return repository.findById(id);
 }
 
@@ -37,7 +46,7 @@ export async function createDraftSong(
   input: AdminSongInput,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong> {
-  requireAdminAccess();
+  await requireAdminAccess();
   return repository.create(input);
 }
 
@@ -46,7 +55,7 @@ export async function updateAdminSong(
   input: AdminSongInput,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong | null> {
-  requireAdminAccess();
+  await requireAdminAccess();
   const song = await repository.findById(id);
 
   if (!song) {
@@ -78,6 +87,12 @@ export class InvalidSongPdfError extends Error {
   }
 }
 
+export class InvalidSongMusicXmlError extends Error {
+  constructor(message = "The uploaded song MusicXML is invalid.") {
+    super(message);
+  }
+}
+
 function validateSongPdf(file: File) {
   if (file.type !== songPdfMimeType) {
     throw new InvalidSongPdfError("Only PDF files are accepted.");
@@ -92,12 +107,49 @@ function validateSongPdf(file: File) {
   }
 }
 
+function hasMusicXmlFileName(fileName: string) {
+  return /\.musicxml$/i.test(fileName) || /\.xml$/i.test(fileName);
+}
+
+function validateSongMusicXmlFile(file: File) {
+  if (!acceptedSongMusicXmlMimeTypes.has(file.type)) {
+    throw new InvalidSongMusicXmlError("Only MusicXML files are accepted.");
+  }
+
+  if (!hasMusicXmlFileName(file.name)) {
+    throw new InvalidSongMusicXmlError("The file must use a .musicxml or .xml extension.");
+  }
+
+  if (file.size <= 0) {
+    throw new InvalidSongMusicXmlError("The MusicXML file is empty.");
+  }
+
+  if (file.size > maxSongMusicXmlSizeBytes) {
+    throw new InvalidSongMusicXmlError("The MusicXML file is too large.");
+  }
+}
+
+function validateSongMusicXmlContent(content: string) {
+  const normalizedContent = content.trim();
+
+  if (!normalizedContent) {
+    throw new InvalidSongMusicXmlError("The MusicXML file is empty.");
+  }
+
+  if (
+    !normalizedContent.includes("<score-partwise") &&
+    !normalizedContent.includes("<score-timewise")
+  ) {
+    throw new InvalidSongMusicXmlError("The file does not look like MusicXML.");
+  }
+}
+
 export async function attachSongPdf(
   id: string,
   file: File,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong | null> {
-  requireAdminAccess();
+  await requireAdminAccess();
   const song = await repository.findById(id);
 
   if (!song) {
@@ -122,7 +174,7 @@ export async function deleteAttachedSongPdf(
   id: string,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong | null> {
-  requireAdminAccess();
+  await requireAdminAccess();
   const song = await repository.findById(id);
 
   if (!song) {
@@ -138,11 +190,51 @@ export async function deleteAttachedSongPdf(
   return repository.deletePdf(id);
 }
 
+export async function attachSongMusicXml(
+  id: string,
+  file: File,
+  repository: AdminSongRepository = createAdminSongRepository(),
+): Promise<AdminSong | null> {
+  await requireAdminAccess();
+  const song = await repository.findById(id);
+
+  if (!song) {
+    return null;
+  }
+
+  validateSongMusicXmlFile(file);
+
+  const content = await file.text();
+
+  validateSongMusicXmlContent(content);
+
+  return repository.attachMusicXml(id, {
+    content,
+    fileName: file.name || "partition.musicxml",
+    mimeType: file.type || "application/vnd.recordare.musicxml+xml",
+    fileSizeBytes: file.size,
+  });
+}
+
+export async function deleteAttachedSongMusicXml(
+  id: string,
+  repository: AdminSongRepository = createAdminSongRepository(),
+): Promise<AdminSong | null> {
+  await requireAdminAccess();
+  const song = await repository.findById(id);
+
+  if (!song) {
+    return null;
+  }
+
+  return repository.deleteMusicXml(id);
+}
+
 export async function deleteDraftSong(
   id: string,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<boolean> {
-  requireAdminAccess();
+  await requireAdminAccess();
   const song = await repository.findById(id);
 
   if (!song) {
@@ -164,7 +256,7 @@ export async function publishSong(
   id: string,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong | null> {
-  requireAdminAccess();
+  await requireAdminAccess();
   const song = await repository.findById(id);
 
   if (!song) {
@@ -182,6 +274,6 @@ export async function unpublishSong(
   id: string,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong | null> {
-  requireAdminAccess();
+  await requireAdminAccess();
   return repository.updateStatus(id, "draft");
 }

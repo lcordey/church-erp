@@ -15,6 +15,7 @@ As of this revision:
 - `pnpm db:reset` loads a generated offline snapshot of the public JEMAF catalog plus 5 editable local songs in `LeMont`
 - the public songs catalog and song administration workflow are implemented
 - the private `song-pdfs` Supabase Storage bucket is configured for optional PDF scores
+- MusicXML score rendering uses `opensheetmusicdisplay` in the browser
 - responsive desktop and phone access has been validated locally
 - local HTTPS and WSL2-to-Windows port forwarding scripts are available
 - Vitest covers the current business rules and API contracts
@@ -46,6 +47,7 @@ pnpm songs:sync-jemaf
 pnpm songs:render-seed
 pnpm songs:import-pdfs
 pnpm songs:import-jem-pdfs
+pnpm songs:import-glorious-musicxml
 pnpm db:start
 pnpm db:status
 pnpm db:reset
@@ -97,6 +99,13 @@ The project uses non-default ports to reduce conflicts with other local Supabase
 Server-side PDF storage access uses:
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
+
+Temporary MVP login uses:
+- `CHURCHERP_LOGIN_PASSWORD`
+- `AUTH_SESSION_SECRET`
+
+Every authenticated MVP-1 user is treated as an administrator. Anonymous users
+can read song chords but cannot access PDF or MusicXML score routes.
 
 Local scripts such as `pnpm dev:phone` and `pnpm test:smoke` load `.env.local`
 explicitly so that an exported shell `DATABASE_URL` for a remote Supabase
@@ -220,10 +229,12 @@ For the local Glorious catalog:
 
 1. Place the canonical ChordPro files in `/home/lcordey/work/download_for_church_erp/Glorious_ChordPro/canonical`.
 2. Place the PDF files in `/home/lcordey/work/download_for_church_erp/Glorious`.
-3. Run `pnpm songs:import-glorious`.
+3. Place the MusicXML files in `/home/lcordey/work/download_for_church_erp/Glorious_MusicXML/musicxml`.
+4. Run `pnpm songs:import-glorious`.
+5. Run `pnpm songs:import-glorious-musicxml`.
 
-This import is idempotent and targets the local database and local Supabase
-Storage.
+These imports are idempotent and target the local database. The PDF import also
+targets local Supabase Storage.
 
 To version the Glorious song metadata and ChordPro sources in the repository
 seed, generate the snapshot and re-render the seed:

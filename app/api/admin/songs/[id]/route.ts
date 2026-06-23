@@ -16,9 +16,13 @@ type RouteContext = {
 
 export async function GET(_request: Request, { params }: RouteContext) {
   const { id } = await params;
-  const song = await getAdminSong(id);
 
-  return song ? Response.json({ data: song }) : songNotFoundResponse();
+  try {
+    const song = await getAdminSong(id);
+    return song ? Response.json({ data: song }) : songNotFoundResponse();
+  } catch (error) {
+    return adminSongErrorResponse(error);
+  }
 }
 
 export async function PUT(request: Request, { params }: RouteContext) {
