@@ -17,7 +17,7 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 - permettre l'ouverture d'une page detail publique
 - exclure les chants brouillon des resultats publics
 - rendre les paroles et accords de la source ChordPro active
-- afficher un lien vers la partition PDF aux utilisateurs connectes quand une source PDF active existe
+- afficher une partition PDF integree aux utilisateurs connectes quand une source PDF active existe
 - afficher et ouvrir une partition MusicXML aux utilisateurs connectes quand une source MusicXML active existe
 - chercher les chants publies par titre ou numero de recueil
 - filtrer le catalogue sans rechargement de page
@@ -99,8 +99,15 @@ Implementation actuelle :
 - route publique du catalogue sur `/`
 - route publique de detail sur `/chants/:slug`
 - controle de transposition temporaire sur la page detail
+- mode `Paroles` sur la page detail pour afficher uniquement les paroles issues de la source ChordPro
 - lien `PDF` sur la page detail connectee quand une partition est disponible
 - mode `Partition` sur la page detail connectee quand une partition MusicXML est disponible
+- le rendu PDF integre fonctionne aussi sur mobile et ne depend pas du viewer PDF natif du navigateur
+- les vues `PDF` et `Partition` partagent un shell visuel clair et epure, coherent avec le reste du site
+- la vue `PDF` propose `Ouvrir` et `Telecharger`
+- la vue `Partition` propose `Ouvrir` dans un onglet dedie et `Telecharger` en PDF genere cote client
+- le nom du PDF genere pour la partition reutilise le titre du chant et, si disponible, son recueil et numero
+- le mode `Accords` permet d'ajuster l'interligne pour densifier ou aerer l'affichage
 - preference persistante de notation anglaise ou francaise
 - le catalogue conserve la recherche et les filtres tant que l'utilisateur reste sur la page catalogue
 

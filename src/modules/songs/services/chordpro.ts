@@ -17,6 +17,7 @@ const sectionDirectives = new Set([
   "start_of_bridge",
   "sob",
 ]);
+const chordTokenPattern = /\[[^\]\r\n]+\]/;
 
 function humanizeSection(value: string) {
   const labels: Record<string, string> = {
@@ -111,4 +112,8 @@ export function parseChordPro(content: string): ChordProLine[] {
   }
 
   return lines;
+}
+
+export function hasChordProChords(content: string): boolean {
+  return chordTokenPattern.test(content);
 }

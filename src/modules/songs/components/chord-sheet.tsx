@@ -1,20 +1,36 @@
 "use client";
 
+import type { CSSProperties } from "react";
+
 import { formatChord, transposeChord } from "../music/musical-key";
 import { parseChordPro } from "../services/chordpro";
 import { useMusicNotation } from "./music-notation-provider";
 
 type ChordSheetProps = {
   content: string;
+  lineHeight?: number;
   transposeBy?: number;
 };
 
-export function ChordSheet({ content, transposeBy = 0 }: ChordSheetProps) {
+export function ChordSheet({
+  content,
+  lineHeight = 1.18,
+  transposeBy = 0,
+}: ChordSheetProps) {
   const { notation } = useMusicNotation();
   const lines = parseChordPro(content);
 
   return (
-    <div className="chord-sheet" aria-label="Paroles et accords">
+    <div
+      className="chord-sheet"
+      style={
+        {
+          "--chord-sheet-line-height": `${lineHeight}`,
+          "--chord-sheet-line-min-height": `${Math.max(lineHeight + 1.42, 2.15)}em`,
+        } as CSSProperties
+      }
+      aria-label="Paroles et accords"
+    >
       {lines.map((line, lineIndex) => {
         if (line.type === "blank") {
           return <div className="chord-sheet__blank" key={lineIndex} />;

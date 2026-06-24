@@ -23,6 +23,14 @@ function authenticatedRequest() {
   });
 }
 
+function authenticatedDownloadRequest() {
+  return new Request("http://localhost?download=1", {
+    headers: {
+      cookie: `${authSessionCookieName}=${createAuthSessionToken()}`,
+    },
+  });
+}
+
 describe("GET /api/songs/:slug/musicxml", () => {
   beforeEach(() => {
     getPublicSongMusicXmlBySlug.mockReset();
@@ -59,6 +67,22 @@ describe("GET /api/songs/:slug/musicxml", () => {
     });
 
     expect(response.status).toBe(404);
+  });
+
+  it("forces attachment download when requested", async () => {
+    getPublicSongMusicXmlBySlug.mockResolvedValue({
+      content: `<score-partwise version="4.0"></score-partwise>`,
+      fileName: "partition.musicxml",
+      mimeType: "application/vnd.recordare.musicxml+xml",
+      fileSizeBytes: 48,
+      downloadUrl: "/api/songs/chant/musicxml",
+    });
+
+    const response = await GET(authenticatedDownloadRequest(), {
+      params: Promise.resolve({ slug: "chant" }),
+    });
+
+    expect(response.headers.get("content-disposition")).toContain("attachment;");
   });
 
   it("requires authentication", async () => {

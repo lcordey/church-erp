@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseChordPro } from "./chordpro";
+import { hasChordProChords, parseChordPro } from "./chordpro";
 
 describe("parseChordPro", () => {
   it("ignores document metadata and separates chords from lyrics", () => {
@@ -48,5 +48,10 @@ describe("parseChordPro", () => {
     expect(lines[0]).toEqual({ type: "section", label: "Refrain" });
     expect(lines[1]).toMatchObject({ type: "lyrics" });
     expect(lines).toHaveLength(2);
+  });
+
+  it("detects when a ChordPro source contains chords", () => {
+    expect(hasChordProChords("[C]Ligne")).toBe(true);
+    expect(hasChordProChords("Ligne sans accord")).toBe(false);
   });
 });

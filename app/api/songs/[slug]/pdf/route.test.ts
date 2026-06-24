@@ -35,6 +35,14 @@ function authenticatedRequest() {
   });
 }
 
+function authenticatedDownloadRequest() {
+  return new Request("http://localhost?download=1", {
+    headers: {
+      cookie: `${authSessionCookieName}=${createAuthSessionToken()}`,
+    },
+  });
+}
+
 describe("GET /api/songs/:slug/pdf", () => {
   beforeEach(() => {
     downloadSongPdf.mockReset();
@@ -76,6 +84,27 @@ describe("GET /api/songs/:slug/pdf", () => {
 
     expect(response.status).toBe(404);
     expect(downloadSongPdf).not.toHaveBeenCalled();
+  });
+
+  it("forces attachment download when requested", async () => {
+    getPublicSongPdfBySlug.mockResolvedValue({
+      storagePath: "songs/song-id/score.pdf",
+      fileName: "partition.pdf",
+      mimeType: "application/pdf",
+      fileSizeBytes: 3,
+      downloadUrl: "/api/songs/chant/pdf",
+    });
+    downloadSongPdf.mockResolvedValue(
+      new Response("pdf", {
+        headers: { "content-type": "application/pdf" },
+      }),
+    );
+
+    const response = await GET(authenticatedDownloadRequest(), {
+      params: Promise.resolve({ slug: "chant" }),
+    });
+
+    expect(response.headers.get("content-disposition")).toContain("attachment;");
   });
 
   it("requires authentication", async () => {

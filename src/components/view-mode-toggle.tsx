@@ -47,11 +47,11 @@ export function ViewModeToggle({
         <button
           aria-pressed={currentMode === "selection"}
           onClick={() => onModeChange("selection")}
-          title="Mode sélection"
+          title="Mode lecture"
           type="button"
         >
           <EyeIcon />
-          <span>Sélection</span>
+          <span>Lecture</span>
         </button>
         <button
           aria-pressed={currentMode === "edition"}
@@ -71,10 +71,10 @@ export function ViewModeToggle({
       <Link
         aria-current={currentMode === "selection" ? "page" : undefined}
         href="/worship"
-        title="Mode sélection"
+        title="Mode lecture"
       >
         <EyeIcon />
-        <span>Sélection</span>
+        <span>Lecture</span>
       </Link>
       <Link
         aria-current={currentMode === "edition" ? "page" : undefined}

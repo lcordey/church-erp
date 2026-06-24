@@ -25,14 +25,18 @@ function pdfNotFoundResponse() {
   );
 }
 
-function contentDisposition(fileName: string | null, slug: string) {
+function contentDisposition(
+  fileName: string | null,
+  slug: string,
+  asAttachment: boolean,
+) {
   const safeFileName = (fileName || `${slug}.pdf`).replace(/["\r\n]/g, "");
-  return `inline; filename="${safeFileName}"`;
+  return `${asAttachment ? "attachment" : "inline"}; filename="${safeFileName}"`;
 }
 
-export async function GET(_request: Request, { params }: RouteContext) {
+export async function GET(request: Request, { params }: RouteContext) {
   try {
-    requireAuthenticatedRequest(_request);
+    requireAuthenticatedRequest(request);
   } catch (error) {
     if (error instanceof AuthenticationRequiredError) {
       return authenticationRequiredResponse();
@@ -42,6 +46,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   }
 
   const { slug } = await params;
+  const asAttachment = new URL(request.url).searchParams.get("download") === "1";
   const pdfSource = await getPublicSongPdfBySlug(slug);
 
   if (!pdfSource) {
@@ -60,7 +65,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     );
     headers.set(
       "content-disposition",
-      contentDisposition(pdfSource.fileName, slug),
+      contentDisposition(pdfSource.fileName, slug, asAttachment),
     );
 
     const contentLength = storageResponse.headers.get("content-length");

@@ -29,6 +29,23 @@ function getCollectionLabel(collection: string): string {
   return getSongCollectionLabel(collection);
 }
 
+function CatalogLoadingState() {
+  return (
+    <div
+      aria-busy="true"
+      aria-live="polite"
+      className="catalog-loading"
+      role="status"
+    >
+      <span aria-hidden="true" className="catalog-loading__spinner" />
+      <div>
+        <strong>Chargement du répertoire…</strong>
+        <p>Les chants vont apparaître dans un instant.</p>
+      </div>
+    </div>
+  );
+}
+
 export function SongCatalog({
   initialCollections,
   initialCatalog,
@@ -70,6 +87,7 @@ export function SongCatalog({
   });
   const pageSize = catalog.limit;
   const loadedCount = catalog.songs.length;
+  const isCatalogLoading = isInitialLoading || isFetching || isLoadingMore;
 
   return (
     <>
@@ -78,10 +96,10 @@ export function SongCatalog({
           <h2 id={headingId}>{heading}</h2>
         </div>
         <div className="catalog-section__heading-actions">
-          {isFetching && !isInitialLoading ? (
+          {isCatalogLoading && !isInitialLoading ? (
             <span aria-live="polite">Mise à jour…</span>
           ) : null}
-          {!isInitialLoading ? (
+          {!isCatalogLoading ? (
             <span>
               {catalog.total} {catalog.total > 1 ? "chants" : "chant"}
             </span>
@@ -125,19 +143,8 @@ export function SongCatalog({
         </fieldset>
       </form>
 
-      {isInitialLoading ? (
-        <div
-          aria-busy="true"
-          aria-live="polite"
-          className="catalog-loading"
-          role="status"
-        >
-          <span aria-hidden="true" className="catalog-loading__spinner" />
-          <div>
-            <strong>Chargement du répertoire…</strong>
-            <p>Les chants vont apparaître dans un instant.</p>
-          </div>
-        </div>
+      {isCatalogLoading ? (
+        <CatalogLoadingState />
       ) : errorMessage && catalog.songs.length === 0 ? (
         <div className="catalog-error" role="alert">
           <p>{errorMessage}</p>
@@ -167,7 +174,7 @@ export function SongCatalog({
         </div>
       )}
 
-      {errorMessage && catalog.songs.length > 0 ? (
+      {errorMessage && catalog.songs.length > 0 && !isCatalogLoading ? (
         <div className="catalog-error catalog-error--inline" role="alert">
           <p>{errorMessage}</p>
           <button onClick={retry} type="button">
@@ -179,7 +186,7 @@ export function SongCatalog({
       {catalog.hasMore ? (
         <div className="catalog-pagination">
           <button
-            disabled={isLoadingMore || isFetching}
+            disabled={isCatalogLoading}
             onClick={() => void loadMore()}
             type="button"
           >

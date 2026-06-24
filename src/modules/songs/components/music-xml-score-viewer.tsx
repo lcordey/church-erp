@@ -1,7 +1,13 @@
 "use client";
 
 import type { OpenSheetMusicDisplay as OpenSheetMusicDisplayInstance } from "opensheetmusicdisplay";
-import { useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 
 import {
   formatMusicalKey,
@@ -11,12 +17,20 @@ import {
   transposeChord,
 } from "../music/musical-key";
 import { useMusicNotation } from "./music-notation-provider";
+import { buildSongDocumentFileStem } from "./song-document-file-name";
 
 type MusicXmlScoreViewerProps = {
+  collection: string | null;
+  collectionNumber: number | null;
   copyright: string | null;
   defaultKey: string | null;
   title: string;
   sourceUrl: string;
+};
+
+export type MusicXmlScoreViewerHandle = {
+  downloadPdf: () => Promise<void>;
+  openDocument: () => void;
 };
 
 function applyScoreTransposition(
@@ -28,12 +42,71 @@ function applyScoreTransposition(
   osmd.render();
 }
 
-export function MusicXmlScoreViewer({
-  copyright,
-  defaultKey,
-  title,
-  sourceUrl,
-}: MusicXmlScoreViewerProps) {
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+async function loadSvgImage(svg: SVGSVGElement) {
+  const serializer = new XMLSerializer();
+  const clonedSvg = svg.cloneNode(true);
+
+  if (!(clonedSvg instanceof SVGSVGElement)) {
+    throw new Error("Invalid SVG element.");
+  }
+
+  clonedSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  clonedSvg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+
+  const { width, height } = svg.getBoundingClientRect();
+  const viewBox = svg.viewBox.baseVal;
+  const intrinsicWidth = width || viewBox.width;
+  const intrinsicHeight = height || viewBox.height;
+
+  if (!intrinsicWidth || !intrinsicHeight) {
+    throw new Error("The score SVG has no measurable dimensions.");
+  }
+
+  if (!clonedSvg.getAttribute("viewBox") && intrinsicWidth && intrinsicHeight) {
+    clonedSvg.setAttribute("viewBox", `0 0 ${intrinsicWidth} ${intrinsicHeight}`);
+  }
+
+  clonedSvg.setAttribute("width", `${intrinsicWidth}`);
+  clonedSvg.setAttribute("height", `${intrinsicHeight}`);
+
+  const svgMarkup = serializer.serializeToString(clonedSvg);
+  const svgBlob = new Blob([svgMarkup], {
+    type: "image/svg+xml;charset=utf-8",
+  });
+  const blobUrl = URL.createObjectURL(svgBlob);
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const nextImage = new Image();
+
+      nextImage.onload = () => resolve(nextImage);
+      nextImage.onerror = () =>
+        reject(new Error("The score SVG could not be converted to an image."));
+      nextImage.src = blobUrl;
+    });
+
+    return { image, width: intrinsicWidth, height: intrinsicHeight };
+  } finally {
+    URL.revokeObjectURL(blobUrl);
+  }
+}
+
+export const MusicXmlScoreViewer = forwardRef<
+  MusicXmlScoreViewerHandle,
+  MusicXmlScoreViewerProps
+>(function MusicXmlScoreViewer(
+  { collection, collectionNumber, copyright, defaultKey, title, sourceUrl },
+  ref,
+) {
   const { notation } = useMusicNotation();
   const containerRef = useRef<HTMLDivElement>(null);
   const osmdRef = useRef<OpenSheetMusicDisplayInstance | null>(null);
@@ -52,6 +125,182 @@ export function MusicXmlScoreViewer({
       ? transposeChord(defaultKey, manualOffset)
       : null;
   const isResetDisabled = transposeBy === 0 && manualOffset === 0;
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      async downloadPdf() {
+        const container = containerRef.current;
+
+        if (!container) {
+          throw new Error("The score is not ready yet.");
+        }
+
+        const svgElements = Array.from(container.querySelectorAll("svg"));
+
+        if (svgElements.length === 0) {
+          throw new Error("The score has not been rendered yet.");
+        }
+
+        const { jsPDF } = await import("jspdf");
+        const pdf = new jsPDF({
+          compress: true,
+          format: "a4",
+          orientation: "portrait",
+          unit: "mm",
+        });
+
+        const margin = 10;
+        const usableWidth = pdf.internal.pageSize.getWidth() - margin * 2;
+        const usableHeight = pdf.internal.pageSize.getHeight() - margin * 2;
+        let isFirstPage = true;
+
+        for (const svg of svgElements) {
+          const { image, width, height } = await loadSvgImage(svg);
+          const sourceCanvas = document.createElement("canvas");
+          const sourceContext = sourceCanvas.getContext("2d");
+
+          if (!sourceContext) {
+            throw new Error("Canvas 2D context is unavailable.");
+          }
+
+          sourceCanvas.width = Math.ceil(width * 2);
+          sourceCanvas.height = Math.ceil(height * 2);
+          sourceContext.scale(2, 2);
+          sourceContext.fillStyle = "#fffdf7";
+          sourceContext.fillRect(0, 0, width, height);
+          sourceContext.drawImage(image, 0, 0, width, height);
+
+          const pixelsPerMm = sourceCanvas.width / usableWidth;
+          const maxSliceHeightPx = usableHeight * pixelsPerMm;
+
+          for (
+            let offsetY = 0;
+            offsetY < sourceCanvas.height;
+            offsetY += maxSliceHeightPx
+          ) {
+            const sliceHeightPx = Math.min(
+              maxSliceHeightPx,
+              sourceCanvas.height - offsetY,
+            );
+            const sliceCanvas = document.createElement("canvas");
+            sliceCanvas.width = sourceCanvas.width;
+            sliceCanvas.height = Math.ceil(sliceHeightPx);
+
+            const sliceContext = sliceCanvas.getContext("2d");
+
+            if (!sliceContext) {
+              throw new Error("Canvas 2D context is unavailable.");
+            }
+
+            sliceContext.fillStyle = "#fffdf7";
+            sliceContext.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+            sliceContext.drawImage(
+              sourceCanvas,
+              0,
+              offsetY,
+              sourceCanvas.width,
+              sliceHeightPx,
+              0,
+              0,
+              sourceCanvas.width,
+              sliceHeightPx,
+            );
+
+            if (!isFirstPage) {
+              pdf.addPage();
+            }
+
+            isFirstPage = false;
+
+            pdf.addImage(
+              sliceCanvas.toDataURL("image/png"),
+              "PNG",
+              margin,
+              margin,
+              usableWidth,
+              sliceHeightPx / pixelsPerMm,
+              undefined,
+              "FAST",
+            );
+          }
+        }
+
+        pdf.save(
+          `${buildSongDocumentFileStem(title, collection, collectionNumber)}.pdf`,
+        );
+      },
+      openDocument() {
+        const container = containerRef.current;
+
+        if (!container) {
+          return;
+        }
+
+        const svgMarkup = container.innerHTML;
+
+        if (!svgMarkup) {
+          return;
+        }
+
+        const popup = window.open("about:blank", "_blank");
+
+        if (!popup || !popup.document) {
+          return;
+        }
+
+        popup.opener = null;
+
+        popup.document.write(`<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${escapeHtml(title)}</title>
+    <style>
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #f3eee4;
+        color: #1f2933;
+        font-family: Georgia, serif;
+      }
+      main {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      .sheet {
+        padding: 24px;
+        background: #fffdf7;
+        box-shadow: 0 18px 50px rgb(24 36 58 / 16%);
+      }
+      svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        margin: 0 auto 24px;
+        background: #fffdf7;
+      }
+      svg:last-child { margin-bottom: 0; }
+      @media print {
+        body { padding: 0; background: white; }
+        .sheet { padding: 0; box-shadow: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="sheet">${svgMarkup}</div>
+    </main>
+  </body>
+</html>`);
+        popup.document.close();
+      },
+    }),
+    [collection, collectionNumber, title],
+  );
 
   function shift(step: number) {
     if (!canonicalDefaultKey) {
@@ -228,8 +477,16 @@ export function MusicXmlScoreViewer({
         </div>
       </div>
 
-      <div className="song-score-viewer__stage">
-        {status ? <p className="song-score-viewer__status">{status}</p> : null}
+      <div className="song-document-viewer__stage">
+        <div className="song-document-viewer__status-row">
+          {status ? (
+            <p className="song-document-viewer__status">{status}</p>
+          ) : (
+            <p className="song-document-viewer__status song-document-viewer__status--ready">
+              Partition rendue en MusicXML.
+            </p>
+          )}
+        </div>
         <div
           ref={containerRef}
           aria-label={`Partition MusicXML de ${title}`}
@@ -243,4 +500,4 @@ export function MusicXmlScoreViewer({
       </div>
     </>
   );
-}
+});

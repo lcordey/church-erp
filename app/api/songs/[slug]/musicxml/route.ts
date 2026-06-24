@@ -21,14 +21,18 @@ function musicXmlNotFoundResponse() {
   );
 }
 
-function contentDisposition(fileName: string | null, slug: string) {
+function contentDisposition(
+  fileName: string | null,
+  slug: string,
+  asAttachment: boolean,
+) {
   const safeFileName = (fileName || `${slug}.musicxml`).replace(/["\r\n]/g, "");
-  return `inline; filename="${safeFileName}"`;
+  return `${asAttachment ? "attachment" : "inline"}; filename="${safeFileName}"`;
 }
 
-export async function GET(_request: Request, { params }: RouteContext) {
+export async function GET(request: Request, { params }: RouteContext) {
   try {
-    requireAuthenticatedRequest(_request);
+    requireAuthenticatedRequest(request);
   } catch (error) {
     if (error instanceof AuthenticationRequiredError) {
       return authenticationRequiredResponse();
@@ -38,6 +42,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   }
 
   const { slug } = await params;
+  const asAttachment = new URL(request.url).searchParams.get("download") === "1";
   const musicXmlSource = await getPublicSongMusicXmlBySlug(slug);
 
   if (!musicXmlSource) {
@@ -48,7 +53,11 @@ export async function GET(_request: Request, { params }: RouteContext) {
     headers: {
       "content-type":
         musicXmlSource.mimeType || "application/vnd.recordare.musicxml+xml",
-      "content-disposition": contentDisposition(musicXmlSource.fileName, slug),
+      "content-disposition": contentDisposition(
+        musicXmlSource.fileName,
+        slug,
+        asAttachment,
+      ),
     },
   });
 }
