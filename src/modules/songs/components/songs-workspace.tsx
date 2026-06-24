@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
+import { getLoginHref } from "@/src/shared/navigation/login-redirect";
 
 import type { PublicSongCatalogPage, PublicSongSummary } from "../types/public-song";
 import { SongCatalog } from "./song-catalog";
@@ -14,12 +15,16 @@ type SongsWorkspaceProps = {
   initialCollections?: string[];
   initialSearch?: string;
   initialCatalog: PublicSongCatalogPage;
+  isAuthenticated?: boolean;
+  loadCatalogOnMount?: boolean;
 };
 
 export function SongsWorkspace({
   initialCollections,
   initialSearch = "",
   initialCatalog,
+  isAuthenticated = true,
+  loadCatalogOnMount = false,
 }: SongsWorkspaceProps) {
   const router = useRouter();
   const [setlistMessage, setSetlistMessage] = useState("");
@@ -33,6 +38,15 @@ export function SongsWorkspace({
   }
 
   async function openSetlistDialog(song: PublicSongSummary) {
+    if (!isAuthenticated) {
+      router.push(
+        getLoginHref(
+          `${window.location.pathname}${window.location.search}`,
+        ),
+      );
+      return;
+    }
+
     setSetlistMessage("");
     setSelectedSong(song);
     setIsSetlistDialogOpen(true);
@@ -139,6 +153,7 @@ export function SongsWorkspace({
               initialCatalog={initialCatalog}
               initialCollections={initialCollections}
               initialSearch={initialSearch}
+              loadOnMount={loadCatalogOnMount}
               onAddToSetlist={openSetlistDialog}
               onEditSong={(song) => router.push(`/admin/chants/${song.id}`)}
               onOpenSong={openSong}

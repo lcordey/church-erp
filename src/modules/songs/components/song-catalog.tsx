@@ -9,6 +9,7 @@ type SongCatalogProps = {
   initialCatalog: PublicSongCatalogPage;
   initialCollections?: string[];
   initialSearch?: string;
+  loadOnMount?: boolean;
   activeMode?: "selection" | "edition";
   activeSongSlug?: string | null;
   heading?: string;
@@ -32,6 +33,7 @@ export function SongCatalog({
   initialCollections,
   initialCatalog,
   initialSearch = "",
+  loadOnMount = false,
   activeMode = "selection",
   activeSongSlug = null,
   heading = "Chants publiés",
@@ -49,9 +51,12 @@ export function SongCatalog({
   const {
     availableCollections,
     catalog,
+    errorMessage,
     isFetching,
+    isInitialLoading,
     isLoadingMore,
     loadMore,
+    retry,
     search,
     selectedCollections,
     toggleCollection,
@@ -60,6 +65,7 @@ export function SongCatalog({
     initialCatalog,
     initialCollections,
     initialSearch,
+    loadOnMount,
     syncUrl,
   });
   const pageSize = catalog.limit;
@@ -72,10 +78,14 @@ export function SongCatalog({
           <h2 id={headingId}>{heading}</h2>
         </div>
         <div className="catalog-section__heading-actions">
-          {isFetching ? <span aria-live="polite">Mise à jour...</span> : null}
-          <span>
-            {catalog.total} {catalog.total > 1 ? "chants" : "chant"}
-          </span>
+          {isFetching && !isInitialLoading ? (
+            <span aria-live="polite">Mise à jour…</span>
+          ) : null}
+          {!isInitialLoading ? (
+            <span>
+              {catalog.total} {catalog.total > 1 ? "chants" : "chant"}
+            </span>
+          ) : null}
         </div>
       </div>
 
@@ -115,7 +125,27 @@ export function SongCatalog({
         </fieldset>
       </form>
 
-      {catalog.songs.length > 0 ? (
+      {isInitialLoading ? (
+        <div
+          aria-busy="true"
+          aria-live="polite"
+          className="catalog-loading"
+          role="status"
+        >
+          <span aria-hidden="true" className="catalog-loading__spinner" />
+          <div>
+            <strong>Chargement du répertoire…</strong>
+            <p>Les chants vont apparaître dans un instant.</p>
+          </div>
+        </div>
+      ) : errorMessage && catalog.songs.length === 0 ? (
+        <div className="catalog-error" role="alert">
+          <p>{errorMessage}</p>
+          <button onClick={retry} type="button">
+            Réessayer
+          </button>
+        </div>
+      ) : catalog.songs.length > 0 ? (
         <div className="song-list" data-fetching={isFetching ? "true" : "false"}>
           {catalog.songs.map((song, index) => (
             <SongCard
@@ -136,6 +166,15 @@ export function SongCatalog({
           <p>{emptyMessage}</p>
         </div>
       )}
+
+      {errorMessage && catalog.songs.length > 0 ? (
+        <div className="catalog-error catalog-error--inline" role="alert">
+          <p>{errorMessage}</p>
+          <button onClick={retry} type="button">
+            Réessayer
+          </button>
+        </div>
+      ) : null}
 
       {catalog.hasMore ? (
         <div className="catalog-pagination">

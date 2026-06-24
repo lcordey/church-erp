@@ -1,5 +1,6 @@
 import {
   listPublicSongResults,
+  listPublicSongs,
   PUBLIC_SONG_PAGE_SIZE,
 } from "@/src/modules/songs/services/public-song-catalog";
 
@@ -24,7 +25,7 @@ function parseCollections(value: string | null): string[] {
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const catalog = await listPublicSongResults({
+  const query = {
     collections: parseCollections(url.searchParams.get("collections")),
     limit: parsePositiveInteger(
       url.searchParams.get("limit"),
@@ -32,7 +33,20 @@ export async function GET(request: Request) {
     ),
     offset: parsePositiveInteger(url.searchParams.get("offset"), 0),
     search: url.searchParams.get("q") ?? "",
-  });
+  };
+  const includeCollections =
+    url.searchParams.get("includeCollections") === "true";
+  const catalog = includeCollections
+    ? await listPublicSongs(query)
+    : await listPublicSongResults(query);
 
-  return Response.json({ data: catalog });
+  return Response.json(
+    { data: catalog },
+    {
+      headers: {
+        "Cache-Control":
+          "public, max-age=0, s-maxage=60, stale-while-revalidate=300",
+      },
+    },
+  );
 }

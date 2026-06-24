@@ -1,9 +1,17 @@
 import { SongsWorkspace } from "@/src/modules/songs/components/songs-workspace";
-import { listPublicSongs } from "@/src/modules/songs/services/public-song-catalog";
-
-export const dynamic = "force-dynamic";
+import { getCurrentActor } from "@/src/infrastructure/auth/require-admin";
+import { PUBLIC_SONG_PAGE_SIZE } from "@/src/modules/songs/services/public-song-catalog";
+import type { PublicSongCatalogPage } from "@/src/modules/songs/types/public-song";
 
 const defaultVisibleCollections = ["JEM", "JEMK", "LeMont", "Glorious"];
+const emptyCatalog: PublicSongCatalogPage = {
+  songs: [],
+  total: 0,
+  limit: PUBLIC_SONG_PAGE_SIZE,
+  offset: 0,
+  hasMore: false,
+  collections: defaultVisibleCollections,
+};
 
 type WorshipPageProps = {
   searchParams: Promise<{
@@ -13,7 +21,10 @@ type WorshipPageProps = {
 };
 
 export default async function WorshipPage({ searchParams }: WorshipPageProps) {
-  const { collections, q } = await searchParams;
+  const [{ collections, q }, actor] = await Promise.all([
+    searchParams,
+    getCurrentActor(),
+  ]);
   const search = q?.trim() ?? "";
   const selectedCollections = collections
     ? collections
@@ -21,16 +32,14 @@ export default async function WorshipPage({ searchParams }: WorshipPageProps) {
         .map((collection) => collection.trim())
         .filter(Boolean)
     : defaultVisibleCollections;
-  const catalog = await listPublicSongs({
-    collections: selectedCollections,
-    search,
-  });
 
   return (
     <SongsWorkspace
       initialCollections={selectedCollections}
       initialSearch={search}
-      initialCatalog={catalog}
+      initialCatalog={emptyCatalog}
+      isAuthenticated={actor !== null}
+      loadCatalogOnMount
     />
   );
 }

@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { listPublicSongResults } = vi.hoisted(() => ({
+const { listPublicSongResults, listPublicSongs } = vi.hoisted(() => ({
   listPublicSongResults: vi.fn(),
+  listPublicSongs: vi.fn(),
 }));
 
 vi.mock("@/src/modules/songs/services/public-song-catalog", () => ({
   listPublicSongResults,
+  listPublicSongs,
   PUBLIC_SONG_PAGE_SIZE: 20,
 }));
 
@@ -14,6 +16,7 @@ import { GET } from "./route";
 describe("GET /api/songs", () => {
   beforeEach(() => {
     listPublicSongResults.mockReset();
+    listPublicSongs.mockReset();
   });
 
   it("returns the public song summaries", async () => {
@@ -29,13 +32,6 @@ describe("GET /api/songs", () => {
           collection: "JEM",
           collectionNumber: 1,
           sourcePageUrl: "https://jemaf.fr/chant/jem001",
-          pdfSource: {
-            fileName: "jem001.pdf",
-            mimeType: "application/pdf",
-            fileSizeBytes: 1234,
-            downloadUrl: "/api/songs/chant-publie/pdf",
-          },
-          musicXmlSource: null,
         },
       ],
       total: 1,
@@ -57,9 +53,6 @@ describe("GET /api/songs", () => {
       data: expect.objectContaining({
         songs: [
           expect.objectContaining({
-            pdfSource: expect.objectContaining({
-              downloadUrl: "/api/songs/chant-publie/pdf",
-            }),
             slug: "chant-publie",
           }),
         ],
@@ -67,11 +60,41 @@ describe("GET /api/songs", () => {
       }),
     });
     expect(body.data).not.toHaveProperty("collections");
+    expect(response.headers.get("cache-control")).toBe(
+      "public, max-age=0, s-maxage=60, stale-while-revalidate=300",
+    );
     expect(listPublicSongResults).toHaveBeenCalledWith({
       collections: ["JEM", "LeMont"],
       limit: 20,
       offset: 40,
       search: "jem",
     });
+  });
+
+  it("includes collection filters when requested for initial loading", async () => {
+    listPublicSongs.mockResolvedValue({
+      songs: [],
+      total: 0,
+      limit: 20,
+      offset: 0,
+      hasMore: false,
+      collections: ["Glorious", "JEM"],
+    });
+
+    const response = await GET(
+      new Request(
+        "http://localhost/api/songs?collections=JEM&includeCollections=true",
+      ),
+    );
+    const body = await response.json();
+
+    expect(body.data.collections).toEqual(["Glorious", "JEM"]);
+    expect(listPublicSongs).toHaveBeenCalledWith({
+      collections: ["JEM"],
+      limit: 20,
+      offset: 0,
+      search: "",
+    });
+    expect(listPublicSongResults).not.toHaveBeenCalled();
   });
 });

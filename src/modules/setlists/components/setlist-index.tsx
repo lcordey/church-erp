@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
+import { getLoginHref } from "@/src/shared/navigation/login-redirect";
 
 import type { SetlistDetail, SetlistSummary } from "../types/setlist";
 
 type SetlistIndexProps = {
   initialSetlists: SetlistSummary[];
+  isAuthenticated: boolean;
 };
 
 type ApiError = {
@@ -22,7 +24,10 @@ type ApiError = {
   };
 };
 
-export function SetlistIndex({ initialSetlists }: SetlistIndexProps) {
+export function SetlistIndex({
+  initialSetlists,
+  isAuthenticated,
+}: SetlistIndexProps) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
@@ -86,29 +91,41 @@ export function SetlistIndex({ initialSetlists }: SetlistIndexProps) {
             <p className="eyebrow">Setlist</p>
             <h1>Préparer les séquences de chants.</h1>
           </div>
-          <form
-            className="setlist-create"
-            onSubmit={(event) => {
-              event.preventDefault();
-              startTransition(() => {
-                void createSetlist();
-              });
-            }}
-          >
-            <label htmlFor="setlist-title">Nouvelle setlist</label>
-            <div>
-              <input
-                id="setlist-title"
-                onChange={(event) => setTitle(event.target.value)}
-                placeholder="Dimanche matin"
-                value={title}
-              />
-              <button disabled={isPending} type="submit">
-                Créer
-              </button>
+          {isAuthenticated ? (
+            <form
+              className="setlist-create"
+              onSubmit={(event) => {
+                event.preventDefault();
+                startTransition(() => {
+                  void createSetlist();
+                });
+              }}
+            >
+              <label htmlFor="setlist-title">Nouvelle setlist</label>
+              <div>
+                <input
+                  id="setlist-title"
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder="Dimanche matin"
+                  value={title}
+                />
+                <button disabled={isPending} type="submit">
+                  Créer
+                </button>
+              </div>
+              {message ? <p className="form-message">{message}</p> : null}
+            </form>
+          ) : (
+            <div className="setlist-create setlist-create--login">
+              <p>Connecte-toi pour créer ou modifier une setlist.</p>
+              <Link
+                className="admin-button admin-button--primary"
+                href={getLoginHref("/setlist")}
+              >
+                Se connecter
+              </Link>
             </div>
-            {message ? <p className="form-message">{message}</p> : null}
-          </form>
+          )}
         </section>
 
         <section className="setlist-list" aria-labelledby="setlist-list-title">
@@ -138,20 +155,29 @@ export function SetlistIndex({ initialSetlists }: SetlistIndexProps) {
                     <Link className="admin-button admin-button--primary" href={`/setlist/${setlist.id}/play`}>
                       Jouer
                     </Link>
-                    <Link className="admin-button" href={`/setlist/${setlist.id}`}>
+                    <Link
+                      className="admin-button"
+                      href={
+                        isAuthenticated
+                          ? `/setlist/${setlist.id}`
+                          : getLoginHref(`/setlist/${setlist.id}`)
+                      }
+                    >
                       Modifier
                     </Link>
-                    <button
-                      className="admin-button admin-button--danger"
-                      onClick={() => {
-                        startTransition(() => {
-                          void deleteSetlist(setlist);
-                        });
-                      }}
-                      type="button"
-                    >
-                      Supprimer
-                    </button>
+                    {isAuthenticated ? (
+                      <button
+                        className="admin-button admin-button--danger"
+                        onClick={() => {
+                          startTransition(() => {
+                            void deleteSetlist(setlist);
+                          });
+                        }}
+                        type="button"
+                      >
+                        Supprimer
+                      </button>
+                    ) : null}
                   </div>
                 </article>
               ))}

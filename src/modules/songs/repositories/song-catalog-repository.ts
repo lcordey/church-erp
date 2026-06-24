@@ -7,6 +7,7 @@ import {
 } from "@/src/infrastructure/database/schema";
 
 import type {
+  SongCatalogListRecord,
   SongCatalogRecord,
   SongMusicXmlFileSource,
   SongMusicXmlSource,
@@ -32,7 +33,7 @@ export function getSongCatalogIdentifierSearch(
 
 export interface SongCatalogRepository {
   listPublished(options?: SongCatalogListOptions): Promise<{
-    songs: SongCatalogRecord[];
+    songs: SongCatalogListRecord[];
     total: number;
   }>;
   findPublishedBySlug(slug: string): Promise<SongCatalogRecord | null>;
@@ -46,7 +47,7 @@ export interface PublishedSongCollectionRepository {
   listPublishedCollections(): Promise<string[]>;
 }
 
-const selection = {
+const listSelection = {
   id: songs.id,
   title: songs.title,
   slug: songs.slug,
@@ -57,6 +58,10 @@ const selection = {
   collection: songs.collection,
   collectionNumber: songs.collectionNumber,
   sourcePageUrl: songs.sourcePageUrl,
+};
+
+const detailSelection = {
+  ...listSelection,
   chordProContent: songSources.textContent,
 };
 
@@ -286,24 +291,26 @@ export function createSongCatalogRepository(): SongCatalogRepository {
           accentInsensitiveTitleSearch,
         );
 
-        const rows = await database
-          .select(selection)
-          .from(songs)
-          .innerJoin(songSources, eq(songSources.songId, songs.id))
-          .where(listCondition)
-          .orderBy(
-            sql`${songs.collection} is null`,
-            asc(songs.collection),
-            asc(songs.collectionNumber),
-            asc(songs.title),
-          )
-          .limit(limit)
-          .offset(offset);
-        const totalRows = await database
-          .select({ value: count() })
-          .from(songs)
-          .innerJoin(songSources, eq(songSources.songId, songs.id))
-          .where(listCondition);
+        const [rows, totalRows] = await Promise.all([
+          database
+            .select(listSelection)
+            .from(songs)
+            .innerJoin(songSources, eq(songSources.songId, songs.id))
+            .where(listCondition)
+            .orderBy(
+              sql`${songs.collection} is null`,
+              asc(songs.collection),
+              asc(songs.collectionNumber),
+              asc(songs.title),
+            )
+            .limit(limit)
+            .offset(offset),
+          database
+            .select({ value: count() })
+            .from(songs)
+            .innerJoin(songSources, eq(songSources.songId, songs.id))
+            .where(listCondition),
+        ]);
 
         return {
           rows,
@@ -323,28 +330,15 @@ export function createSongCatalogRepository(): SongCatalogRepository {
         queryResult = await runListQuery(false);
       }
 
-      const pdfSources = await findActivePdfSources(
-        queryResult.rows.map((row) => row.id),
-      );
-      const musicXmlSources = await findActiveMusicXmlSources(
-        queryResult.rows.map((row) => row.id),
-      );
-
       return {
-        songs: queryResult.rows.map((row) =>
-          toCatalogRecord({
-            ...row,
-            pdfSource: pdfSources.get(row.id) ?? null,
-            musicXmlSource: musicXmlSources.get(row.id) ?? null,
-          }),
-        ),
+        songs: queryResult.rows,
         total: queryResult.totalRows[0]?.value ?? 0,
       };
     },
 
     async findPublishedBySlug(slug) {
       const rows = await database
-        .select(selection)
+        .select(detailSelection)
         .from(songs)
         .innerJoin(songSources, eq(songSources.songId, songs.id))
         .where(and(publishedSongCondition, eq(songs.slug, slug)))

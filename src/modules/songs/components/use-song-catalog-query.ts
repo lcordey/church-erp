@@ -13,6 +13,7 @@ type UseSongCatalogQueryOptions = {
   initialCatalog: PublicSongCatalogPage;
   initialCollections?: string[];
   initialSearch?: string;
+  loadOnMount?: boolean;
   syncUrl?: boolean;
 };
 
@@ -48,13 +49,14 @@ function createQueryKey(options: {
   });
 }
 
-async function fetchCatalogResults(options: {
+async function fetchCatalog(options: {
   collections: string[];
+  includeCollections?: boolean;
   limit: number;
   offset: number;
   search: string;
   signal?: AbortSignal;
-}): Promise<PublicSongCatalogResults> {
+}): Promise<PublicSongCatalogPage | PublicSongCatalogResults> {
   const url = new URL("/api/songs", window.location.origin);
   const search = options.search.trim();
 
@@ -69,9 +71,16 @@ async function fetchCatalogResults(options: {
   url.searchParams.set("limit", String(options.limit));
   url.searchParams.set("offset", String(options.offset));
 
+  if (options.includeCollections) {
+    url.searchParams.set("includeCollections", "true");
+  }
+
   const response = await fetch(url, { signal: options.signal });
   const payload = (await response.json().catch(() => null)) as
-    | { data?: PublicSongCatalogResults; error?: { message?: string } }
+    | {
+        data?: PublicSongCatalogPage | PublicSongCatalogResults;
+        error?: { message?: string };
+      }
     | null;
 
   if (!response.ok || !payload?.data) {
@@ -83,19 +92,27 @@ async function fetchCatalogResults(options: {
   return payload.data;
 }
 
+function hasCollections(
+  catalog: PublicSongCatalogPage | PublicSongCatalogResults,
+): catalog is PublicSongCatalogPage {
+  return "collections" in catalog;
+}
+
 export function useSongCatalogQuery({
   initialCatalog,
   initialCollections,
   initialSearch = "",
+  loadOnMount = false,
   syncUrl = true,
 }: UseSongCatalogQueryOptions) {
-  const availableCollections = initialCatalog.collections;
   const pageSize = initialCatalog.limit;
   const initialSelectedCollections =
     initialCollections?.length
-      ? initialCollections.filter((collection) =>
-          availableCollections.includes(collection),
-        )
+      ? loadOnMount
+        ? initialCollections
+        : initialCollections.filter((collection) =>
+            initialCatalog.collections.includes(collection),
+          )
       : [];
   const initialKey = createQueryKey({
     collections: initialSelectedCollections,
@@ -104,17 +121,28 @@ export function useSongCatalogQuery({
     search: initialSearch,
   });
   const [catalog, setCatalog] = useState(initialCatalog);
+  const [availableCollections, setAvailableCollections] = useState(
+    initialCatalog.collections,
+  );
   const [search, setSearch] = useState(initialSearch);
   const [selectedCollections, setSelectedCollections] = useState<string[]>(
     () => initialSelectedCollections,
   );
-  const [isFetching, setIsFetching] = useState(false);
+  const [isFetching, setIsFetching] = useState(loadOnMount);
+  const [isInitialLoading, setIsInitialLoading] = useState(loadOnMount);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [refreshVersion, setRefreshVersion] = useState(0);
   const [cache] = useState<CatalogCache>(
-    () => new Map([[initialKey, toCatalogResults(initialCatalog)]]),
+    () =>
+      loadOnMount
+        ? new Map()
+        : new Map([[initialKey, toCatalogResults(initialCatalog)]]),
   );
   const hasMounted = useRef(false);
+  const hasLoadedCatalog = useRef(!loadOnMount);
+  const hasLoadedCollections = useRef(!loadOnMount);
+  const availableCollectionsRef = useRef(initialCatalog.collections);
   const replacementRequestId = useRef(0);
   const replacementController = useRef<AbortController | null>(null);
   const activeQueryKey = useRef(initialKey);
@@ -144,9 +172,14 @@ export function useSongCatalogQuery({
   }, [search, selectedCollections, syncUrl]);
 
   useEffect(() => {
-    if (!hasMounted.current) {
+    const isFirstRun = !hasMounted.current;
+
+    if (isFirstRun) {
       hasMounted.current = true;
-      return;
+
+      if (!loadOnMount) {
+        return;
+      }
     }
 
     const normalizedSearch = search.trim();
@@ -163,19 +196,24 @@ export function useSongCatalogQuery({
     replacementController.current = controller;
     const requestId = replacementRequestId.current + 1;
     replacementRequestId.current = requestId;
-    const delay = changeReason.current === "search" ? 200 : 0;
+    const delay =
+      !isFirstRun && changeReason.current === "search" ? 200 : 0;
     setIsFetching(true);
+    setIsInitialLoading(!hasLoadedCatalog.current);
     setErrorMessage("");
 
     const timer = window.setTimeout(() => {
-      void fetchCatalogResults({
+      const includeCollections = !hasLoadedCollections.current;
+
+      void fetchCatalog({
         collections: selectedCollections,
+        includeCollections,
         limit: pageSize,
         offset: 0,
         search: normalizedSearch,
         signal: controller.signal,
       })
-        .then((nextCatalog) => {
+        .then((nextCatalogResponse) => {
           if (
             controller.signal.aborted ||
             replacementRequestId.current !== requestId
@@ -183,8 +221,20 @@ export function useSongCatalogQuery({
             return;
           }
 
+          const nextCollections = hasCollections(nextCatalogResponse)
+            ? nextCatalogResponse.collections
+            : availableCollectionsRef.current;
+          const nextCatalog = toCatalogResults(nextCatalogResponse);
+
+          if (hasCollections(nextCatalogResponse)) {
+            hasLoadedCollections.current = true;
+            availableCollectionsRef.current = nextCollections;
+            setAvailableCollections(nextCollections);
+          }
+
+          hasLoadedCatalog.current = true;
           cache.set(key, nextCatalog);
-          setCatalog({ ...nextCatalog, collections: availableCollections });
+          setCatalog({ ...nextCatalog, collections: nextCollections });
         })
         .catch((error: unknown) => {
           if (error instanceof DOMException && error.name === "AbortError") {
@@ -208,6 +258,7 @@ export function useSongCatalogQuery({
             replacementRequestId.current === requestId
           ) {
             setIsFetching(false);
+            setIsInitialLoading(false);
           }
         });
     }, delay);
@@ -216,7 +267,14 @@ export function useSongCatalogQuery({
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [availableCollections, cache, pageSize, search, selectedCollections]);
+  }, [
+    cache,
+    loadOnMount,
+    pageSize,
+    refreshVersion,
+    search,
+    selectedCollections,
+  ]);
 
   function applyCachedCatalog(nextSearch: string, nextCollections: string[]) {
     const cached = cache.get(
@@ -229,7 +287,10 @@ export function useSongCatalogQuery({
     );
 
     if (cached) {
-      setCatalog({ ...cached, collections: availableCollections });
+      setCatalog({
+        ...cached,
+        collections: availableCollectionsRef.current,
+      });
     }
   }
 
@@ -276,7 +337,7 @@ export function useSongCatalogQuery({
     try {
       const nextCatalog =
         cached ??
-        (await fetchCatalogResults({
+        (await fetchCatalog({
           collections: selectedCollections,
           limit: pageSize,
           offset,
@@ -287,11 +348,13 @@ export function useSongCatalogQuery({
         return;
       }
 
-      cache.set(key, nextCatalog);
+      const nextResults = toCatalogResults(nextCatalog);
+
+      cache.set(key, nextResults);
       setCatalog((current) => ({
-        ...nextCatalog,
-        collections: availableCollections,
-        songs: [...current.songs, ...nextCatalog.songs],
+        ...nextResults,
+        collections: availableCollectionsRef.current,
+        songs: [...current.songs, ...nextResults.songs],
       }));
     } catch (error) {
       setErrorMessage(
@@ -304,15 +367,22 @@ export function useSongCatalogQuery({
     }
   }
 
+  function retry() {
+    changeReason.current = "collection";
+    setRefreshVersion((current) => current + 1);
+  }
+
   return {
     availableCollections,
     catalog,
     errorMessage,
     isFetching,
+    isInitialLoading,
     isLoadingMore,
     loadMore,
     search,
     selectedCollections,
+    retry,
     toggleCollection,
     updateSearch,
   };

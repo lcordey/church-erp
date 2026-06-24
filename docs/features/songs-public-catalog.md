@@ -40,11 +40,13 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 - a l'ouverture du repertoire sans filtre URL, les recueils `JEM`, `JEMK`, `LeMont` et `Glorious` sont coches par defaut
 - la page publique charge uniquement la premiere page de resultats
 - la recherche et le filtre par recueil sont appliques cote serveur avant pagination
-- les recueils disponibles sont charges au rendu initial, puis conserves cote client pendant les recherches
+- la structure de la page repertoire est affichee sans attendre la base de donnees; la premiere page est chargee de facon asynchrone avec un etat de chargement et une action de relance en cas d'erreur
+- les recueils disponibles sont charges avec la premiere requete via `includeCollections=true`, puis conserves cote client pendant les recherches
 - l'API `GET /api/songs?q=...&collections=...&limit=20&offset=0` expose uniquement les resultats publics pages: `songs`, `total`, `limit`, `offset`, `hasMore`
+- l'API accepte `includeCollections=true` pour ajouter `collections` a la reponse initiale
+- les reponses du catalogue peuvent etre mises en cache par le CDN pendant 60 secondes et servies en mode stale-while-revalidate pendant 5 minutes
 - la pagination MVP-1 utilise `limit` et `offset`; un curseur pourra remplacer ce mecanisme si le catalogue devient tres volumineux
-- l'API publique expose uniquement les metadonnees PDF utiles et une URL backend de telechargement
-- l'API publique expose uniquement les metadonnees MusicXML utiles et une URL backend de lecture
+- la liste publique n'expose ni contenu ChordPro ni metadonnees de partitions; ces donnees sont chargees uniquement par les vues detail qui en ont besoin
 - le chemin Supabase Storage interne n'est jamais expose au navigateur
 - le seed local du catalogue public reste rejouable hors ligne meme si le snapshot JEMAF a ete collecte depuis le reseau
 - la recherche par auteur, paroles ou themes est reportee
@@ -88,6 +90,8 @@ Implementation actuelle :
 - des cases a cocher pour les recueils disponibles
 - un compteur de resultats qui suit le filtre courant
 - les resultats deja affiches restent visibles pendant le chargement d'un nouveau filtre
+- le premier chargement affiche un indicateur dedie sans bloquer le rendu du reste de la page
+- une erreur de chargement peut etre relancee sans recharger toute la page
 - le filtre par recueil declenche une mise a jour immediate; la recherche texte utilise un court debounce
 - un bouton permet de charger les 20 chants suivants quand d'autres resultats existent
 - l'ouverture d'un chant depuis le catalogue navigue vers sa page detail

@@ -4,6 +4,7 @@ import { getCurrentActor } from "@/src/infrastructure/auth/require-admin";
 import { listPublicSongs } from "@/src/modules/songs/services/public-song-catalog";
 import { SetlistEditor } from "@/src/modules/setlists/components/setlist-editor";
 import { getSetlist } from "@/src/modules/setlists/services/setlist-management";
+import { getLoginHref } from "@/src/shared/navigation/login-redirect";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export default async function SetlistEditPage({ params }: SetlistEditPageProps) 
   const actor = await getCurrentActor();
 
   if (!actor) {
-    redirect(`/login?redirectTo=${encodeURIComponent(`/setlist/${id}`)}`);
+    redirect(getLoginHref(`/setlist/${id}`));
   }
 
   const [setlist, catalog] = await Promise.all([

@@ -18,8 +18,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <p className="eyebrow">Accès équipe</p>
         <h1>Connexion</h1>
         <p className="app-panel__lead">
-          Connecte-toi pour consulter les partitions PDF et MusicXML, préparer
-          les setlists et modifier les chants locaux.
+          Connecte-toi pour modifier les chants et les setlists, ainsi que pour
+          consulter les partitions PDF et MusicXML.
         </p>
 
         <form action="/api/auth/login" className="login-form" method="post">

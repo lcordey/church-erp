@@ -8,6 +8,7 @@ import { SongDetailView } from "@/src/modules/songs/components/song-detail-view"
 import type { SetlistDetail } from "../types/setlist";
 
 type SetlistPlayerProps = {
+  canAccessScores: boolean;
   setlist: SetlistDetail;
 };
 
@@ -27,7 +28,10 @@ function ArrowRightIcon() {
   );
 }
 
-export function SetlistPlayer({ setlist }: SetlistPlayerProps) {
+export function SetlistPlayer({
+  canAccessScores,
+  setlist,
+}: SetlistPlayerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const currentItem = setlist.items[currentIndex];
@@ -88,8 +92,8 @@ export function SetlistPlayer({ setlist }: SetlistPlayerProps) {
       <main className="song-page">
         <div className="song-page__shell">
           <AppTopBar
-            backHref={`/setlist/${setlist.id}`}
-            backLabel="Retour à la setlist"
+            backHref="/setlist"
+            backLabel="Retour aux setlists"
             mode="public"
           />
           <div className="empty-state">
@@ -121,12 +125,12 @@ export function SetlistPlayer({ setlist }: SetlistPlayerProps) {
       <div className="song-page__shell">
         <AppTopBar
           actions={headerActions}
-          backHref={`/setlist/${setlist.id}`}
+          backHref="/setlist"
           backLabel={setlist.title}
           mode="public"
         />
         <SongDetailView
-          canAccessScores
+          canAccessScores={canAccessScores}
           eyebrow={`${setlist.title} · ${currentIndex + 1}/${setlist.items.length}`}
           song={currentItem.song}
         />

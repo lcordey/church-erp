@@ -128,8 +128,6 @@ describe("public song catalog", () => {
         collection: publishedSong.collection,
         collectionNumber: publishedSong.collectionNumber,
         sourcePageUrl: publishedSong.sourcePageUrl,
-        pdfSource: null,
-        musicXmlSource: null,
       },
     ]);
     expect(catalog.songs[0]).not.toHaveProperty("chordProContent");

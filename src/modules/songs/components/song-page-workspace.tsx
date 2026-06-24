@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
+import { getLoginHref } from "@/src/shared/navigation/login-redirect";
 
 import type { AdminSong } from "../types/admin-song";
 import type { PublicSongDetail } from "../types/public-song";
@@ -14,6 +15,7 @@ type SongPageWorkspaceProps = {
   adminSong: AdminSong | null;
   canAccessScores: boolean;
   initialMode: "selection" | "edition";
+  isAuthenticated: boolean;
   song: PublicSongDetail;
 };
 
@@ -21,6 +23,7 @@ export function SongPageWorkspace({
   adminSong: initialAdminSong,
   canAccessScores,
   initialMode,
+  isAuthenticated,
   song,
 }: SongPageWorkspaceProps) {
   const router = useRouter();
@@ -33,6 +36,12 @@ export function SongPageWorkspace({
   const updateMode = useCallback(
     (nextMode: "selection" | "edition") => {
       if (nextMode === "edition" && !adminSong) {
+        if (!isAuthenticated) {
+          router.push(
+            getLoginHref(`/chants/${readableSong.slug}?mode=edition`),
+          );
+        }
+
         return;
       }
 
@@ -44,7 +53,7 @@ export function SongPageWorkspace({
         { scroll: false },
       );
     },
-    [adminSong, readableSong.slug, router],
+    [adminSong, isAuthenticated, readableSong.slug, router],
   );
 
   return (

@@ -9,6 +9,7 @@ import type {
   PublicSongCatalogResults,
   PublicSongDetail,
   PublicSongSummary,
+  SongCatalogListRecord,
   SongCatalogRecord,
   SongMusicXmlFileSource,
   SongPdfFileSource,
@@ -25,12 +26,12 @@ export type PublicSongCatalogQuery = {
 };
 
 export function isPublicSong(
-  song: Pick<SongCatalogRecord, "status">,
+  song: Pick<SongCatalogListRecord, "status">,
 ): boolean {
   return song.status === "published";
 }
 
-function toSummary(song: SongCatalogRecord): PublicSongSummary {
+function toSummary(song: SongCatalogListRecord): PublicSongSummary {
   return {
     id: song.id,
     title: song.title,
@@ -41,8 +42,6 @@ function toSummary(song: SongCatalogRecord): PublicSongSummary {
     collection: song.collection,
     collectionNumber: song.collectionNumber,
     sourcePageUrl: song.sourcePageUrl,
-    pdfSource: song.pdfSource,
-    musicXmlSource: song.musicXmlSource,
   };
 }
 
@@ -50,6 +49,8 @@ function toDetail(song: SongCatalogRecord): PublicSongDetail {
   return {
     ...toSummary(song),
     chordProContent: song.chordProContent,
+    pdfSource: song.pdfSource,
+    musicXmlSource: song.musicXmlSource,
   };
 }
 

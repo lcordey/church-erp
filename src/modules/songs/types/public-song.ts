@@ -32,8 +32,6 @@ export type PublicSongSummary = {
   collection: string | null;
   collectionNumber: number | null;
   sourcePageUrl: string | null;
-  pdfSource: SongPdfSource | null;
-  musicXmlSource: SongMusicXmlSource | null;
 };
 
 export type PublicSongCatalogResults = {
@@ -50,6 +48,12 @@ export type PublicSongCatalogPage = PublicSongCatalogResults & {
 
 export type PublicSongDetail = PublicSongSummary & {
   chordProContent: string;
+  pdfSource: SongPdfSource | null;
+  musicXmlSource: SongMusicXmlSource | null;
+};
+
+export type SongCatalogListRecord = PublicSongSummary & {
+  status: SongPublicationStatus;
 };
 
 export type SongCatalogRecord = PublicSongDetail & {

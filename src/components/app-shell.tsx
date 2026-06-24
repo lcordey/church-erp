@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { AppHeaderProvider, AppShellHeader } from "./app-header-context";
 import { PwaInstallPrompt } from "./pwa-install-prompt";
+import { getLoginHref } from "@/src/shared/navigation/login-redirect";
 
 type AppShellProps = {
   children: ReactNode;
@@ -108,7 +109,12 @@ export function AppShell({ children, isAuthenticated }: AppShellProps) {
                 <button type="submit">Se déconnecter</button>
               </form>
             ) : (
-              <Link href="/login">Se connecter</Link>
+              <Link
+                href={getLoginHref(pathname)}
+                onClick={() => setIsOpen(false)}
+              >
+                Se connecter
+              </Link>
             )}
           </div>
         </aside>
