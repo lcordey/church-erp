@@ -1314,7 +1314,8 @@ a {
   background: #fffdf7;
   box-shadow: 0 18px 50px rgb(24 36 58 / 16%);
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x pan-y pinch-zoom;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
 }
 
 .song-score-viewer__viewport:last-child {
@@ -1336,6 +1337,13 @@ a {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 12px;
+}
+
+.song-score-viewer__display-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
 }
 
 .song-score-viewer__field {
@@ -1360,6 +1368,36 @@ a {
   background: rgb(255 253 247 / 94%);
   color: var(--ink);
   font: 600 0.95rem/1 var(--sans);
+}
+
+.song-score-viewer__zoom-controls {
+  display: grid;
+  gap: 6px;
+}
+
+.song-score-viewer__zoom-controls > span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.song-score-viewer__zoom-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.song-score-viewer__zoom-buttons button {
+  min-width: 52px;
+  min-height: 40px;
+  border: 1px solid rgb(49 91 120 / 18%);
+  border-radius: 12px;
+  padding: 0 12px;
+  background: rgb(255 253 247 / 94%);
+  color: var(--ink);
+  cursor: pointer;
+  font: 700 0.92rem/1 var(--sans);
 }
 
 .song-score-viewer__hint {
@@ -1416,17 +1454,28 @@ a {
   font-size: 0.88rem;
 }
 
+.song-score-fullscreen__header-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
 .song-score-fullscreen__body {
   flex: 1;
-  overflow: auto;
   padding: 14px;
+}
+
+.song-score-fullscreen__viewport {
+  height: 100%;
+  overflow: auto;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x pan-y pinch-zoom;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
 }
 
 .song-score-fullscreen__sheet {
   min-width: fit-content;
-  min-height: 100%;
+  min-height: fit-content;
   padding: 20px;
   background: #fffdf7;
   box-shadow: 0 24px 60px rgb(24 36 58 / 16%);
@@ -2673,9 +2722,20 @@ a {
     flex-direction: column;
   }
 
+  .song-score-viewer__display-fields {
+    width: 100%;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .song-score-viewer__hint {
     max-width: none;
     text-align: left;
+  }
+
+  .song-score-fullscreen__header-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .song-score-fullscreen__header {

@@ -35,6 +35,9 @@ export type MusicXmlScoreViewerHandle = {
 };
 
 const DEFAULT_SCORE_RENDER_WIDTH = 1120;
+const MIN_SCORE_ZOOM = 0.8;
+const MAX_SCORE_ZOOM = 1.8;
+const SCORE_ZOOM_STEP = 0.15;
 
 function applyScoreTransposition(
   osmd: OpenSheetMusicDisplayInstance,
@@ -52,6 +55,33 @@ function escapeHtml(value: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function clampScoreZoom(value: number) {
+  return Math.min(MAX_SCORE_ZOOM, Math.max(MIN_SCORE_ZOOM, value));
+}
+
+function applySvgDisplayWidth(
+  container: HTMLElement | null,
+  width: number,
+  zoom: number,
+) {
+  if (!container) {
+    return;
+  }
+
+  const scaledWidth = Math.round(width * zoom);
+
+  container.querySelectorAll("svg").forEach((svgElement) => {
+    if (!(svgElement instanceof SVGSVGElement)) {
+      return;
+    }
+
+    svgElement.style.display = "block";
+    svgElement.style.width = `${scaledWidth}px`;
+    svgElement.style.minWidth = `${scaledWidth}px`;
+    svgElement.style.height = "auto";
+  });
 }
 
 async function loadSvgImage(svg: SVGSVGElement) {
@@ -113,12 +143,14 @@ export const MusicXmlScoreViewer = forwardRef<
   const { notation } = useMusicNotation();
   const stageRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const fullscreenSheetRef = useRef<HTMLDivElement>(null);
   const osmdRef = useRef<OpenSheetMusicDisplayInstance | null>(null);
   const [status, setStatus] = useState("Chargement de la partition…");
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const [fullscreenMarkup, setFullscreenMarkup] = useState("");
   const [stageWidth, setStageWidth] = useState(0);
   const [measuresPerLine, setMeasuresPerLine] = useState(4);
+  const [zoom, setZoom] = useState(1);
   const canonicalDefaultKey =
     defaultKey && isMusicalKey(defaultKey) ? defaultKey : null;
   const [selectedKey, setSelectedKey] = useState(canonicalDefaultKey ?? "");
@@ -380,6 +412,14 @@ export const MusicXmlScoreViewer = forwardRef<
     };
   }, [isFullscreenOpen]);
 
+  useEffect(() => {
+    applySvgDisplayWidth(containerRef.current, renderWidth, zoom);
+  }, [renderWidth, zoom, status]);
+
+  useEffect(() => {
+    applySvgDisplayWidth(fullscreenSheetRef.current, renderWidth, zoom);
+  }, [fullscreenMarkup, isFullscreenOpen, renderWidth, zoom]);
+
   function shift(step: number) {
     if (!canonicalDefaultKey) {
       setManualOffset((current) => current + step);
@@ -498,6 +538,41 @@ export const MusicXmlScoreViewer = forwardRef<
     applyScoreTransposition(osmd, transposeBy);
   }, [transposeBy]);
 
+  function changeZoom(step: number) {
+    setZoom((current) => clampScoreZoom(current + step));
+  }
+
+  function renderZoomControls(className?: string) {
+    return (
+      <div className={className ?? "song-score-viewer__zoom-controls"}>
+        <span>Zoom</span>
+        <div className="song-score-viewer__zoom-buttons">
+          <button
+            aria-label="Réduire le zoom de la partition"
+            onClick={() => changeZoom(-SCORE_ZOOM_STEP)}
+            type="button"
+          >
+            −
+          </button>
+          <button
+            aria-label="Réinitialiser le zoom de la partition"
+            onClick={() => setZoom(1)}
+            type="button"
+          >
+            {Math.round(zoom * 100)}%
+          </button>
+          <button
+            aria-label="Augmenter le zoom de la partition"
+            onClick={() => changeZoom(SCORE_ZOOM_STEP)}
+            type="button"
+          >
+            +
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="transpose-toolbar transpose-toolbar--score">
@@ -559,22 +634,25 @@ export const MusicXmlScoreViewer = forwardRef<
 
       <div ref={stageRef} className="song-document-viewer__stage">
         <div className="song-score-viewer__display-controls">
-          <label className="song-score-viewer__field">
-            <span>Mesures par ligne</span>
-            <select
-              aria-label="Nombre de mesures par ligne"
-              onChange={(event) => {
-                setMeasuresPerLine(Number(event.target.value));
-              }}
-              value={measuresPerLine}
-            >
-              {[2, 3, 4, 5, 6].map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="song-score-viewer__display-fields">
+            <label className="song-score-viewer__field">
+              <span>Mesures par ligne</span>
+              <select
+                aria-label="Nombre de mesures par ligne"
+                onChange={(event) => {
+                  setMeasuresPerLine(Number(event.target.value));
+                }}
+                value={measuresPerLine}
+              >
+                {[2, 3, 4, 5, 6].map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {renderZoomControls()}
+          </div>
           <p className="song-score-viewer__hint">
             Sur téléphone, la partition garde une largeur proche du desktop.
             Fais défiler librement dans la vue, ou utilise le plein écran pour
@@ -623,21 +701,27 @@ export const MusicXmlScoreViewer = forwardRef<
                   reste disponible sur mobile.
                 </p>
               </div>
-              <button
-                aria-label="Fermer le plein écran"
-                className="icon-button"
-                onClick={() => setIsFullscreenOpen(false)}
-                type="button"
-              >
-                ×
-              </button>
+              <div className="song-score-fullscreen__header-actions">
+                {renderZoomControls("song-score-viewer__zoom-controls song-score-viewer__zoom-controls--fullscreen")}
+                <button
+                  aria-label="Fermer le plein écran"
+                  className="icon-button"
+                  onClick={() => setIsFullscreenOpen(false)}
+                  type="button"
+                >
+                  ×
+                </button>
+              </div>
             </header>
             <div className="song-score-fullscreen__body">
-              <div
-                aria-label={`Partition MusicXML en plein écran de ${title}`}
-                className="song-score-fullscreen__sheet"
-                dangerouslySetInnerHTML={{ __html: fullscreenMarkup }}
-              />
+              <div className="song-score-fullscreen__viewport">
+                <div
+                  ref={fullscreenSheetRef}
+                  aria-label={`Partition MusicXML en plein écran de ${title}`}
+                  className="song-score-fullscreen__sheet"
+                  dangerouslySetInnerHTML={{ __html: fullscreenMarkup }}
+                />
+              </div>
             </div>
           </div>
         </div>
