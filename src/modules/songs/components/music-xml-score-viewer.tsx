@@ -35,6 +35,9 @@ export type MusicXmlScoreViewerHandle = {
 };
 
 const DEFAULT_SCORE_ZOOM = 1;
+const MOBILE_SCORE_MEDIA_QUERY = "(max-width: 720px), (pointer: coarse)";
+const MOBILE_SCORE_RENDER_WIDTH = 1120;
+const MOBILE_DEFAULT_SCORE_ZOOM = 0.4;
 const DEFAULT_MEASURES_PER_LINE = 4;
 const DEFAULT_LYRICS_SPACING = 1;
 const MIN_SCORE_ZOOM = 0.2;
@@ -156,6 +159,10 @@ export const MusicXmlScoreViewer = forwardRef<
   const [status, setStatus] = useState("Chargement de la partition…");
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const [fullscreenMarkup, setFullscreenMarkup] = useState("");
+  const [isMobileRendering, setIsMobileRendering] = useState<boolean | null>(
+    null,
+  );
+  const isMobileRenderingRef = useRef<boolean | null>(null);
   const [stageWidth, setStageWidth] = useState(0);
   const [measuresPerLine, setMeasuresPerLine] = useState(
     DEFAULT_MEASURES_PER_LINE,
@@ -182,7 +189,40 @@ export const MusicXmlScoreViewer = forwardRef<
       ? transposeChord(defaultKey, manualOffset)
       : null;
   const isResetDisabled = transposeBy === 0 && manualOffset === 0;
-  const renderWidth = stageWidth;
+  const renderWidth =
+    isMobileRendering === null
+      ? 0
+      : isMobileRendering
+        ? MOBILE_SCORE_RENDER_WIDTH
+        : stageWidth;
+  const defaultZoom = isMobileRendering
+    ? MOBILE_DEFAULT_SCORE_ZOOM
+    : DEFAULT_SCORE_ZOOM;
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(MOBILE_SCORE_MEDIA_QUERY);
+
+    function updateRenderingMode() {
+      const nextIsMobileRendering = mediaQuery.matches;
+
+      if (isMobileRenderingRef.current === nextIsMobileRendering) {
+        return;
+      }
+
+      isMobileRenderingRef.current = nextIsMobileRendering;
+      setIsMobileRendering(nextIsMobileRendering);
+      setZoom(
+        nextIsMobileRendering
+          ? MOBILE_DEFAULT_SCORE_ZOOM
+          : DEFAULT_SCORE_ZOOM,
+      );
+    }
+
+    updateRenderingMode();
+    mediaQuery.addEventListener("change", updateRenderingMode);
+
+    return () => mediaQuery.removeEventListener("change", updateRenderingMode);
+  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -600,7 +640,7 @@ export const MusicXmlScoreViewer = forwardRef<
           </button>
           <button
             aria-label="Réinitialiser le zoom de la partition"
-            onClick={() => setZoom(DEFAULT_SCORE_ZOOM)}
+            onClick={() => setZoom(defaultZoom)}
             type="button"
           >
             {Math.round(zoom * 100)}%
