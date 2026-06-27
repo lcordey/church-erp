@@ -53,6 +53,11 @@
   - `wsl.exe bash -lc "cd /home/lcordey/work/church-erp && if [ -f ~/.nvm/nvm.sh ]; then . ~/.nvm/nvm.sh; fi && pnpm lint && pnpm typecheck"`
 - Prefer `pnpm` directly inside WSL after sourcing `~/.nvm/nvm.sh` when present. Avoid Windows `npm.cmd` wrappers for this repo because they can fall back to `cmd.exe` and lose the Linux workspace path.
 - When reporting validation status, distinguish environment-path issues from real application failures.
+- The WSL shell profile exports remote Supabase import variables for Codex sessions:
+  - `LOCAL_DATABASE_URL`
+  - `LOCAL_SUPABASE_URL`
+  - `LOCAL_SUPABASE_SERVICE_ROLE_KEY`
+- These exports are intended for server-side import and admin tooling only. Never expose them to browser code or commit their secret values into repository files.
 
 ## Design
 - The interface should be clean, calm, and sober.

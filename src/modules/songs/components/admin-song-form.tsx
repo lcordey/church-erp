@@ -11,6 +11,7 @@ import {
 } from "../music/musical-key";
 import { formatSongCollectionLabel } from "../collections/song-collection";
 import type { AdminSong } from "../types/admin-song";
+import type { GeneratedChordProResult } from "../types/admin-song";
 import type {
   AdminSongField,
   AdminSongValidationErrors,
@@ -115,6 +116,7 @@ export function AdminSongForm({
   const [message, setMessage] = useState("");
   const [isPdfPending, setIsPdfPending] = useState(false);
   const [isMusicXmlPending, setIsMusicXmlPending] = useState(false);
+  const [isChordProGenerationPending, setIsChordProGenerationPending] = useState(false);
   const [isPending, startTransition] = useTransition();
   const isEditing = Boolean(song);
   const isReadOnly = song ? !song.isEditable : false;
@@ -396,6 +398,45 @@ export function AdminSongForm({
     }
   }
 
+  async function generateChordProFromMusicXml() {
+    if (!song) {
+      return;
+    }
+
+    setIsChordProGenerationPending(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(
+        `/api/admin/songs/${song.id}/chordpro/generate`,
+        { method: "POST" },
+      );
+      const payload = (await response.json()) as ApiError & {
+        data?: GeneratedChordProResult;
+      };
+
+      if (!response.ok || !payload.data) {
+        setMessage(
+          payload.error?.message ??
+            "Impossible de générer le ChordPro depuis la partition.",
+        );
+        return;
+      }
+
+      setForm((current) => ({
+        ...current,
+        chordProContent: payload.data?.chordProContent ?? current.chordProContent,
+        defaultKey: current.defaultKey || payload.data?.defaultKey || "",
+      }));
+      setErrors((current) => ({ ...current, chordProContent: undefined }));
+      setMessage(
+        "Source ChordPro générée depuis la partition. Vérifie le résultat avant d’enregistrer.",
+      );
+    } finally {
+      setIsChordProGenerationPending(false);
+    }
+  }
+
   return (
     <div className="admin-editor">
       <section className="admin-form-panel">
@@ -608,6 +649,20 @@ export function AdminSongForm({
 
           <label className="field field--wide">
             <span>Source ChordPro *</span>
+            {song?.musicXmlSource ? (
+              <div className="pdf-field__actions">
+                <button
+                  className="admin-button admin-button--quiet"
+                  disabled={isReadOnly || isChordProGenerationPending}
+                  onClick={() => void generateChordProFromMusicXml()}
+                  type="button"
+                >
+                  {isChordProGenerationPending
+                    ? "Génération…"
+                    : "Générer depuis la partition"}
+                </button>
+              </div>
+            ) : null}
             <textarea
               disabled={isReadOnly}
               rows={17}

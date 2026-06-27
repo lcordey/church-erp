@@ -24,8 +24,10 @@ import {
   deleteAttachedSongMusicXml,
   deleteAttachedSongPdf,
   deleteDraftSong,
+  generateAdminSongChordProFromMusicXml,
   InvalidSongMusicXmlError,
   InvalidSongPdfError,
+  MissingSongMusicXmlError,
   publishSong,
   PublishedSongDeletionError,
   ReadOnlySongError,
@@ -65,6 +67,7 @@ function createRepository(song: AdminSong | null = draftSong) {
     update: vi.fn(async () => song),
     delete: vi.fn(async () => true),
     findPdfSourceById: vi.fn(async () => null),
+    findMusicXmlSourceById: vi.fn(async () => null),
     attachPdf: vi.fn(async () => song),
     deletePdf: vi.fn(async () => song),
     attachMusicXml: vi.fn(async () => song),
@@ -225,6 +228,34 @@ describe("admin song management", () => {
     await deleteAttachedSongMusicXml(draftSong.id, repository);
 
     expect(repository.deleteMusicXml).toHaveBeenCalledWith(draftSong.id);
+  });
+
+  it("generates chordpro from the active MusicXML source", async () => {
+    const repository = createRepository();
+    repository.findMusicXmlSourceById = vi.fn(async () => ({
+      content: `<score-partwise><work><work-title>Hosanna</work-title></work><part id="P1"><measure><attributes><key><fifths>3</fifths><mode>major</mode></key></attributes><harmony><root><root-step>A</root-step></root><kind>major</kind></harmony><note><lyric><text>Hosanna</text></lyric></note></measure></part></score-partwise>`,
+      fileName: "hosanna.musicxml",
+      mimeType: "application/vnd.recordare.musicxml+xml",
+      fileSizeBytes: 128,
+      downloadUrl: `/api/songs/${draftSong.slug}/musicxml`,
+    }));
+
+    const generated = await generateAdminSongChordProFromMusicXml(
+      draftSong.id,
+      repository,
+    );
+
+    expect(generated?.defaultKey).toBe("A");
+    expect(generated?.chordProContent).toContain("{title: Hosanna}");
+    expect(generated?.chordProContent).toContain("[A]Hosanna");
+  });
+
+  it("rejects generation when there is no MusicXML source", async () => {
+    const repository = createRepository();
+
+    await expect(
+      generateAdminSongChordProFromMusicXml(draftSong.id, repository),
+    ).rejects.toBeInstanceOf(MissingSongMusicXmlError);
   });
 
   it("deletes a draft", async () => {

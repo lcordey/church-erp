@@ -5,6 +5,7 @@ const collectionLabels: Record<string, string> = {
   ATG: "À Toi la Gloire",
   LeMont: "LeMont",
   Glorious: "Glorious",
+  Exo: "Exo",
 };
 
 const collectionSearchAliases: Record<string, string[]> = {
@@ -14,6 +15,7 @@ const collectionSearchAliases: Record<string, string[]> = {
   ATG: ["ATG", "À Toi la Gloire", "A Toi la Gloire"],
   LeMont: ["LeMont"],
   Glorious: ["Glorious"],
+  Exo: ["Exo"],
 };
 
 export function getSongCollectionLabel(collection: string): string {

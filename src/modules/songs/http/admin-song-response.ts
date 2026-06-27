@@ -7,6 +7,7 @@ import { SongSlugConflictError } from "../repositories/admin-song-repository";
 import {
   InvalidSongMusicXmlError,
   InvalidSongPdfError,
+  MissingSongMusicXmlError,
   PublishedSongDeletionError,
   ReadOnlySongError,
 } from "../services/admin-song-management";
@@ -91,6 +92,19 @@ export function adminSongErrorResponse(error: unknown) {
         },
       },
       { status: 400 },
+    );
+  }
+
+  if (error instanceof MissingSongMusicXmlError) {
+    return Response.json(
+      {
+        error: {
+          code: "MISSING_MUSICXML",
+          message:
+            "Ajoute d’abord une partition MusicXML avant de générer le ChordPro.",
+        },
+      },
+      { status: 409 },
     );
   }
 

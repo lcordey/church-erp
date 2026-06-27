@@ -13,7 +13,9 @@ import type {
   AdminSong,
   AdminSongInput,
   AdminSongListItem,
+  GeneratedChordProResult,
 } from "../types/admin-song";
+import { generateChordProFromMusicXml } from "./musicxml-to-chordpro";
 
 const songPdfMimeType = "application/pdf";
 const maxSongPdfSizeBytes = 20 * 1024 * 1024;
@@ -90,6 +92,12 @@ export class InvalidSongPdfError extends Error {
 export class InvalidSongMusicXmlError extends Error {
   constructor(message = "The uploaded song MusicXML is invalid.") {
     super(message);
+  }
+}
+
+export class MissingSongMusicXmlError extends Error {
+  constructor() {
+    super("The song has no active MusicXML source.");
   }
 }
 
@@ -228,6 +236,40 @@ export async function deleteAttachedSongMusicXml(
   }
 
   return repository.deleteMusicXml(id);
+}
+
+export async function generateAdminSongChordProFromMusicXml(
+  id: string,
+  repository: AdminSongRepository = createAdminSongRepository(),
+): Promise<GeneratedChordProResult | null> {
+  await requireAdminAccess();
+  const song = await repository.findById(id);
+
+  if (!song) {
+    return null;
+  }
+
+  if (!song.isEditable) {
+    throw new ReadOnlySongError();
+  }
+
+  const musicXmlSource = await repository.findMusicXmlSourceById(id);
+
+  if (!musicXmlSource) {
+    throw new MissingSongMusicXmlError();
+  }
+
+  try {
+    return generateChordProFromMusicXml(musicXmlSource.content, {
+      title: song.title,
+      author: song.author,
+      defaultKey: song.defaultKey,
+    });
+  } catch {
+    throw new InvalidSongMusicXmlError(
+      "The active MusicXML source cannot be converted into ChordPro.",
+    );
+  }
 }
 
 export async function deleteDraftSong(

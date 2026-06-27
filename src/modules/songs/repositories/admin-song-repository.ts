@@ -14,6 +14,7 @@ import type {
   AdminSongPdfInput,
 } from "../types/admin-song";
 import type {
+  SongMusicXmlFileSource,
   SongMusicXmlSource,
   SongPdfFileSource,
   SongPdfSource,
@@ -34,6 +35,7 @@ export interface AdminSongRepository {
   update(id: string, input: AdminSongInput): Promise<AdminSong | null>;
   delete(id: string): Promise<boolean>;
   findPdfSourceById(id: string): Promise<SongPdfFileSource | null>;
+  findMusicXmlSourceById(id: string): Promise<SongMusicXmlFileSource | null>;
   attachPdf(id: string, input: AdminSongPdfInput): Promise<AdminSong | null>;
   deletePdf(id: string): Promise<AdminSong | null>;
   attachMusicXml(
@@ -82,6 +84,11 @@ const musicXmlSelection = {
   fileSizeBytes: songSources.fileSizeBytes,
 };
 
+const musicXmlFileSelection = {
+  ...musicXmlSelection,
+  content: songSources.textContent,
+};
+
 type PdfSelectionRow = {
   songId: string;
   slug: string;
@@ -97,6 +104,10 @@ type MusicXmlSelectionRow = {
   fileName: string | null;
   mimeType: string | null;
   fileSizeBytes: number | null;
+};
+
+type MusicXmlFileSelectionRow = MusicXmlSelectionRow & {
+  content: string | null;
 };
 
 function toPdfSource(row: PdfSelectionRow): SongPdfFileSource | null {
@@ -128,6 +139,22 @@ function toAdminPdfSource(source: SongPdfFileSource | null): SongPdfSource | nul
 
 function toMusicXmlSource(row: MusicXmlSelectionRow): SongMusicXmlSource {
   return {
+    fileName: row.fileName,
+    mimeType: row.mimeType,
+    fileSizeBytes: row.fileSizeBytes,
+    downloadUrl: `/api/songs/${row.slug}/musicxml`,
+  };
+}
+
+function toMusicXmlFileSource(
+  row: MusicXmlFileSelectionRow,
+): SongMusicXmlFileSource | null {
+  if (!row.content) {
+    return null;
+  }
+
+  return {
+    content: row.content,
     fileName: row.fileName,
     mimeType: row.mimeType,
     fileSizeBytes: row.fileSizeBytes,
@@ -380,6 +407,17 @@ export function createAdminSongRepository(): AdminSongRepository {
         .limit(1);
 
       return rows[0] ? toPdfSource(rows[0]) : null;
+    },
+
+    async findMusicXmlSourceById(id) {
+      const rows = await database
+        .select(musicXmlFileSelection)
+        .from(songSources)
+        .innerJoin(songs, eq(songSources.songId, songs.id))
+        .where(and(eq(songs.id, id), activeMusicXml))
+        .limit(1);
+
+      return rows[0] ? toMusicXmlFileSource(rows[0]) : null;
     },
 
     async attachPdf(id, input) {

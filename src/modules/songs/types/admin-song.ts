@@ -47,4 +47,9 @@ export type AdminSongMusicXmlInput = {
   fileSizeBytes: number;
 };
 
+export type GeneratedChordProResult = {
+  chordProContent: string;
+  defaultKey: string | null;
+};
+
 export type AdminSongListItem = Omit<AdminSong, "chordProContent">;

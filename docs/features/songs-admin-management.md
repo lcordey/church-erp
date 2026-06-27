@@ -18,6 +18,7 @@ publier automatiquement et supprimer des chants depuis leur ecran d'edition.
 - supprimer definitivement un chant depuis son ecran d'edition
 - ajouter, remplacer ou retirer une partition PDF attachee au chant
 - ajouter, remplacer ou retirer une partition MusicXML attachee au chant
+- generer une proposition de source ChordPro a partir du MusicXML attache
 - consulter les metadonnees utiles cote administration
 - consulter les chants officiels importes en lecture seule
 
@@ -64,6 +65,7 @@ Pour MVP-1 :
 - une source `ChordPro` active est requise pour publier
 - une source `PDF` active est optionnelle
 - une source `MusicXML` active est optionnelle et stockee comme contenu texte en base
+- quand une source `MusicXML` active existe, l'edition peut proposer une generation initiale de `ChordPro` sans enregistrer automatiquement le resultat
 
 Champs possibles plus tard, non requis maintenant :
 - `tempo`
@@ -81,6 +83,7 @@ Implementation actuelle :
 - endpoints sous `/api/admin/songs`
 - endpoints PDF sous `/api/admin/songs/:id/pdf`
 - endpoints MusicXML sous `/api/admin/songs/:id/musicxml`
+- endpoint de generation ChordPro sous `/api/admin/songs/:id/chordpro/generate`
 - stockage PDF dans le bucket prive Supabase Storage `song-pdfs`
 - helper d'autorisation explicite et permissif pendant le MVP-1
 - conflits de slug retournes avec un statut HTTP `409`
@@ -104,6 +107,7 @@ Implementation actuelle :
 - validation bloquante des accords ChordPro avec message sous le champ source
 - section `Partition PDF` pour ajouter, remplacer ou retirer le fichier attache
 - section `Partition` pour ajouter, remplacer ou retirer le fichier MusicXML attache
+- action `Generer depuis la partition` dans l'edition quand un MusicXML est disponible
 
 Routes :
 - `/admin/chants/nouveau`

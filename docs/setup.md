@@ -248,6 +248,22 @@ This updates `supabase/generated/glorious-catalog.json` and folds those songs
 into `supabase/seed.sql`. PDF binaries still remain outside SQL and must be
 uploaded separately through `pnpm songs:import-glorious`.
 
+For a local folder-based collection import such as `Exo`, where songs ship as
+MusicXML and optional PDFs without canonical ChordPro files:
+
+```bash
+pnpm songs:import-folder-catalog -- \
+  --collection Exo \
+  --namespace exo \
+  --musicxml-dir /home/lcordey/work/download_for_church_erp/Exo_1_MusicXML/musicxml \
+  --pdf-dir /home/lcordey/work/download_for_church_erp/Exo_1_pdf
+```
+
+This importer creates published songs in the requested collection, stores the
+MusicXML payload in PostgreSQL, generates a minimal placeholder ChordPro source
+so the songs appear in the catalog, and uploads matching PDFs when the target
+Supabase Storage credentials are available.
+
 Never use `drizzle-kit push` for project schema changes. Committed migrations
 must remain the reproducible source of database changes.
 
