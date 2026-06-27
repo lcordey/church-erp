@@ -34,6 +34,8 @@ export type MusicXmlScoreViewerHandle = {
   openFullscreen: () => void;
 };
 
+const DEFAULT_SCORE_RENDER_WIDTH = 1120;
+
 function applyScoreTransposition(
   osmd: OpenSheetMusicDisplayInstance,
   semitones: number,
@@ -109,11 +111,14 @@ export const MusicXmlScoreViewer = forwardRef<
   ref,
 ) {
   const { notation } = useMusicNotation();
+  const stageRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const osmdRef = useRef<OpenSheetMusicDisplayInstance | null>(null);
   const [status, setStatus] = useState("Chargement de la partition…");
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const [fullscreenMarkup, setFullscreenMarkup] = useState("");
+  const [stageWidth, setStageWidth] = useState(0);
+  const [measuresPerLine, setMeasuresPerLine] = useState(4);
   const canonicalDefaultKey =
     defaultKey && isMusicalKey(defaultKey) ? defaultKey : null;
   const [selectedKey, setSelectedKey] = useState(canonicalDefaultKey ?? "");
@@ -128,6 +133,29 @@ export const MusicXmlScoreViewer = forwardRef<
       ? transposeChord(defaultKey, manualOffset)
       : null;
   const isResetDisabled = transposeBy === 0 && manualOffset === 0;
+  const renderWidth = Math.max(stageWidth, DEFAULT_SCORE_RENDER_WIDTH);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+
+    if (!stage) {
+      return;
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+
+      if (!entry) {
+        return;
+      }
+
+      setStageWidth(Math.floor(entry.contentRect.width));
+    });
+
+    observer.observe(stage);
+
+    return () => observer.disconnect();
+  }, []);
 
   useImperativeHandle(
     ref,
@@ -327,7 +355,7 @@ export const MusicXmlScoreViewer = forwardRef<
     }
 
     setFullscreenMarkup(container.innerHTML);
-  }, [isFullscreenOpen, status, transposeBy]);
+  }, [isFullscreenOpen, measuresPerLine, renderWidth, status, transposeBy]);
 
   useEffect(() => {
     if (!isFullscreenOpen) {
@@ -396,8 +424,10 @@ export const MusicXmlScoreViewer = forwardRef<
           return;
         }
 
+        container.style.width = `${Math.round(renderWidth)}px`;
+
         const osmd = new OpenSheetMusicDisplay(container, {
-          autoResize: true,
+          autoResize: false,
           backend: "svg",
           defaultColorMusic: "#1f2933",
           defaultColorTitle: "#1f2933",
@@ -426,7 +456,7 @@ export const MusicXmlScoreViewer = forwardRef<
           osmd.Sheet.CopyrightString = copyright;
         }
 
-        osmd.EngravingRules.RenderXMeasuresPerLineAkaSystem = 4;
+        osmd.EngravingRules.RenderXMeasuresPerLineAkaSystem = measuresPerLine;
         osmd.EngravingRules.TitleBottomDistance = 5.5;
         osmd.EngravingRules.LyricsUseXPaddingForLongLyrics = true;
         osmd.EngravingRules.LyricsXPaddingFactorForLongLyrics = 1.25;
@@ -455,7 +485,7 @@ export const MusicXmlScoreViewer = forwardRef<
         container.innerHTML = "";
       }
     };
-  }, [copyright, sourceUrl, title]);
+  }, [copyright, measuresPerLine, renderWidth, sourceUrl, title]);
 
   useEffect(() => {
     const osmd = osmdRef.current;
@@ -527,7 +557,29 @@ export const MusicXmlScoreViewer = forwardRef<
         </div>
       </div>
 
-      <div className="song-document-viewer__stage">
+      <div ref={stageRef} className="song-document-viewer__stage">
+        <div className="song-score-viewer__display-controls">
+          <label className="song-score-viewer__field">
+            <span>Mesures par ligne</span>
+            <select
+              aria-label="Nombre de mesures par ligne"
+              onChange={(event) => {
+                setMeasuresPerLine(Number(event.target.value));
+              }}
+              value={measuresPerLine}
+            >
+              {[2, 3, 4, 5, 6].map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="song-score-viewer__hint">
+            Sur téléphone, la partition garde une largeur proche du desktop.
+            Fais défiler horizontalement ou utilise le plein écran pour zoomer.
+          </p>
+        </div>
         <div className="song-document-viewer__status-row">
           {status ? (
             <p className="song-document-viewer__status">{status}</p>
