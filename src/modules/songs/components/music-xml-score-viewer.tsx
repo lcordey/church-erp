@@ -31,6 +31,7 @@ type MusicXmlScoreViewerProps = {
 export type MusicXmlScoreViewerHandle = {
   downloadPdf: () => Promise<void>;
   openDocument: () => void;
+  openFullscreen: () => void;
 };
 
 function applyScoreTransposition(
@@ -111,6 +112,8 @@ export const MusicXmlScoreViewer = forwardRef<
   const containerRef = useRef<HTMLDivElement>(null);
   const osmdRef = useRef<OpenSheetMusicDisplayInstance | null>(null);
   const [status, setStatus] = useState("Chargement de la partition…");
+  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
+  const [fullscreenMarkup, setFullscreenMarkup] = useState("");
   const canonicalDefaultKey =
     defaultKey && isMusicalKey(defaultKey) ? defaultKey : null;
   const [selectedKey, setSelectedKey] = useState(canonicalDefaultKey ?? "");
@@ -298,9 +301,56 @@ export const MusicXmlScoreViewer = forwardRef<
 </html>`);
         popup.document.close();
       },
+      openFullscreen() {
+        const container = containerRef.current;
+
+        if (!container?.innerHTML) {
+          return;
+        }
+
+        setFullscreenMarkup(container.innerHTML);
+        setIsFullscreenOpen(true);
+      },
     }),
     [collection, collectionNumber, title],
   );
+
+  useEffect(() => {
+    if (!isFullscreenOpen) {
+      return;
+    }
+
+    const container = containerRef.current;
+
+    if (!container?.innerHTML) {
+      return;
+    }
+
+    setFullscreenMarkup(container.innerHTML);
+  }, [isFullscreenOpen, status, transposeBy]);
+
+  useEffect(() => {
+    if (!isFullscreenOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsFullscreenOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isFullscreenOpen]);
 
   function shift(step: number) {
     if (!canonicalDefaultKey) {
@@ -498,6 +548,45 @@ export const MusicXmlScoreViewer = forwardRef<
           </footer>
         ) : null}
       </div>
+      {isFullscreenOpen ? (
+        <div
+          aria-modal="true"
+          className="song-score-fullscreen"
+          role="dialog"
+        >
+          <div
+            className="song-score-fullscreen__backdrop"
+            onClick={() => setIsFullscreenOpen(false)}
+          />
+          <div className="song-score-fullscreen__panel">
+            <header className="song-score-fullscreen__header">
+              <div>
+                <p className="eyebrow">Lecture confortable</p>
+                <h2>{title}</h2>
+                <p>
+                  Fais défiler librement la partition. Le zoom du navigateur
+                  reste disponible sur mobile.
+                </p>
+              </div>
+              <button
+                aria-label="Fermer le plein écran"
+                className="icon-button"
+                onClick={() => setIsFullscreenOpen(false)}
+                type="button"
+              >
+                ×
+              </button>
+            </header>
+            <div className="song-score-fullscreen__body">
+              <div
+                aria-label={`Partition MusicXML en plein écran de ${title}`}
+                className="song-score-fullscreen__sheet"
+                dangerouslySetInnerHTML={{ __html: fullscreenMarkup }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 });

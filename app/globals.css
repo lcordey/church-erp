@@ -1324,6 +1324,72 @@ a {
   min-width: 760px;
 }
 
+.song-score-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: stretch;
+}
+
+.song-score-fullscreen__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(20 28 42 / 62%);
+  backdrop-filter: blur(8px);
+}
+
+.song-score-fullscreen__panel {
+  position: relative;
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at top left, rgb(255 255 255 / 94%), transparent 28rem),
+    linear-gradient(180deg, rgb(246 241 232 / 98%), rgb(236 231 221 / 97%));
+}
+
+.song-score-fullscreen__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 18px 12px;
+  border-bottom: 1px solid rgb(49 91 120 / 12%);
+}
+
+.song-score-fullscreen__header h2 {
+  margin: 0;
+  font-size: clamp(1.3rem, 4vw, 2rem);
+}
+
+.song-score-fullscreen__header p:last-child {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.song-score-fullscreen__body {
+  flex: 1;
+  overflow: auto;
+  padding: 14px;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+.song-score-fullscreen__sheet {
+  min-width: fit-content;
+  min-height: 100%;
+  padding: 20px;
+  background: #fffdf7;
+  box-shadow: 0 24px 60px rgb(24 36 58 / 16%);
+}
+
+.song-score-fullscreen__sheet > svg {
+  display: block;
+  min-width: 960px;
+}
+
 .song-score-viewer__sheet-footer {
   border-top: 1px solid #ece5d7;
   border-radius: 0 0 8px 8px;
@@ -2555,6 +2621,26 @@ a {
     min-height: 68vh;
   }
 
+  .song-score-fullscreen__header {
+    padding: 16px 14px 10px;
+  }
+
+  .song-score-fullscreen__header p:last-child {
+    max-width: 30rem;
+  }
+
+  .song-score-fullscreen__body {
+    padding: 10px;
+  }
+
+  .song-score-fullscreen__sheet {
+    padding: 16px;
+  }
+
+  .song-score-fullscreen__sheet > svg {
+    min-width: 820px;
+  }
+
   .app-shell__header-inner {
     align-items: center;
     justify-content: space-between;
@@ -2771,6 +2857,7 @@ a {
 
   .song-score-viewer__score,
   .song-score-viewer__sheet-footer,
+  .song-score-fullscreen__sheet,
   .song-pdf-viewer__page canvas {
     box-shadow: none !important;
   }

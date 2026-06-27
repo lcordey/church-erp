@@ -65,3 +65,9 @@
 - Update the relevant file in `docs/features/` when feature scope or rules change.
 - Keep `docs/MVP-1.md` aligned with the actual delivery plan.
 - Keep `docs/MVP-X.md` aligned with deferred ideas and likely future priorities.
+
+## Git Workflow
+- The default development branch is `dev`.
+- Start new development work from `dev`, not from `main`.
+- Use `main` for production-ready history and push selected, validated changes from `dev` to `main`.
+- Keep `dev` recreated from the current `main` baseline only when explicitly resetting the development branch strategy.

@@ -133,6 +133,13 @@ export function SongDetailView({
             <div className="song-document-viewer__actions">
               <button
                 className="admin-button"
+                onClick={() => musicXmlViewerRef.current?.openFullscreen()}
+                type="button"
+              >
+                Plein écran
+              </button>
+              <button
+                className="admin-button"
                 onClick={async () => {
                   await musicXmlViewerRef.current?.downloadPdf();
                 }}
