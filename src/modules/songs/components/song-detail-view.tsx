@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { formatSongCollectionLabel } from "../collections/song-collection";
 import type { AdminSong } from "../types/admin-song";
@@ -13,7 +13,10 @@ import {
 } from "./music-xml-score-viewer";
 import { hasChordProChords } from "../services/chordpro";
 import { SongPdfViewer } from "./song-pdf-viewer";
-import { TransposableSongSheet } from "./transposable-song-sheet";
+import {
+  TransposableSongSheet,
+  type TransposableSongSheetHandle,
+} from "./transposable-song-sheet";
 
 type SongDetailViewProps = {
   song: PublicSongDetail | AdminSong;
@@ -37,10 +40,85 @@ export function SongDetailView({
     song.collectionNumber,
   );
   const musicXmlViewerRef = useRef<MusicXmlScoreViewerHandle>(null);
+  const textViewerRef = useRef<TransposableSongSheetHandle>(null);
+  const [isViewerFullscreen, setIsViewerFullscreen] = useState(false);
 
   function getDownloadHref(sourceUrl: string) {
     const separator = sourceUrl.includes("?") ? "&" : "?";
     return `${sourceUrl}${separator}download=1`;
+  }
+
+  useEffect(() => {
+    if (!isViewerFullscreen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsViewerFullscreen(false);
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isViewerFullscreen]);
+
+  const documentLabel =
+    sourceView === "lyrics"
+      ? "Paroles"
+      : sourceView === "chordpro"
+        ? "Paroles et accords"
+        : sourceView === "pdf"
+          ? "Partition PDF"
+          : "Partition";
+  const documentDetail =
+    sourceView === "pdf" && song.pdfSource
+      ? (song.pdfSource.fileName ?? song.title)
+      : sourceView === "musicxml" && song.musicXmlSource
+        ? (song.musicXmlSource.fileName ?? song.title)
+        : song.title;
+
+  async function downloadActiveDocument() {
+    if (sourceView === "pdf" && song.pdfSource) {
+      const link = document.createElement("a");
+      link.href = getDownloadHref(song.pdfSource.downloadUrl);
+      link.click();
+      return;
+    }
+
+    if (sourceView === "musicxml") {
+      await musicXmlViewerRef.current?.downloadPdf();
+      return;
+    }
+
+    await textViewerRef.current?.downloadPdf();
+  }
+
+  function openActiveDocument() {
+    if (sourceView === "pdf" && song.pdfSource) {
+      const popup = window.open(song.pdfSource.downloadUrl, "_blank");
+
+      if (popup) {
+        popup.opener = null;
+      }
+
+      return;
+    }
+
+    if (sourceView === "musicxml") {
+      musicXmlViewerRef.current?.openDocument();
+      return;
+    }
+
+    textViewerRef.current?.openDocument();
   }
 
   return (
@@ -93,69 +171,50 @@ export function SongDetailView({
         {actions ? <div className="song-detail-view__actions">{actions}</div> : null}
       </header>
 
-      {canAccessScores && sourceView === "pdf" && song.pdfSource ? (
-        <section className="song-document-viewer song-document-viewer--pdf">
-          <header className="song-document-viewer__toolbar">
-            <div>
-              <span>Partition PDF</span>
-              <small>{song.pdfSource.fileName ?? song.title}</small>
-            </div>
-            <div className="song-document-viewer__actions">
-              <a
-                className="admin-button"
-                href={getDownloadHref(song.pdfSource.downloadUrl)}
-              >
-                Télécharger
-              </a>
-              <a
-                className="admin-button admin-button--primary"
-                href={song.pdfSource.downloadUrl}
-                rel="noreferrer"
-                target="_blank"
-              >
-                Ouvrir
-              </a>
-            </div>
-          </header>
+      <section
+        className={`song-document-viewer song-document-viewer--${sourceView} ${
+          isViewerFullscreen ? "song-document-viewer--fullscreen" : ""
+        }`}
+      >
+        <header className="song-document-viewer__toolbar">
+          <div>
+            <span>{documentLabel}</span>
+            <small>{documentDetail}</small>
+          </div>
+          <div className="song-document-viewer__actions">
+            <button
+              className="admin-button"
+              onClick={() => setIsViewerFullscreen((current) => !current)}
+              type="button"
+            >
+              {isViewerFullscreen ? "Quitter" : "Plein écran"}
+            </button>
+            <button
+              className="admin-button"
+              onClick={() => void downloadActiveDocument()}
+              type="button"
+            >
+              Télécharger
+            </button>
+            <button
+              className="admin-button admin-button--primary"
+              onClick={openActiveDocument}
+              type="button"
+            >
+              Ouvrir
+            </button>
+          </div>
+        </header>
+
+        {canAccessScores && sourceView === "pdf" && song.pdfSource ? (
           <SongPdfViewer
             copyright={song.copyright}
             sourceUrl={song.pdfSource.downloadUrl}
             title={song.title}
           />
-        </section>
-      ) : canAccessScores && sourceView === "musicxml" && song.musicXmlSource ? (
-        <section className="song-document-viewer song-document-viewer--score">
-          <header className="song-document-viewer__toolbar">
-            <div>
-              <span>Partition</span>
-              <small>{song.musicXmlSource.fileName ?? song.title}</small>
-            </div>
-            <div className="song-document-viewer__actions">
-              <button
-                className="admin-button"
-                onClick={() => musicXmlViewerRef.current?.openFullscreen()}
-                type="button"
-              >
-                Plein écran
-              </button>
-              <button
-                className="admin-button"
-                onClick={async () => {
-                  await musicXmlViewerRef.current?.downloadPdf();
-                }}
-                type="button"
-              >
-                Télécharger
-              </button>
-              <button
-                className="admin-button admin-button--primary"
-                onClick={() => musicXmlViewerRef.current?.openDocument()}
-                type="button"
-              >
-                Ouvrir
-              </button>
-            </div>
-          </header>
+        ) : canAccessScores &&
+          sourceView === "musicxml" &&
+          song.musicXmlSource ? (
           <MusicXmlScoreViewer
             ref={musicXmlViewerRef}
             key={song.id}
@@ -166,16 +225,19 @@ export function SongDetailView({
             sourceUrl={song.musicXmlSource.downloadUrl}
             title={song.title}
           />
-        </section>
-      ) : (
-        <TransposableSongSheet
-          content={song.chordProContent}
-          copyright={song.copyright}
-          defaultKey={song.defaultKey}
-          displayMode={sourceView === "lyrics" || !hasChords ? "lyrics" : "chords"}
-          title={song.title}
-        />
-      )}
+        ) : (
+          <TransposableSongSheet
+            ref={textViewerRef}
+            content={song.chordProContent}
+            copyright={song.copyright}
+            defaultKey={song.defaultKey}
+            displayMode={
+              sourceView === "lyrics" || !hasChords ? "lyrics" : "chords"
+            }
+            title={song.title}
+          />
+        )}
+      </section>
 
       <div className="song-detail-view__meta-footer">
         <div className="song-header__metadata song-header__metadata--footer">
