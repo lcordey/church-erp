@@ -42,6 +42,7 @@ export function SongDetailView({
   const musicXmlViewerRef = useRef<MusicXmlScoreViewerHandle>(null);
   const textViewerRef = useRef<TransposableSongSheetHandle>(null);
   const [isViewerFullscreen, setIsViewerFullscreen] = useState(false);
+  const [areSettingsVisible, setAreSettingsVisible] = useState(true);
 
   function getDownloadHref(sourceUrl: string) {
     const separator = sourceUrl.includes("?") ? "&" : "?";
@@ -85,6 +86,8 @@ export function SongDetailView({
       : sourceView === "musicxml" && song.musicXmlSource
         ? (song.musicXmlSource.fileName ?? song.title)
         : song.title;
+  const hasDisplaySettings =
+    sourceView === "chordpro" || sourceView === "musicxml";
 
   async function downloadActiveDocument() {
     if (sourceView === "pdf" && song.pdfSource) {
@@ -182,6 +185,16 @@ export function SongDetailView({
             <small>{documentDetail}</small>
           </div>
           <div className="song-document-viewer__actions">
+            {hasDisplaySettings ? (
+              <button
+                aria-pressed={areSettingsVisible}
+                className="admin-button"
+                onClick={() => setAreSettingsVisible((current) => !current)}
+                type="button"
+              >
+                Réglages
+              </button>
+            ) : null}
             <button
               className="admin-button"
               onClick={() => setIsViewerFullscreen((current) => !current)}
@@ -222,6 +235,7 @@ export function SongDetailView({
             collectionNumber={song.collectionNumber}
             copyright={song.copyright}
             defaultKey={song.defaultKey}
+            showSettings={areSettingsVisible}
             sourceUrl={song.musicXmlSource.downloadUrl}
             title={song.title}
           />
@@ -234,6 +248,7 @@ export function SongDetailView({
             displayMode={
               sourceView === "lyrics" || !hasChords ? "lyrics" : "chords"
             }
+            showSettings={areSettingsVisible}
             title={song.title}
           />
         )}

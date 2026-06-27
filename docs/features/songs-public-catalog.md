@@ -106,6 +106,8 @@ Implementation actuelle :
 - les vues `PDF` et `Partition` partagent un shell visuel clair et epure, coherent avec le reste du site
 - les quatre vues `Paroles`, `Accords`, `PDF` et `Partition` partagent les actions `Plein ecran`, `Telecharger` et `Ouvrir`
 - les vues `Paroles` et `Accords` utilisent une feuille de document sobre, proche du rendu pagine des PDF
+- les vues `Accords` et `Partition` exposent leurs reglages dans un panneau commun affichable ou masquable, en vue normale comme en plein ecran
+- le PDF conserve les pages deja rendues pendant son adaptation a un changement de taille ou au plein ecran
 - la vue `PDF` propose `Ouvrir` et `Telecharger`
 - la vue `Partition` propose `Ouvrir` dans un onglet dedie et `Telecharger` en PDF genere cote client
 - la vue `Partition` permet d'ajuster le nombre de mesures par ligne et l'espacement horizontal des paroles avec des sliders

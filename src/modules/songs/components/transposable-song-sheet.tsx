@@ -26,6 +26,7 @@ type TransposableSongSheetProps = {
   copyright: string | null;
   defaultKey: string | null;
   displayMode?: "chords" | "lyrics";
+  showSettings?: boolean;
   title: string;
 };
 
@@ -57,6 +58,7 @@ export const TransposableSongSheet = forwardRef<
     copyright,
     defaultKey,
     displayMode = "chords",
+    showSettings = true,
     title,
   },
   ref,
@@ -260,8 +262,8 @@ export const TransposableSongSheet = forwardRef<
 
   return (
     <div className="song-text-document">
-      {displayMode === "chords" ? (
-        <>
+      {displayMode === "chords" && showSettings ? (
+        <div className="song-render-settings">
           <div className="transpose-toolbar">
             <div>
               <span>Transposition temporaire</span>
@@ -336,7 +338,7 @@ export const TransposableSongSheet = forwardRef<
               <strong>{lineHeight.toFixed(2)}</strong>
             </label>
           </div>
-        </>
+        </div>
       ) : null}
 
       <div className="song-document-viewer__stage song-document-viewer__stage--text">

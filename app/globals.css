@@ -1290,6 +1290,12 @@ a {
   gap: 10px;
 }
 
+.song-document-viewer__actions .admin-button[aria-pressed="true"] {
+  border-color: rgb(49 91 120 / 34%);
+  color: var(--accent);
+  background: rgb(49 91 120 / 10%);
+}
+
 .song-document-viewer__stage {
   flex: 1;
   padding: clamp(14px, 2.5vw, 28px);
@@ -1973,6 +1979,23 @@ a {
   background: rgb(255 253 247 / 72%);
 }
 
+.song-render-settings {
+  border-bottom: 1px solid var(--line);
+  background: rgb(255 253 247 / 54%);
+}
+
+.song-render-settings .transpose-toolbar {
+  margin: 0;
+  border-width: 0 0 1px;
+  background: transparent;
+}
+
+.song-render-settings .sheet-controls {
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
 .sheet-controls__field {
   display: grid;
   grid-template-columns: auto minmax(180px, 240px) auto;
@@ -2588,13 +2611,13 @@ a {
 .transpose-toolbar--score {
   margin: 0;
   border-width: 0 0 1px;
-  border-color: rgb(255 253 247 / 14%);
-  color: white;
-  background: rgb(255 253 247 / 7%);
+  border-color: var(--line);
+  color: var(--ink);
+  background: rgb(255 253 247 / 54%);
 }
 
 .transpose-toolbar--score small {
-  color: rgb(255 253 247 / 68%);
+  color: var(--muted);
 }
 
 @keyframes card-enter {

@@ -13,15 +13,16 @@ export function SongPdfViewer({
   sourceUrl,
   title,
 }: SongPdfViewerProps) {
+  const stageRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState("Chargement du PDF…");
   const [pageCount, setPageCount] = useState<number | null>(null);
   const [stageWidth, setStageWidth] = useState(0);
 
   useEffect(() => {
-    const container = containerRef.current;
+    const stage = stageRef.current;
 
-    if (!container) {
+    if (!stage) {
       return;
     }
 
@@ -32,10 +33,12 @@ export function SongPdfViewer({
         return;
       }
 
-      setStageWidth(Math.floor(entry.contentRect.width));
+      const nextWidth = Math.floor(entry.contentRect.width);
+
+      setStageWidth((current) => (current === nextWidth ? current : nextWidth));
     });
 
-    observer.observe(container);
+    observer.observe(stage);
 
     return () => observer.disconnect();
   }, []);
@@ -60,9 +63,13 @@ export function SongPdfViewer({
         return;
       }
 
-      setStatus("Chargement du PDF…");
-      setPageCount(null);
-      container.replaceChildren();
+      const isInitialRender = container.childElementCount === 0;
+      const nextPages = document.createDocumentFragment();
+
+      if (isInitialRender) {
+        setStatus("Chargement du PDF…");
+        setPageCount(null);
+      }
 
       try {
         const [{ GlobalWorkerOptions, getDocument }] = await Promise.all([
@@ -125,7 +132,7 @@ export function SongPdfViewer({
           canvas.style.height = `${Math.round(viewport.height * displayScale)}px`;
 
           pageElement.append(canvas);
-          container.append(pageElement);
+          nextPages.append(pageElement);
 
           await page.render({
             canvas,
@@ -135,6 +142,7 @@ export function SongPdfViewer({
         }
 
         if (!isCancelled) {
+          container.replaceChildren(nextPages);
           setStatus("");
         }
       } catch (error) {
@@ -142,7 +150,10 @@ export function SongPdfViewer({
 
         if (!isCancelled) {
           setStatus("Impossible d’afficher ce PDF sur cet appareil.");
-          container.replaceChildren();
+
+          if (isInitialRender) {
+            container.replaceChildren();
+          }
         }
       }
     }
@@ -153,15 +164,14 @@ export function SongPdfViewer({
       isCancelled = true;
       void loadingTask?.destroy();
       worker.terminate();
-
-      if (container) {
-        container.replaceChildren();
-      }
     };
   }, [sourceUrl, stageWidth]);
 
   return (
-    <div className="song-document-viewer__stage song-document-viewer__stage--pdf">
+    <div
+      ref={stageRef}
+      className="song-document-viewer__stage song-document-viewer__stage--pdf"
+    >
       <div className="song-document-viewer__status-row">
         <p className="song-document-viewer__status">
           {status ||
