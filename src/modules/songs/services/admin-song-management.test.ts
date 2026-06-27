@@ -30,7 +30,6 @@ import {
   MissingSongMusicXmlError,
   publishSong,
   PublishedSongDeletionError,
-  ReadOnlySongError,
   unpublishSong,
   updateAdminSong,
 } from "./admin-song-management";
@@ -130,7 +129,7 @@ describe("admin song management", () => {
     expect(song?.status).toBe("draft");
   });
 
-  it("refuses to update a read-only official song", async () => {
+  it("updates an official song when admin editing is requested", async () => {
     const repository = createRepository({
       ...draftSong,
       isEditable: false,
@@ -138,8 +137,11 @@ describe("admin song management", () => {
 
     await expect(
       updateAdminSong(draftSong.id, input, repository),
-    ).rejects.toBeInstanceOf(ReadOnlySongError);
-    expect(repository.update).not.toHaveBeenCalled();
+    ).resolves.toEqual({
+      ...draftSong,
+      isEditable: false,
+    });
+    expect(repository.update).toHaveBeenCalledWith(draftSong.id, input);
   });
 
   it("attaches one PDF source to a song", async () => {

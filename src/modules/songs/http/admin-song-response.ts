@@ -9,7 +9,6 @@ import {
   InvalidSongPdfError,
   MissingSongMusicXmlError,
   PublishedSongDeletionError,
-  ReadOnlySongError,
 } from "../services/admin-song-management";
 import type { AdminSongValidationErrors } from "../validation/admin-song-input";
 
@@ -41,19 +40,6 @@ export function songNotFoundResponse() {
 export function adminSongErrorResponse(error: unknown) {
   if (error instanceof AuthenticationRequiredError) {
     return authenticationRequiredResponse();
-  }
-
-  if (error instanceof ReadOnlySongError) {
-    return Response.json(
-      {
-        error: {
-          code: "READ_ONLY_SONG",
-          message:
-            "Ce chant vient d’une source officielle et ne peut pas être modifié directement.",
-        },
-      },
-      { status: 409 },
-    );
   }
 
   if (error instanceof PublishedSongDeletionError) {

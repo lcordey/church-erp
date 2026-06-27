@@ -119,7 +119,6 @@ export function AdminSongForm({
   const [isChordProGenerationPending, setIsChordProGenerationPending] = useState(false);
   const [isPending, startTransition] = useTransition();
   const isEditing = Boolean(song);
-  const isReadOnly = song ? !song.isEditable : false;
 
   function updateField(field: AdminSongField, value: string) {
     setForm((current) => {
@@ -462,7 +461,6 @@ export function AdminSongForm({
           <label className="field field--wide">
             <span>Titre *</span>
             <input
-              disabled={isReadOnly}
               value={form.title}
               onChange={(event) => updateField("title", event.target.value)}
             />
@@ -472,7 +470,6 @@ export function AdminSongForm({
           <label className="field">
             <span>Tonalité</span>
             <select
-              disabled={isReadOnly}
               value={form.defaultKey}
               onChange={(event) => updateField("defaultKey", event.target.value)}
             >
@@ -498,7 +495,6 @@ export function AdminSongForm({
           <label className="field">
             <span>Auteur</span>
             <input
-              disabled={isReadOnly}
               value={form.author}
               onChange={(event) => updateField("author", event.target.value)}
             />
@@ -507,7 +503,6 @@ export function AdminSongForm({
           <label className="field">
             <span>Copyright</span>
             <input
-              disabled={isReadOnly}
               value={form.copyright}
               onChange={(event) => updateField("copyright", event.target.value)}
             />
@@ -653,7 +648,7 @@ export function AdminSongForm({
               <div className="pdf-field__actions">
                 <button
                   className="admin-button admin-button--quiet"
-                  disabled={isReadOnly || isChordProGenerationPending}
+                  disabled={isChordProGenerationPending}
                   onClick={() => void generateChordProFromMusicXml()}
                   type="button"
                 >
@@ -664,7 +659,6 @@ export function AdminSongForm({
               </div>
             ) : null}
             <textarea
-              disabled={isReadOnly}
               rows={17}
               value={form.chordProContent}
               onChange={(event) =>
@@ -688,21 +682,15 @@ export function AdminSongForm({
           </label>
 
           {message ? <p className="form-message">{message}</p> : null}
-          {isReadOnly ? (
-            <p className="form-message">
-              Ce chant vient d’une source officielle et ne peut pas être modifié directement.
-            </p>
-          ) : null}
-
           <div className="admin-form__actions">
             <button
               className="admin-button admin-button--primary"
-              disabled={isPending || isReadOnly}
+              disabled={isPending}
             >
               {isPending ? "Enregistrement…" : "Enregistrer"}
             </button>
 
-            {song && !isReadOnly ? (
+            {song ? (
               <button
                 className="admin-button admin-button--danger"
                 disabled={isPending}

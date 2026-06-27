@@ -64,17 +64,7 @@ export async function updateAdminSong(
     return null;
   }
 
-  if (!song.isEditable) {
-    throw new ReadOnlySongError();
-  }
-
   return repository.update(id, input);
-}
-
-export class ReadOnlySongError extends Error {
-  constructor() {
-    super("Official songs cannot be edited directly.");
-  }
 }
 
 export class PublishedSongDeletionError extends Error {
@@ -249,10 +239,6 @@ export async function generateAdminSongChordProFromMusicXml(
     return null;
   }
 
-  if (!song.isEditable) {
-    throw new ReadOnlySongError();
-  }
-
   const musicXmlSource = await repository.findMusicXmlSourceById(id);
 
   if (!musicXmlSource) {
@@ -285,10 +271,6 @@ export async function deleteDraftSong(
 
   if (song.status === "published") {
     throw new PublishedSongDeletionError();
-  }
-
-  if (!song.isEditable) {
-    throw new ReadOnlySongError();
   }
 
   return repository.delete(id);

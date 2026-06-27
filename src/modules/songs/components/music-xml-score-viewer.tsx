@@ -35,9 +35,11 @@ export type MusicXmlScoreViewerHandle = {
 };
 
 const DEFAULT_SCORE_RENDER_WIDTH = 1120;
-const MIN_SCORE_ZOOM = 0.8;
+const MOBILE_SCORE_MEDIA_QUERY = "(max-width: 720px)";
+const MOBILE_DEFAULT_SCORE_ZOOM = 0.4;
+const MIN_SCORE_ZOOM = 0.2;
 const MAX_SCORE_ZOOM = 1.8;
-const SCORE_ZOOM_STEP = 0.15;
+const SCORE_ZOOM_STEP = 0.1;
 
 function applyScoreTransposition(
   osmd: OpenSheetMusicDisplayInstance,
@@ -58,7 +60,9 @@ function escapeHtml(value: string) {
 }
 
 function clampScoreZoom(value: number) {
-  return Math.min(MAX_SCORE_ZOOM, Math.max(MIN_SCORE_ZOOM, value));
+  const roundedValue = Math.round(value * 100) / 100;
+
+  return Math.min(MAX_SCORE_ZOOM, Math.max(MIN_SCORE_ZOOM, roundedValue));
 }
 
 function applySvgDisplayWidth(
@@ -71,6 +75,9 @@ function applySvgDisplayWidth(
   }
 
   const scaledWidth = Math.round(width * zoom);
+
+  container.style.width = `${scaledWidth}px`;
+  container.style.minWidth = `${scaledWidth}px`;
 
   container.querySelectorAll("svg").forEach((svgElement) => {
     if (!(svgElement instanceof SVGSVGElement)) {
@@ -150,6 +157,7 @@ export const MusicXmlScoreViewer = forwardRef<
   const [fullscreenMarkup, setFullscreenMarkup] = useState("");
   const [stageWidth, setStageWidth] = useState(0);
   const [measuresPerLine, setMeasuresPerLine] = useState(4);
+  const [defaultZoom, setDefaultZoom] = useState(1);
   const [zoom, setZoom] = useState(1);
   const canonicalDefaultKey =
     defaultKey && isMusicalKey(defaultKey) ? defaultKey : null;
@@ -166,6 +174,15 @@ export const MusicXmlScoreViewer = forwardRef<
       : null;
   const isResetDisabled = transposeBy === 0 && manualOffset === 0;
   const renderWidth = Math.max(stageWidth, DEFAULT_SCORE_RENDER_WIDTH);
+
+  useEffect(() => {
+    if (!window.matchMedia(MOBILE_SCORE_MEDIA_QUERY).matches) {
+      return;
+    }
+
+    setDefaultZoom(MOBILE_DEFAULT_SCORE_ZOOM);
+    setZoom(MOBILE_DEFAULT_SCORE_ZOOM);
+  }, []);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -549,6 +566,7 @@ export const MusicXmlScoreViewer = forwardRef<
         <div className="song-score-viewer__zoom-buttons">
           <button
             aria-label="Réduire le zoom de la partition"
+            disabled={zoom <= MIN_SCORE_ZOOM}
             onClick={() => changeZoom(-SCORE_ZOOM_STEP)}
             type="button"
           >
@@ -556,13 +574,14 @@ export const MusicXmlScoreViewer = forwardRef<
           </button>
           <button
             aria-label="Réinitialiser le zoom de la partition"
-            onClick={() => setZoom(1)}
+            onClick={() => setZoom(defaultZoom)}
             type="button"
           >
             {Math.round(zoom * 100)}%
           </button>
           <button
             aria-label="Augmenter le zoom de la partition"
+            disabled={zoom >= MAX_SCORE_ZOOM}
             onClick={() => changeZoom(SCORE_ZOOM_STEP)}
             type="button"
           >
