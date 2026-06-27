@@ -36,7 +36,7 @@ const sampleMusicXml = `<?xml version="1.0" encoding="utf-8"?>
       </note>
       <harmony>
         <root><root-step>B</root-step></root>
-        <kind>major</kind>
+        <kind text="m">minor</kind>
       </harmony>
       <note>
         <lyric><syllabic>single</syllabic><text>Dieu</text></lyric>
@@ -57,7 +57,7 @@ describe("musicxml to chordpro", () => {
     expect(result.chordProContent).toContain("{title: Hosanna}");
     expect(result.chordProContent).toContain("{subtitle: Auteur Exemple}");
     expect(result.chordProContent).toContain("{key: A}");
-    expect(result.chordProContent).toContain("[A]Hosanna [B]Dieu");
+    expect(result.chordProContent).toContain("[A]Hosanna [Bm]Dieu");
   });
 
   it("falls back to explicit options when metadata is missing", () => {
@@ -69,5 +69,106 @@ describe("musicxml to chordpro", () => {
     expect(result.chordProContent).toContain("{title: Titre manuel}");
     expect(result.chordProContent).toContain("{key: C}");
     expect(result.chordProContent).toContain("Salut");
+  });
+
+  it("keeps numbered lyric lines as separate verses", () => {
+    const result = generateChordProFromMusicXml(`
+      <score-partwise>
+        <part id="P1">
+          <measure number="1">
+            <harmony>
+              <root><root-step>C</root-step></root>
+              <kind>major</kind>
+            </harmony>
+            <note>
+              <duration>1</duration>
+              <lyric number="1"><syllabic>single</syllabic><text>Je</text></lyric>
+              <lyric number="2"><syllabic>single</syllabic><text>Tu</text></lyric>
+            </note>
+            <note>
+              <duration>1</duration>
+              <lyric number="1"><syllabic>single</syllabic><text>chante</text></lyric>
+              <lyric number="2"><syllabic>single</syllabic><text>chantes</text></lyric>
+            </note>
+          </measure>
+          <measure number="2">
+            <note>
+              <duration>1</duration>
+              <lyric number="1"><syllabic>single</syllabic><text>encore</text></lyric>
+              <lyric number="2"><syllabic>single</syllabic><text>toujours</text></lyric>
+            </note>
+          </measure>
+        </part>
+      </score-partwise>
+    `);
+
+    expect(result.chordProContent).toContain(
+      [
+        "{start_of_verse: Couplet 1}",
+        "[C]Je chante encore",
+        "{end_of_verse}",
+        "",
+        "{start_of_verse: Couplet 2}",
+        "[C]Tu chantes toujours",
+        "{end_of_verse}",
+      ].join("\n"),
+    );
+  });
+
+  it("joins syllables and removes transcription hyphens inside words", () => {
+    const result = generateChordProFromMusicXml(`
+      <score-partwise>
+        <part id="P1">
+          <measure number="1">
+            <note>
+              <duration>1</duration>
+              <lyric><syllabic>single</syllabic><text>A-mour</text></lyric>
+            </note>
+            <note>
+              <duration>1</duration>
+              <lyric><syllabic>begin</syllabic><text>mer</text></lyric>
+            </note>
+            <harmony>
+              <root><root-step>G</root-step></root>
+              <kind>major</kind>
+            </harmony>
+            <note>
+              <duration>1</duration>
+              <lyric><syllabic>end</syllabic><text>veille</text></lyric>
+            </note>
+          </measure>
+        </part>
+      </score-partwise>
+    `);
+
+    expect(result.chordProContent).toContain("Amour mer[G]veille");
+    expect(result.chordProContent).not.toContain("A-mour");
+  });
+
+  it("uses printed systems instead of measures for lyric line breaks", () => {
+    const result = generateChordProFromMusicXml(`
+      <score-partwise>
+        <part id="P1">
+          <measure number="1">
+            <note><duration>1</duration><lyric><text>Une</text></lyric></note>
+          </measure>
+          <measure number="2">
+            <note><duration>1</duration><lyric><text>même</text></lyric></note>
+          </measure>
+          <measure number="3">
+            <print new-system="yes" />
+            <note><duration>1</duration><lyric><text>Nouvelle</text></lyric></note>
+          </measure>
+          <measure number="4">
+            <note><duration>1</duration><lyric><text>ligne</text></lyric></note>
+          </measure>
+        </part>
+      </score-partwise>
+    `);
+
+    expect(result.chordProContent).toContain(
+      "Une même\nNouvelle ligne",
+    );
+    expect(result.chordProContent).not.toContain("Une\nmême");
   });
 });

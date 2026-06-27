@@ -31,7 +31,10 @@ function alterToAccidental(value: number | null) {
 function normalizeKind(kind: string | null) {
   const normalized = kind?.toLowerCase() ?? "major";
   const mapping: Record<string, string> = {
+    maj: "",
     major: "",
+    min: "m",
+    m: "m",
     minor: "m",
     augmented: "aug",
     diminished: "dim",
@@ -76,127 +79,383 @@ function extractHarmonyChord(harmonyXml: string) {
   return `${root}${kind}${bass}`;
 }
 
-function extractSyllableText(lyricXml: string) {
-  const text = extractFirst(lyricXml, /<text>([\s\S]*?)<\/text>/i);
-  const syllabic = extractFirst(lyricXml, /<syllabic>(.*?)<\/syllabic>/i);
+type Syllabic = "single" | "begin" | "middle" | "end";
 
-  if (!text) {
+type TimedHarmony = {
+  chord: string;
+  offset: number;
+  order: number;
+};
+
+type TimedSyllable = {
+  text: string;
+  syllabic: Syllabic;
+  verseId: string;
+  offset: number;
+  order: number;
+};
+
+type MusicSystem = {
+  harmonies: TimedHarmony[];
+  syllables: TimedSyllable[];
+};
+
+function extractAttribute(attributes: string, name: string) {
+  const match = attributes.match(
+    new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`, "i"),
+  );
+
+  return match ? cleanupText(match[1] ?? match[2]) : null;
+}
+
+function parseDuration(content: string) {
+  const duration = extractFirst(content, /<duration>(-?\d+)<\/duration>/i);
+  return duration ? Number.parseInt(duration, 10) : 0;
+}
+
+function normalizeSyllabic(value: string | null): Syllabic {
+  const normalized = value?.toLowerCase();
+
+  if (
+    normalized === "begin" ||
+    normalized === "middle" ||
+    normalized === "end"
+  ) {
+    return normalized;
+  }
+
+  return "single";
+}
+
+function normalizeLyricText(value: string) {
+  return cleanupText(value).replace(/(\p{L})-\s*(?=\p{L})/gu, "$1");
+}
+
+function extractNoteSyllables(
+  noteXml: string,
+  offset: number,
+  order: number,
+) {
+  const syllables: TimedSyllable[] = [];
+
+  for (const match of noteXml.matchAll(
+    /<lyric\b([^>]*)>([\s\S]*?)<\/lyric>/gi,
+  )) {
+    const attributes = match[1];
+    const lyricXml = match[2];
+    const textParts = [...lyricXml.matchAll(/<text>([\s\S]*?)<\/text>/gi)]
+      .map((textMatch) => cleanupText(textMatch[1]))
+      .filter(Boolean);
+
+    if (textParts.length === 0) {
+      continue;
+    }
+
+    syllables.push({
+      text: normalizeLyricText(textParts.join("")),
+      syllabic: normalizeSyllabic(
+        extractFirst(lyricXml, /<syllabic>(.*?)<\/syllabic>/i),
+      ),
+      verseId:
+        extractAttribute(attributes, "number") ??
+        extractAttribute(attributes, "name") ??
+        "1",
+      offset,
+      order,
+    });
+  }
+
+  return syllables;
+}
+
+function hasSystemContent(system: MusicSystem) {
+  return system.harmonies.length > 0 || system.syllables.length > 0;
+}
+
+function startsNewSystem(measureXml: string) {
+  return /<print\b[^>]*(?:new-system|new-page)\s*=\s*(?:"yes"|'yes')[^>]*\/?>/i.test(
+    measureXml,
+  );
+}
+
+function extractPreferredPart(content: string) {
+  const parts = [...content.matchAll(/<part\b[^>]*>([\s\S]*?)<\/part>/gi)]
+    .map((match) => match[1]);
+
+  if (parts.length === 0) {
     return null;
   }
 
-  return {
-    text,
-    syllabic: syllabic?.toLowerCase() ?? "single",
-  };
+  return parts.reduce((preferred, part) => {
+    const preferredLyrics = [...preferred.matchAll(/<lyric\b/gi)].length;
+    const partLyrics = [...part.matchAll(/<lyric\b/gi)].length;
+    return partLyrics > preferredLyrics ? part : preferred;
+  });
 }
 
-function extractMeasureTokens(measureXml: string) {
-  return [...measureXml.matchAll(/<harmony\b[\s\S]*?<\/harmony>|<lyric\b[\s\S]*?<\/lyric>/gi)]
-    .map((match) => match[0]);
-}
+function extractMusicSystems(content: string) {
+  const part = extractPreferredPart(content);
 
-function wordsFromMeasure(measureXml: string) {
-  const words: string[] = [];
-  const chords: string[] = [];
-  let pendingWord = "";
-
-  for (const token of extractMeasureTokens(measureXml)) {
-    if (token.startsWith("<harmony")) {
-      const chord = extractHarmonyChord(token);
-
-      if (chord) {
-        chords.push(chord);
-      }
-
-      continue;
-    }
-
-    const syllable = extractSyllableText(token);
-
-    if (!syllable) {
-      continue;
-    }
-
-    if (syllable.syllabic === "begin") {
-      pendingWord = syllable.text;
-      continue;
-    }
-
-    if (syllable.syllabic === "middle") {
-      pendingWord += syllable.text;
-      continue;
-    }
-
-    if (syllable.syllabic === "end") {
-      pendingWord += syllable.text;
-      const word = cleanupText(pendingWord);
-
-      if (word) {
-        words.push(word);
-      }
-
-      pendingWord = "";
-      continue;
-    }
-
-    if (pendingWord) {
-      const word = cleanupText(`${pendingWord}${syllable.text}`);
-
-      if (word) {
-        words.push(word);
-      }
-
-      pendingWord = "";
-      continue;
-    }
-
-    words.push(syllable.text);
-  }
-
-  if (pendingWord) {
-    const word = cleanupText(pendingWord);
-
-    if (word) {
-      words.push(word);
-    }
-  }
-
-  return { words, chords };
-}
-
-function buildChordProLine(words: string[], chords: string[]) {
-  if (words.length === 0 && chords.length === 0) {
-    return null;
-  }
-
-  if (words.length === 0) {
-    return chords.map((chord) => `[${chord}]`).join(" ");
-  }
-
-  const parts: string[] = [];
-
-  for (let index = 0; index < words.length; index += 1) {
-    const chord = chords[index];
-
-    parts.push(chord ? `[${chord}]${words[index]}` : words[index]);
-  }
-
-  for (let index = words.length; index < chords.length; index += 1) {
-    parts.push(`[${chords[index]}]`);
-  }
-
-  return parts.join(" ").trim();
-}
-
-function extractPartMeasures(content: string) {
-  const partMatch = content.match(/<part\b[\s\S]*?>([\s\S]*?)<\/part>/i);
-
-  if (!partMatch) {
+  if (!part) {
     return [];
   }
 
-  return [...partMatch[1].matchAll(/<measure\b[\s\S]*?>([\s\S]*?)<\/measure>/gi)]
-    .map((match) => match[1]);
+  const systems: MusicSystem[] = [{ harmonies: [], syllables: [] }];
+  let currentSystem = systems[0];
+  let absoluteOffset = 0;
+  let eventOrder = 0;
+
+  for (const measureMatch of part.matchAll(
+    /<measure\b[^>]*>([\s\S]*?)<\/measure>/gi,
+  )) {
+    const measureXml = measureMatch[1];
+
+    if (startsNewSystem(measureXml) && hasSystemContent(currentSystem)) {
+      currentSystem = { harmonies: [], syllables: [] };
+      systems.push(currentSystem);
+    }
+
+    let cursor = 0;
+    let furthestOffset = 0;
+    let lastNoteOffset = 0;
+
+    for (const eventMatch of measureXml.matchAll(
+      /<harmony\b[\s\S]*?<\/harmony>|<note\b[\s\S]*?<\/note>|<backup\b[\s\S]*?<\/backup>|<forward\b[\s\S]*?<\/forward>/gi,
+    )) {
+      const eventXml = eventMatch[0];
+      eventOrder += 1;
+
+      if (/^<harmony\b/i.test(eventXml)) {
+        const chord = extractHarmonyChord(eventXml);
+        const harmonyOffsetValue = extractFirst(
+          eventXml,
+          /<offset\b[^>]*>(-?\d+)<\/offset>/i,
+        );
+        const harmonyOffset = harmonyOffsetValue
+          ? Number.parseInt(harmonyOffsetValue, 10)
+          : 0;
+
+        if (chord) {
+          currentSystem.harmonies.push({
+            chord,
+            offset: absoluteOffset + cursor + harmonyOffset,
+            order: eventOrder,
+          });
+        }
+
+        continue;
+      }
+
+      if (/^<backup\b/i.test(eventXml)) {
+        cursor = Math.max(0, cursor - parseDuration(eventXml));
+        continue;
+      }
+
+      if (/^<forward\b/i.test(eventXml)) {
+        cursor += parseDuration(eventXml);
+        furthestOffset = Math.max(furthestOffset, cursor);
+        continue;
+      }
+
+      const isChordNote = /<chord\s*\/>/i.test(eventXml);
+      const noteOffset = isChordNote ? lastNoteOffset : cursor;
+
+      currentSystem.syllables.push(
+        ...extractNoteSyllables(
+          eventXml,
+          absoluteOffset + noteOffset,
+          eventOrder,
+        ),
+      );
+
+      if (!isChordNote) {
+        lastNoteOffset = noteOffset;
+        cursor += parseDuration(eventXml);
+        furthestOffset = Math.max(furthestOffset, cursor);
+      }
+    }
+
+    absoluteOffset += Math.max(furthestOffset, cursor, 1);
+  }
+
+  return systems.filter(hasSystemContent);
+}
+
+function compareVerseIds(left: string, right: string) {
+  const leftNumber = Number(left);
+  const rightNumber = Number(right);
+
+  if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) {
+    return leftNumber - rightNumber;
+  }
+
+  return left.localeCompare(right);
+}
+
+function getSystemVerseIds(system: MusicSystem) {
+  return [...new Set(system.syllables.map((syllable) => syllable.verseId))]
+    .sort(compareVerseIds);
+}
+
+function comesAfterHarmony(
+  syllable: TimedSyllable,
+  harmony: TimedHarmony,
+) {
+  return (
+    syllable.offset > harmony.offset ||
+    (syllable.offset === harmony.offset && syllable.order > harmony.order)
+  );
+}
+
+function buildChordProLine(
+  syllables: TimedSyllable[],
+  harmonies: TimedHarmony[],
+) {
+  if (syllables.length === 0) {
+    return harmonies.map(({ chord }) => `[${chord}]`).join(" ");
+  }
+
+  const chordPrefixes = syllables.map(() => [] as string[]);
+  const trailingChords: string[] = [];
+
+  for (const harmony of harmonies) {
+    const syllableIndex = syllables.findIndex((syllable) =>
+      comesAfterHarmony(syllable, harmony),
+    );
+
+    if (syllableIndex === -1) {
+      trailingChords.push(harmony.chord);
+    } else {
+      chordPrefixes[syllableIndex].push(harmony.chord);
+    }
+  }
+
+  let line = "";
+  let wordOpen = false;
+  let previousText = "";
+
+  for (let index = 0; index < syllables.length; index += 1) {
+    const syllable = syllables[index];
+    const text = normalizeLyricText(syllable.text);
+
+    if (!text) {
+      continue;
+    }
+
+    const joinsPreviousWord =
+      wordOpen && syllable.syllabic !== "begin";
+    const startsWithPunctuation = /^[,.;:!?…)\]}]/u.test(text);
+    const followsApostrophe = /['’]$/u.test(previousText);
+
+    if (
+      line &&
+      !joinsPreviousWord &&
+      !startsWithPunctuation &&
+      !followsApostrophe
+    ) {
+      line += " ";
+    }
+
+    line += chordPrefixes[index]
+      .map((chord) => `[${chord}]`)
+      .join("");
+    line += text;
+
+    wordOpen =
+      syllable.syllabic === "begin" || syllable.syllabic === "middle";
+    previousText = text;
+  }
+
+  if (trailingChords.length > 0) {
+    line += `${line ? " " : ""}${trailingChords
+      .map((chord) => `[${chord}]`)
+      .join(" ")}`;
+  }
+
+  return line.trim();
+}
+
+function buildSystemLines(system: MusicSystem) {
+  return new Map(
+    getSystemVerseIds(system).map((verseId) => [
+      verseId,
+      buildChordProLine(
+        system.syllables.filter(
+          (syllable) => syllable.verseId === verseId,
+        ),
+        system.harmonies,
+      ),
+    ]),
+  );
+}
+
+function buildChordProBody(systems: MusicSystem[]) {
+  const blocks: string[] = [];
+  let systemIndex = 0;
+
+  while (systemIndex < systems.length) {
+    const verseIds = getSystemVerseIds(systems[systemIndex]);
+
+    if (verseIds.length > 1) {
+      let parallelEnd = systemIndex + 1;
+
+      while (
+        parallelEnd < systems.length &&
+        getSystemVerseIds(systems[parallelEnd]).length > 1
+      ) {
+        parallelEnd += 1;
+      }
+
+      const parallelSystems = systems.slice(systemIndex, parallelEnd);
+      const parallelVerseIds = [
+        ...new Set(parallelSystems.flatMap(getSystemVerseIds)),
+      ].sort(compareVerseIds);
+
+      for (const verseId of parallelVerseIds) {
+        const lines = parallelSystems
+          .map((system) => buildSystemLines(system).get(verseId))
+          .filter((line): line is string => Boolean(line));
+
+        if (lines.length > 0) {
+          blocks.push(
+            [
+              `{start_of_verse: Couplet ${verseId}}`,
+              ...lines,
+              "{end_of_verse}",
+            ].join("\n"),
+          );
+        }
+      }
+
+      systemIndex = parallelEnd;
+      continue;
+    }
+
+    const lines: string[] = [];
+
+    while (
+      systemIndex < systems.length &&
+      getSystemVerseIds(systems[systemIndex]).length <= 1
+    ) {
+      const system = systems[systemIndex];
+      const [verseId] = getSystemVerseIds(system);
+      const line = verseId
+        ? buildSystemLines(system).get(verseId)
+        : buildChordProLine([], system.harmonies);
+
+      if (line) {
+        lines.push(line);
+      }
+
+      systemIndex += 1;
+    }
+
+    if (lines.length > 0) {
+      blocks.push(lines.join("\n"));
+    }
+  }
+
+  return blocks.join("\n\n");
 }
 
 function toSupportedKey(fifths: number, mode: string) {
@@ -268,12 +527,9 @@ export function generateChordProFromMusicXml(
     options?.author ??
     null;
   const defaultKey = extractMusicXmlDefaultKey(content) ?? options?.defaultKey ?? null;
-  const lines = extractPartMeasures(content)
-    .map(wordsFromMeasure)
-    .map(({ words, chords }) => buildChordProLine(words, chords))
-    .filter((line): line is string => Boolean(line));
+  const body = buildChordProBody(extractMusicSystems(content));
 
-  if (lines.length === 0) {
+  if (!body) {
     throw new Error("The MusicXML file does not contain any renderable lyrics or harmony.");
   }
 
@@ -283,7 +539,7 @@ export function generateChordProFromMusicXml(
       author ? `{subtitle: ${author}}` : null,
       defaultKey ? `{key: ${defaultKey}}` : null,
       "",
-      ...lines,
+      body,
     ]
       .filter((line): line is string => line !== null)
       .join("\n"),

@@ -66,6 +66,9 @@ Pour MVP-1 :
 - une source `PDF` active est optionnelle
 - une source `MusicXML` active est optionnelle et stockee comme contenu texte en base
 - quand une source `MusicXML` active existe, l'edition peut proposer une generation initiale de `ChordPro` sans enregistrer automatiquement le resultat
+- la generation ChordPro separe les lignes de paroles MusicXML numerotees en couplets distincts
+- les syllabes d'un meme mot sont reunies sans tiret de cesure
+- les retours a la ligne suivent les changements de systeme indiques par la partition plutot que chaque mesure
 
 Champs possibles plus tard, non requis maintenant :
 - `tempo`
