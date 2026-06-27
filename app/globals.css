@@ -1306,17 +1306,23 @@ a {
   box-shadow: 0 18px 50px rgb(24 36 58 / 16%);
 }
 
-.song-score-viewer__score {
+.song-score-viewer__viewport {
   min-height: min(78vh, 960px);
   overflow: auto;
   border-radius: 8px 8px 0 0;
   padding-top: 34px;
   background: #fffdf7;
   box-shadow: 0 18px 50px rgb(24 36 58 / 16%);
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y pinch-zoom;
 }
 
-.song-score-viewer__score:last-child {
+.song-score-viewer__viewport:last-child {
   border-radius: 8px;
+}
+
+.song-score-viewer__score {
+  min-width: fit-content;
 }
 
 .song-score-viewer__score > svg {
@@ -2658,7 +2664,7 @@ a {
     text-align: center;
   }
 
-  .song-score-viewer__score {
+  .song-score-viewer__viewport {
     min-height: 68vh;
   }
 
@@ -2906,14 +2912,14 @@ a {
     box-shadow: none !important;
   }
 
-  .song-score-viewer__score,
+  .song-score-viewer__viewport,
   .song-score-viewer__sheet-footer,
   .song-score-fullscreen__sheet,
   .song-pdf-viewer__page canvas {
     box-shadow: none !important;
   }
 
-  .song-score-viewer__score {
+  .song-score-viewer__viewport {
     min-height: auto;
     overflow: visible;
     padding-top: 0;

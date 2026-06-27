@@ -577,7 +577,8 @@ export const MusicXmlScoreViewer = forwardRef<
           </label>
           <p className="song-score-viewer__hint">
             Sur téléphone, la partition garde une largeur proche du desktop.
-            Fais défiler horizontalement ou utilise le plein écran pour zoomer.
+            Fais défiler librement dans la vue, ou utilise le plein écran pour
+            une lecture encore plus confortable.
           </p>
         </div>
         <div className="song-document-viewer__status-row">
@@ -589,11 +590,13 @@ export const MusicXmlScoreViewer = forwardRef<
             </p>
           )}
         </div>
-        <div
-          ref={containerRef}
-          aria-label={`Partition MusicXML de ${title}`}
-          className="song-score-viewer__score"
-        />
+        <div className="song-score-viewer__viewport">
+          <div
+            ref={containerRef}
+            aria-label={`Partition MusicXML de ${title}`}
+            className="song-score-viewer__score"
+          />
+        </div>
         {copyright ? (
           <footer className="song-score-viewer__sheet-footer">
             {copyright}
