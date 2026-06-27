@@ -34,9 +34,7 @@ export type MusicXmlScoreViewerHandle = {
   openFullscreen: () => void;
 };
 
-const DEFAULT_SCORE_RENDER_WIDTH = 1120;
-const MOBILE_SCORE_MEDIA_QUERY = "(max-width: 720px)";
-const MOBILE_DEFAULT_SCORE_ZOOM = 0.4;
+const DEFAULT_SCORE_ZOOM = 1;
 const MIN_SCORE_ZOOM = 0.2;
 const MAX_SCORE_ZOOM = 1.8;
 const SCORE_ZOOM_STEP = 0.1;
@@ -70,7 +68,7 @@ function applySvgDisplayWidth(
   width: number,
   zoom: number,
 ) {
-  if (!container) {
+  if (!container || width <= 0) {
     return;
   }
 
@@ -157,8 +155,7 @@ export const MusicXmlScoreViewer = forwardRef<
   const [fullscreenMarkup, setFullscreenMarkup] = useState("");
   const [stageWidth, setStageWidth] = useState(0);
   const [measuresPerLine, setMeasuresPerLine] = useState(4);
-  const [defaultZoom, setDefaultZoom] = useState(1);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(DEFAULT_SCORE_ZOOM);
   const canonicalDefaultKey =
     defaultKey && isMusicalKey(defaultKey) ? defaultKey : null;
   const [selectedKey, setSelectedKey] = useState(canonicalDefaultKey ?? "");
@@ -173,16 +170,7 @@ export const MusicXmlScoreViewer = forwardRef<
       ? transposeChord(defaultKey, manualOffset)
       : null;
   const isResetDisabled = transposeBy === 0 && manualOffset === 0;
-  const renderWidth = Math.max(stageWidth, DEFAULT_SCORE_RENDER_WIDTH);
-
-  useEffect(() => {
-    if (!window.matchMedia(MOBILE_SCORE_MEDIA_QUERY).matches) {
-      return;
-    }
-
-    setDefaultZoom(MOBILE_DEFAULT_SCORE_ZOOM);
-    setZoom(MOBILE_DEFAULT_SCORE_ZOOM);
-  }, []);
+  const renderWidth = stageWidth;
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -454,7 +442,7 @@ export const MusicXmlScoreViewer = forwardRef<
     const container = containerRef.current;
 
     async function renderScore() {
-      if (!container) {
+      if (!container || renderWidth <= 0) {
         return;
       }
 
@@ -574,7 +562,7 @@ export const MusicXmlScoreViewer = forwardRef<
           </button>
           <button
             aria-label="Réinitialiser le zoom de la partition"
-            onClick={() => setZoom(defaultZoom)}
+            onClick={() => setZoom(DEFAULT_SCORE_ZOOM)}
             type="button"
           >
             {Math.round(zoom * 100)}%
@@ -672,11 +660,6 @@ export const MusicXmlScoreViewer = forwardRef<
             </label>
             {renderZoomControls()}
           </div>
-          <p className="song-score-viewer__hint">
-            Sur téléphone, la partition garde une largeur proche du desktop.
-            Fais défiler librement dans la vue, ou utilise le plein écran pour
-            une lecture encore plus confortable.
-          </p>
         </div>
         <div className="song-document-viewer__status-row">
           {status ? (
@@ -712,14 +695,6 @@ export const MusicXmlScoreViewer = forwardRef<
           />
           <div className="song-score-fullscreen__panel">
             <header className="song-score-fullscreen__header">
-              <div>
-                <p className="eyebrow">Lecture confortable</p>
-                <h2>{title}</h2>
-                <p>
-                  Fais défiler librement la partition. Le zoom du navigateur
-                  reste disponible sur mobile.
-                </p>
-              </div>
               <div className="song-score-fullscreen__header-actions">
                 {renderZoomControls("song-score-viewer__zoom-controls song-score-viewer__zoom-controls--fullscreen")}
                 <button
