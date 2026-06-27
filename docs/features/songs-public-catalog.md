@@ -107,7 +107,9 @@ Implementation actuelle :
 - la vue `PDF` propose `Ouvrir` et `Telecharger`
 - la vue `Partition` propose `Ouvrir` dans un onglet dedie et `Telecharger` en PDF genere cote client
 - la vue `Partition` permet d'ajuster le nombre de mesures par ligne et l'espacement horizontal des paroles avec des sliders
-- sur mobile, la partition conserve une largeur de gravure stable independante du viewport puis est affichee a 40 % par defaut; le rendu desktop continue de suivre la largeur disponible
+- sur mobile, la partition conserve une largeur de gravure stable independante du viewport; le rendu desktop continue de suivre la largeur disponible
+- le zoom initial s'ajuste ensuite au viewport actif pour eviter le scroll horizontal; sa valeur reste modifiable manuellement entre 20 % et 180 %
+- le plein ecran conserve un header compact pour le zoom et la fermeture, avec un viewport scrollable distinct et un fond de partition unique
 - le nom du PDF genere pour la partition reutilise le titre du chant et, si disponible, son recueil et numero
 - le mode `Accords` permet d'ajuster l'interligne pour densifier ou aerer l'affichage
 - preference persistante de notation anglaise ou francaise

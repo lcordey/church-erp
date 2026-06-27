@@ -47,11 +47,21 @@ const SCORE_LAYOUT_UPDATE_DELAY = 180;
 
 function applyScoreTransposition(
   osmd: OpenSheetMusicDisplayInstance,
+  container: HTMLElement | null,
   semitones: number,
+  renderWidth: number,
+  zoom: number,
 ) {
+  if (!container || renderWidth <= 0) {
+    return;
+  }
+
+  container.style.width = `${Math.round(renderWidth)}px`;
+  container.style.minWidth = `${Math.round(renderWidth)}px`;
   osmd.Sheet.Transpose = semitones;
   osmd.updateGraphic();
   osmd.render();
+  applySvgDisplayWidth(container, renderWidth, zoom);
 }
 
 function escapeHtml(value: string) {
@@ -67,6 +77,19 @@ function clampScoreZoom(value: number) {
   const roundedValue = Math.round(value * 100) / 100;
 
   return Math.min(MAX_SCORE_ZOOM, Math.max(MIN_SCORE_ZOOM, roundedValue));
+}
+
+function getFittedScoreZoom(
+  viewport: HTMLElement | null,
+  renderWidth: number,
+) {
+  if (!viewport || renderWidth <= 0 || viewport.clientWidth <= 0) {
+    return null;
+  }
+
+  const fittedZoom = (viewport.clientWidth - 2) / renderWidth;
+
+  return clampScoreZoom(Math.floor(fittedZoom * 100) / 100);
 }
 
 function applySvgDisplayWidth(
@@ -153,9 +176,13 @@ export const MusicXmlScoreViewer = forwardRef<
 ) {
   const { notation } = useMusicNotation();
   const stageRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const fullscreenViewportRef = useRef<HTMLDivElement>(null);
   const fullscreenSheetRef = useRef<HTMLDivElement>(null);
   const osmdRef = useRef<OpenSheetMusicDisplayInstance | null>(null);
+  const renderWidthRef = useRef(0);
+  const zoomRef = useRef(DEFAULT_SCORE_ZOOM);
   const [status, setStatus] = useState("Chargement de la partition…");
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const [fullscreenMarkup, setFullscreenMarkup] = useState("");
@@ -195,9 +222,8 @@ export const MusicXmlScoreViewer = forwardRef<
       : isMobileRendering
         ? MOBILE_SCORE_RENDER_WIDTH
         : stageWidth;
-  const defaultZoom = isMobileRendering
-    ? MOBILE_DEFAULT_SCORE_ZOOM
-    : DEFAULT_SCORE_ZOOM;
+  renderWidthRef.current = renderWidth;
+  zoomRef.current = zoom;
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(MOBILE_SCORE_MEDIA_QUERY);
@@ -459,7 +485,6 @@ export const MusicXmlScoreViewer = forwardRef<
     isFullscreenOpen,
     renderWidth,
     status,
-    transposeBy,
   ]);
 
   useEffect(() => {
@@ -492,6 +517,31 @@ export const MusicXmlScoreViewer = forwardRef<
   useEffect(() => {
     applySvgDisplayWidth(fullscreenSheetRef.current, renderWidth, zoom);
   }, [fullscreenMarkup, isFullscreenOpen, renderWidth, zoom]);
+
+  useEffect(() => {
+    if (status || renderWidth <= 0) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const viewport = isFullscreenOpen
+        ? fullscreenViewportRef.current
+        : viewportRef.current;
+      const fittedZoom = getFittedScoreZoom(viewport, renderWidth);
+
+      if (fittedZoom !== null) {
+        setZoom(fittedZoom);
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [
+    fullscreenMarkup,
+    isFullscreenOpen,
+    renderWidth,
+    stageWidth,
+    status,
+  ]);
 
   function shift(step: number) {
     if (!canonicalDefaultKey) {
@@ -580,7 +630,13 @@ export const MusicXmlScoreViewer = forwardRef<
           0.8 * appliedLyricsSpacing;
 
         osmdRef.current = osmd;
-        applyScoreTransposition(osmd, transposeByRef.current);
+        applyScoreTransposition(
+          osmd,
+          container,
+          transposeByRef.current,
+          renderWidth,
+          zoomRef.current,
+        );
         setStatus("");
       } catch (error) {
         console.error(error);
@@ -618,11 +674,41 @@ export const MusicXmlScoreViewer = forwardRef<
     }
 
     transposeByRef.current = transposeBy;
-    applyScoreTransposition(osmd, transposeBy);
-  }, [transposeBy]);
+    applyScoreTransposition(
+      osmd,
+      containerRef.current,
+      transposeBy,
+      renderWidthRef.current,
+      zoomRef.current,
+    );
+
+    if (isFullscreenOpen && containerRef.current?.innerHTML) {
+      setFullscreenMarkup(containerRef.current.innerHTML);
+    }
+  }, [isFullscreenOpen, transposeBy]);
 
   function changeZoom(step: number) {
     setZoom((current) => clampScoreZoom(current + step));
+  }
+
+  function requestCustomZoom() {
+    const value = window.prompt(
+      "Saisis un zoom entre 20 % et 180 %.",
+      String(Math.round(zoom * 100)),
+    );
+
+    if (value === null) {
+      return;
+    }
+
+    const percentage = Number(value.trim().replace("%", "").replace(",", "."));
+
+    if (!Number.isFinite(percentage)) {
+      window.alert("Saisis une valeur de zoom valide.");
+      return;
+    }
+
+    setZoom(clampScoreZoom(percentage / 100));
   }
 
   function renderZoomControls(className?: string) {
@@ -639,8 +725,8 @@ export const MusicXmlScoreViewer = forwardRef<
             −
           </button>
           <button
-            aria-label="Réinitialiser le zoom de la partition"
-            onClick={() => setZoom(defaultZoom)}
+            aria-label="Définir un zoom personnalisé pour la partition"
+            onClick={requestCustomZoom}
             type="button"
           >
             {Math.round(zoom * 100)}%
@@ -766,7 +852,7 @@ export const MusicXmlScoreViewer = forwardRef<
             </p>
           )}
         </div>
-        <div className="song-score-viewer__viewport">
+        <div ref={viewportRef} className="song-score-viewer__viewport">
           <div
             ref={containerRef}
             aria-label={`Partition MusicXML de ${title}`}
@@ -804,7 +890,10 @@ export const MusicXmlScoreViewer = forwardRef<
               </div>
             </header>
             <div className="song-score-fullscreen__body">
-              <div className="song-score-fullscreen__viewport">
+              <div
+                ref={fullscreenViewportRef}
+                className="song-score-fullscreen__viewport"
+              >
                 <div
                   ref={fullscreenSheetRef}
                   aria-label={`Partition MusicXML en plein écran de ${title}`}

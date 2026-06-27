@@ -1439,25 +1439,27 @@ a {
   min-height: 0;
   overflow: hidden;
   flex-direction: column;
-  background:
-    radial-gradient(circle at top left, rgb(255 255 255 / 94%), transparent 28rem),
-    linear-gradient(180deg, rgb(246 241 232 / 98%), rgb(236 231 221 / 97%));
+  background: #fffdf7;
 }
 
 .song-score-fullscreen__header {
-  position: absolute;
-  top: max(10px, env(safe-area-inset-top));
-  right: max(10px, env(safe-area-inset-right));
-  z-index: 1;
   display: flex;
-  pointer-events: none;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  padding:
+    max(8px, env(safe-area-inset-top))
+    max(10px, env(safe-area-inset-right))
+    8px
+    max(10px, env(safe-area-inset-left));
+  border-bottom: 1px solid rgb(49 91 120 / 12%);
+  background: rgb(246 241 232 / 98%);
 }
 
 .song-score-fullscreen__header-actions {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
-  pointer-events: auto;
 }
 
 .song-score-viewer__zoom-controls--fullscreen > span {
@@ -1472,22 +1474,23 @@ a {
 }
 
 .song-score-fullscreen__viewport {
+  width: 100%;
+  height: 100%;
   min-width: 0;
   min-height: 0;
   flex: 1;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  touch-action: pan-x pan-y pinch-zoom;
+  touch-action: auto;
+  background: #fffdf7;
 }
 
 .song-score-fullscreen__sheet {
   min-width: fit-content;
   min-height: fit-content;
   margin-inline: auto;
-  padding: 20px;
-  background: #fffdf7;
-  box-shadow: 0 24px 60px rgb(24 36 58 / 16%);
+  background: transparent;
 }
 
 .song-score-fullscreen__sheet > svg {
@@ -2735,15 +2738,6 @@ a {
     width: 100%;
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .song-score-fullscreen__header {
-    top: max(8px, env(safe-area-inset-top));
-    right: max(8px, env(safe-area-inset-right));
-  }
-
-  .song-score-fullscreen__sheet {
-    padding: 16px;
   }
 
   .app-shell__header-inner {
