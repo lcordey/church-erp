@@ -35,9 +35,12 @@ export type MusicXmlScoreViewerHandle = {
 };
 
 const DEFAULT_SCORE_ZOOM = 1;
+const DEFAULT_MEASURES_PER_LINE = 4;
+const DEFAULT_LYRICS_SPACING = 1;
 const MIN_SCORE_ZOOM = 0.2;
 const MAX_SCORE_ZOOM = 1.8;
 const SCORE_ZOOM_STEP = 0.1;
+const SCORE_LAYOUT_UPDATE_DELAY = 180;
 
 function applyScoreTransposition(
   osmd: OpenSheetMusicDisplayInstance,
@@ -154,7 +157,16 @@ export const MusicXmlScoreViewer = forwardRef<
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const [fullscreenMarkup, setFullscreenMarkup] = useState("");
   const [stageWidth, setStageWidth] = useState(0);
-  const [measuresPerLine, setMeasuresPerLine] = useState(4);
+  const [measuresPerLine, setMeasuresPerLine] = useState(
+    DEFAULT_MEASURES_PER_LINE,
+  );
+  const [lyricsSpacing, setLyricsSpacing] = useState(DEFAULT_LYRICS_SPACING);
+  const [appliedMeasuresPerLine, setAppliedMeasuresPerLine] = useState(
+    DEFAULT_MEASURES_PER_LINE,
+  );
+  const [appliedLyricsSpacing, setAppliedLyricsSpacing] = useState(
+    DEFAULT_LYRICS_SPACING,
+  );
   const [zoom, setZoom] = useState(DEFAULT_SCORE_ZOOM);
   const canonicalDefaultKey =
     defaultKey && isMusicalKey(defaultKey) ? defaultKey : null;
@@ -171,6 +183,15 @@ export const MusicXmlScoreViewer = forwardRef<
       : null;
   const isResetDisabled = transposeBy === 0 && manualOffset === 0;
   const renderWidth = stageWidth;
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setAppliedMeasuresPerLine(measuresPerLine);
+      setAppliedLyricsSpacing(lyricsSpacing);
+    }, SCORE_LAYOUT_UPDATE_DELAY);
+
+    return () => window.clearTimeout(timeout);
+  }, [lyricsSpacing, measuresPerLine]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -392,7 +413,14 @@ export const MusicXmlScoreViewer = forwardRef<
     }
 
     setFullscreenMarkup(container.innerHTML);
-  }, [isFullscreenOpen, measuresPerLine, renderWidth, status, transposeBy]);
+  }, [
+    appliedLyricsSpacing,
+    appliedMeasuresPerLine,
+    isFullscreenOpen,
+    renderWidth,
+    status,
+    transposeBy,
+  ]);
 
   useEffect(() => {
     if (!isFullscreenOpen) {
@@ -501,12 +529,15 @@ export const MusicXmlScoreViewer = forwardRef<
           osmd.Sheet.CopyrightString = copyright;
         }
 
-        osmd.EngravingRules.RenderXMeasuresPerLineAkaSystem = measuresPerLine;
+        osmd.EngravingRules.RenderXMeasuresPerLineAkaSystem =
+          appliedMeasuresPerLine;
         osmd.EngravingRules.TitleBottomDistance = 5.5;
         osmd.EngravingRules.LyricsUseXPaddingForLongLyrics = true;
-        osmd.EngravingRules.LyricsXPaddingFactorForLongLyrics = 1.25;
+        osmd.EngravingRules.LyricsXPaddingFactorForLongLyrics =
+          1.25 * appliedLyricsSpacing;
         osmd.EngravingRules.MaximumLyricsElongationFactor = 2.4;
-        osmd.EngravingRules.BetweenSyllableMinimumDistance = 0.8;
+        osmd.EngravingRules.BetweenSyllableMinimumDistance =
+          0.8 * appliedLyricsSpacing;
 
         osmdRef.current = osmd;
         applyScoreTransposition(osmd, transposeByRef.current);
@@ -530,7 +561,14 @@ export const MusicXmlScoreViewer = forwardRef<
         container.innerHTML = "";
       }
     };
-  }, [copyright, measuresPerLine, renderWidth, sourceUrl, title]);
+  }, [
+    appliedLyricsSpacing,
+    appliedMeasuresPerLine,
+    copyright,
+    renderWidth,
+    sourceUrl,
+    title,
+  ]);
 
   useEffect(() => {
     const osmd = osmdRef.current;
@@ -643,20 +681,38 @@ export const MusicXmlScoreViewer = forwardRef<
         <div className="song-score-viewer__display-controls">
           <div className="song-score-viewer__display-fields">
             <label className="song-score-viewer__field">
-              <span>Mesures par ligne</span>
-              <select
+              <span className="song-score-viewer__field-heading">
+                <span>Mesures par ligne</span>
+                <output>{measuresPerLine}</output>
+              </span>
+              <input
                 aria-label="Nombre de mesures par ligne"
+                max="6"
+                min="2"
                 onChange={(event) => {
                   setMeasuresPerLine(Number(event.target.value));
                 }}
+                step="1"
+                type="range"
                 value={measuresPerLine}
-              >
-                {[2, 3, 4, 5, 6].map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
+              />
+            </label>
+            <label className="song-score-viewer__field">
+              <span className="song-score-viewer__field-heading">
+                <span>Espacement des paroles</span>
+                <output>{Math.round(lyricsSpacing * 100)} %</output>
+              </span>
+              <input
+                aria-label="Espacement horizontal des paroles"
+                max="1.8"
+                min="0.6"
+                onChange={(event) => {
+                  setLyricsSpacing(Number(event.target.value));
+                }}
+                step="0.1"
+                type="range"
+                value={lyricsSpacing}
+              />
             </label>
             {renderZoomControls()}
           </div>
