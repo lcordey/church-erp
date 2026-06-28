@@ -1,9 +1,11 @@
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { formatSongCollectionLabel } from "../collections/song-collection";
 import type { PublicSongSummary } from "../types/public-song";
 
 type SongCardProps = {
+  href?: string;
   song: PublicSongSummary;
   isActive?: boolean;
   mode?: "selection" | "edition";
@@ -38,6 +40,7 @@ function stopEvent(event: {
 }
 
 export function SongCard({
+  href,
   song,
   isActive = false,
   mode = "selection",
@@ -85,23 +88,39 @@ export function SongCard({
         isMenuOpen ? " song-card--menu-open" : ""
       }`}
     >
-      <button
-        className="song-card__open"
-        onClick={() => onOpen?.(song)}
-        type="button"
-      >
-        <span className="song-card__content">
-          <span className="song-card__title">{song.title}</span>
-          <span className="song-card__metadata">
-            {collectionLabel ?? "Chant local"}
+      {href ? (
+        <Link className="song-card__open" href={href}>
+          <span className="song-card__content">
+            <span className="song-card__title">{song.title}</span>
+            <span className="song-card__metadata">
+              {collectionLabel ?? "Chant local"}
+            </span>
           </span>
-        </span>
-        {mode === "edition" ? (
-          <span className="song-card__action-space" aria-hidden="true" />
-        ) : hasQuickActions ? (
-          <span className="song-card__action-space" aria-hidden="true" />
-        ) : null}
-      </button>
+          {mode === "edition" ? (
+            <span className="song-card__action-space" aria-hidden="true" />
+          ) : hasQuickActions ? (
+            <span className="song-card__action-space" aria-hidden="true" />
+          ) : null}
+        </Link>
+      ) : (
+        <button
+          className="song-card__open"
+          onClick={() => onOpen?.(song)}
+          type="button"
+        >
+          <span className="song-card__content">
+            <span className="song-card__title">{song.title}</span>
+            <span className="song-card__metadata">
+              {collectionLabel ?? "Chant local"}
+            </span>
+          </span>
+          {mode === "edition" ? (
+            <span className="song-card__action-space" aria-hidden="true" />
+          ) : hasQuickActions ? (
+            <span className="song-card__action-space" aria-hidden="true" />
+          ) : null}
+        </button>
+      )}
       {mode === "edition" ? (
         <button
           aria-label={`Éditer ${song.title}`}

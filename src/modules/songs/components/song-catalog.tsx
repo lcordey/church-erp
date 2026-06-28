@@ -17,6 +17,7 @@ type SongCatalogProps = {
   heading?: string;
   headingId?: string;
   emptyMessage?: string;
+  getSongHref?: (song: PublicSongSummary) => string;
   onAddToSetlist?: (song: PublicSongSummary) => void;
   onEditSong?: (song: PublicSongSummary) => void;
   onOpenSong?: (song: PublicSongSummary) => void;
@@ -67,6 +68,7 @@ export function SongCatalog({
   heading = "Chants publiés",
   headingId = "catalog-title",
   emptyMessage = "Aucun chant ne correspond à cette recherche.",
+  getSongHref,
   onAddToSetlist,
   onEditSong,
   onOpenSong,
@@ -234,6 +236,7 @@ export function SongCatalog({
         <div className="song-list" data-fetching={isFetching ? "true" : "false"}>
           {catalog.songs.map((song) => (
             <SongCard
+              href={getSongHref?.(song)}
               isActive={activeSongSlug === song.slug}
               key={song.id}
               mode={activeMode}
