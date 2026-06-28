@@ -27,8 +27,8 @@ export default function SettingsPage() {
           <div>
             <h2>Lecture des chants</h2>
             <p>
-              Définissez le rendu par défaut des paroles et des accords. Ces
-              préférences sont conservées localement sur l’appareil.
+              Définissez le rendu et la source d’ouverture par défaut des
+              chants. Ces préférences sont conservées localement sur l’appareil.
             </p>
           </div>
           <SongRenderPreferencesControls showDescription />

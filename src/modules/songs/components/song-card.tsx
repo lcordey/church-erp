@@ -9,7 +9,6 @@ type SongCardProps = {
   index: number;
   isActive?: boolean;
   mode?: "selection" | "edition";
-  showOpenIndicator?: boolean;
   onAddToSetlist?: (song: PublicSongSummary) => void;
   onOpen?: (song: PublicSongSummary) => void;
   onEdit?: (song: PublicSongSummary) => void;
@@ -45,7 +44,6 @@ export function SongCard({
   index,
   isActive = false,
   mode = "selection",
-  showOpenIndicator = true,
   onAddToSetlist,
   onOpen,
   onEdit,
@@ -118,13 +116,7 @@ export function SongCard({
           <span className="song-card__action-space" aria-hidden="true" />
         ) : hasQuickActions ? (
           <span className="song-card__action-space" aria-hidden="true" />
-        ) : !showOpenIndicator ? (
-          <span className="song-card__action-space" aria-hidden="true" />
-        ) : (
-          <span className="song-card__arrow" aria-hidden="true">
-            ↗
-          </span>
-        )}
+        ) : null}
       </button>
       {mode === "edition" ? (
         <button

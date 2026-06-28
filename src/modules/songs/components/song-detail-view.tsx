@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { formatSongCollectionLabel } from "../collections/song-collection";
 import type { AdminSong } from "../types/admin-song";
@@ -14,9 +14,14 @@ import {
 import { hasChordProChords } from "../services/chordpro";
 import { SongPdfViewer } from "./song-pdf-viewer";
 import {
+  resolvePreferredSongSource,
+  type SongSourceView,
+} from "./song-render-preferences";
+import {
   TransposableSongSheet,
   type TransposableSongSheetHandle,
 } from "./transposable-song-sheet";
+import { useSongRenderPreferences } from "./song-render-preferences-provider";
 
 function SettingsIcon() {
   return (
@@ -51,6 +56,32 @@ function DownloadIcon() {
   );
 }
 
+function FullscreenIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M8 4H4v4" />
+      <path d="M16 4h4v4" />
+      <path d="M20 16v4h-4" />
+      <path d="M4 16v4h4" />
+    </svg>
+  );
+}
+
+function ExitFullscreenIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M9 4H4v5" />
+      <path d="m4 4 6 6" />
+      <path d="M15 4h5v5" />
+      <path d="m20 4-6 6" />
+      <path d="M4 15v5h5" />
+      <path d="m4 20 6-6" />
+      <path d="M20 15v5h-5" />
+      <path d="m20 20-6-6" />
+    </svg>
+  );
+}
+
 type SongDetailViewProps = {
   song: PublicSongDetail | AdminSong;
   actions?: ReactNode;
@@ -63,10 +94,31 @@ export function SongDetailView({
   actions,
   canAccessScores = false,
 }: SongDetailViewProps) {
+  const containerRef = useRef<HTMLElement>(null);
+  const { preferences } = useSongRenderPreferences();
   const hasChords = hasChordProChords(song.chordProContent);
-  const [sourceView, setSourceView] = useState<
-    "chordpro" | "lyrics" | "pdf" | "musicxml"
-  >("lyrics");
+  const availableSources = useMemo(
+    () =>
+      [
+        "lyrics",
+        ...(hasChords ? (["chordpro"] as const) : []),
+        ...(canAccessScores && song.pdfSource ? (["pdf"] as const) : []),
+        ...(canAccessScores && song.musicXmlSource
+          ? (["musicxml"] as const)
+          : []),
+      ] satisfies SongSourceView[],
+    [canAccessScores, hasChords, song.musicXmlSource, song.pdfSource],
+  );
+  const [sourceView, setSourceView] = useState<SongSourceView>(() =>
+    resolvePreferredSongSource(preferences.sourcePriority, availableSources),
+  );
+  const resolvedSourceView = useMemo(
+    () =>
+      availableSources.includes(sourceView)
+        ? sourceView
+        : resolvePreferredSongSource(preferences.sourcePriority, availableSources),
+    [availableSources, preferences.sourcePriority, sourceView],
+  );
   const collectionLabel = formatSongCollectionLabel(
     song.collection,
     song.collectionNumber,
@@ -75,6 +127,39 @@ export function SongDetailView({
   const textViewerRef = useRef<TransposableSongSheetHandle>(null);
   const [areSettingsVisible, setAreSettingsVisible] = useState(false);
   const [areDetailsVisible, setAreDetailsVisible] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [isFocusExitVisible, setIsFocusExitVisible] = useState(false);
+
+  useEffect(() => {
+    function handleFullscreenChange() {
+      const isActive = document.fullscreenElement === containerRef.current;
+      setIsFocusMode(isActive);
+      setIsFocusExitVisible(isActive);
+
+      if (!isActive) {
+        setAreDetailsVisible(false);
+        setAreSettingsVisible(false);
+      }
+    }
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isFocusMode || !isFocusExitVisible) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setIsFocusExitVisible(false);
+    }, 1600);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isFocusExitVisible, isFocusMode]);
 
   function getDownloadHref(sourceUrl: string) {
     const separator = sourceUrl.includes("?") ? "&" : "?";
@@ -82,17 +167,17 @@ export function SongDetailView({
   }
 
   const hasDisplaySettings =
-    sourceView === "chordpro" || sourceView === "musicxml";
+    resolvedSourceView === "chordpro" || resolvedSourceView === "musicxml";
 
   async function downloadActiveDocument() {
-    if (sourceView === "pdf" && song.pdfSource) {
+    if (resolvedSourceView === "pdf" && song.pdfSource) {
       const link = document.createElement("a");
       link.href = getDownloadHref(song.pdfSource.downloadUrl);
       link.click();
       return;
     }
 
-    if (sourceView === "musicxml") {
+    if (resolvedSourceView === "musicxml") {
       await musicXmlViewerRef.current?.downloadPdf();
       return;
     }
@@ -100,10 +185,50 @@ export function SongDetailView({
     await textViewerRef.current?.downloadPdf();
   }
 
+  async function enterFocusMode() {
+    if (!containerRef.current?.requestFullscreen) {
+      return;
+    }
+
+    setAreDetailsVisible(false);
+    setAreSettingsVisible(false);
+    await containerRef.current.requestFullscreen();
+  }
+
+  async function exitFocusMode() {
+    if (!document.fullscreenElement) {
+      return;
+    }
+
+    await document.exitFullscreen();
+  }
+
+  function handleFocusPointerDown(event: ReactPointerEvent<HTMLElement>) {
+    if (!isFocusMode) {
+      return;
+    }
+
+    const target = event.target;
+
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    if (target.closest("button, a, select, input, label")) {
+      return;
+    }
+
+    setIsFocusExitVisible(true);
+  }
+
   return (
-    <section className="song-detail-view">
+    <section
+      className={`song-detail-view${isFocusMode ? " song-detail-view--focus" : ""}`}
+      onPointerDown={handleFocusPointerDown}
+      ref={containerRef}
+    >
       <section
-        className={`song-document-viewer song-document-viewer--${sourceView}`}
+        className={`song-document-viewer song-document-viewer--${resolvedSourceView}`}
       >
         <header className="song-document-viewer__toolbar">
           <div className="song-document-viewer__source">
@@ -121,7 +246,7 @@ export function SongDetailView({
                     | "musicxml",
                 );
               }}
-              value={sourceView}
+              value={resolvedSourceView}
             >
               <option value="lyrics">Paroles</option>
               {hasChords ? <option value="chordpro">Accords</option> : null}
@@ -171,6 +296,15 @@ export function SongDetailView({
                 <SettingsIcon />
               </button>
             ) : null}
+            <button
+              aria-label="Activer le mode focus"
+              className="icon-button song-document-viewer__icon-button"
+              onClick={() => void enterFocusMode()}
+              title="Mode focus"
+              type="button"
+            >
+              <FullscreenIcon />
+            </button>
             <button
               aria-label="Télécharger le document"
               className="icon-button song-document-viewer__icon-button"
@@ -223,14 +357,33 @@ export function SongDetailView({
           ) : null}
         </header>
 
-        {canAccessScores && sourceView === "pdf" && song.pdfSource ? (
+        {isFocusMode ? (
+          <div
+            className={`song-document-viewer__focus-exit${
+              isFocusExitVisible
+                ? " song-document-viewer__focus-exit--visible"
+                : ""
+            }`}
+          >
+            <button
+              aria-label="Quitter le mode focus"
+              className="icon-button song-document-viewer__focus-exit-button"
+              onClick={() => void exitFocusMode()}
+              type="button"
+            >
+              <ExitFullscreenIcon />
+            </button>
+          </div>
+        ) : null}
+
+        {canAccessScores && resolvedSourceView === "pdf" && song.pdfSource ? (
           <SongPdfViewer
             copyright={song.copyright}
             sourceUrl={song.pdfSource.downloadUrl}
             title={song.title}
           />
         ) : canAccessScores &&
-          sourceView === "musicxml" &&
+          resolvedSourceView === "musicxml" &&
           song.musicXmlSource ? (
           <MusicXmlScoreViewer
             ref={musicXmlViewerRef}
@@ -250,7 +403,9 @@ export function SongDetailView({
             copyright={song.copyright}
             defaultKey={song.defaultKey}
             displayMode={
-              sourceView === "lyrics" || !hasChords ? "lyrics" : "chords"
+              resolvedSourceView === "lyrics" || !hasChords
+                ? "lyrics"
+                : "chords"
             }
             showSettings={areSettingsVisible}
             title={song.title}

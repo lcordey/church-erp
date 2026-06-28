@@ -50,6 +50,9 @@ de les modifier, puis de les jouer en mode lecture.
 - l'ajout de chants reutilise le catalogue public pagine, avec la meme recherche serveur et les memes filtres
 - le mode lecture immersif conserve le header de la setlist et ses actions precedent/suivant
 - le rendu chant utilise le meme selecteur compact de source que la page detail, avec le PDF integre quand il existe
+- lors du passage au chant suivant ou precedent, la source affichee est revalidee; si la source precedente n'existe pas sur le nouveau chant, le lecteur bascule automatiquement vers la meilleure source disponible selon la priorite globale
+- le mode lecture peut basculer en plein ecran focus pour n'afficher que le contenu du chant et une sortie minimaliste
+- les cartes de setlists ouvrent directement la lecture sans fleche ou indicateur d'ouverture dedie
 
 ## Tests
 

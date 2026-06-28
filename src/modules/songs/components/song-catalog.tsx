@@ -22,7 +22,6 @@ type SongCatalogProps = {
   searchLabel?: string;
   searchPlaceholder?: string;
   showHeading?: boolean;
-  showOpenIndicator?: boolean;
   syncUrl?: boolean;
 };
 
@@ -64,7 +63,6 @@ export function SongCatalog({
   searchLabel = "Recherche",
   searchPlaceholder = "Titre ou numéro de recueil",
   showHeading = true,
-  showOpenIndicator = true,
   syncUrl = true,
 }: SongCatalogProps) {
   const {
@@ -167,7 +165,6 @@ export function SongCatalog({
               onAddToSetlist={onAddToSetlist}
               onEdit={onEditSong}
               onOpen={onOpenSong}
-              showOpenIndicator={showOpenIndicator}
               song={song}
             />
           ))}

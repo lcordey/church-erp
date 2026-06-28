@@ -238,7 +238,6 @@ export function SetlistEditor({
             }}
             searchInputId="setlist-song-search"
             searchPlaceholder="Titre ou numéro de recueil"
-            showOpenIndicator={false}
             syncUrl={false}
           />
         </section>

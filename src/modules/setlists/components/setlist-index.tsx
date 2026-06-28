@@ -116,11 +116,7 @@ function SetlistCard({
         </span>
         {isAuthenticated ? (
           <span className="song-card__action-space" aria-hidden="true" />
-        ) : (
-          <span className="song-card__arrow" aria-hidden="true">
-            ↗
-          </span>
-        )}
+        ) : null}
       </button>
 
       {isAuthenticated ? (

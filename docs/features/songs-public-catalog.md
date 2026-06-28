@@ -105,10 +105,12 @@ Implementation actuelle :
 - le rendu PDF integre fonctionne aussi sur mobile et ne depend pas du viewer PDF natif du navigateur
 - les quatre vues `Paroles`, `Accords`, `PDF` et `Partition` partagent un mode lecture immersif qui occupe l'espace disponible sous le header applicatif
 - le selecteur de source, les informations du chant, les reglages disponibles et le telechargement sont regroupes dans une barre de lecture compacte
+- la source ouverte par defaut suit un ordre de priorite global configurable dans `Reglages`; si la source preferee manque, la suivante disponible est choisie automatiquement
 - le titre, l'auteur, le recueil, la tonalite et la provenance restent accessibles dans un panneau d'information sans etre affiches en permanence sous le rendu
 - les vues `Paroles` et `Accords` utilisent une feuille de document sobre, proche du rendu pagine des PDF
 - les vues `Accords` et `Partition` exposent leurs reglages dans un panneau commun affichable ou masquable
 - le panneau de reglages du lecteur est masque par defaut et s'ouvre a la demande
+- le lecteur propose un mode focus plein ecran qui masque le header applicatif et les commandes secondaires; un bouton temporaire permet de quitter ce mode
 - le PDF conserve les pages deja rendues pendant son adaptation a un changement de taille
 - la vue `PDF` propose le telechargement du fichier source
 - la vue `Partition` propose le telechargement d'un PDF genere cote client
@@ -120,7 +122,9 @@ Implementation actuelle :
 - le mode `Accords` permet d'ajuster globalement la couleur des accords, la taille des accords, la taille du texte et l'interligne
 - preference persistante de notation anglaise ou francaise
 - preference persistante du rendu paroles et accords, configurable aussi depuis la page `Reglages`
+- preference persistante de priorite des sources de lecture, configurable depuis la page `Reglages`
 - le catalogue conserve la recherche et les filtres tant que l'utilisateur reste sur la page catalogue
+- les cartes de chants du repertoire ouvrent directement le detail sans indicateur visuel d'ouverture dedie
 
 ## Tests
 

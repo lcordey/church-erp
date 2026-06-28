@@ -3,6 +3,8 @@
 import {
   chordColorOptions,
   defaultSongRenderPreferences,
+  songSourceViewOptions,
+  type SongSourceView,
 } from "./song-render-preferences";
 import { useSongRenderPreferences } from "./song-render-preferences-provider";
 
@@ -10,6 +12,13 @@ const chordColorLabels: Record<(typeof chordColorOptions)[number], string> = {
   accent: "Bleu",
   ink: "Noir",
   warm: "Ocre",
+};
+
+const sourceLabels: Record<SongSourceView, string> = {
+  chordpro: "Accords",
+  lyrics: "Paroles",
+  musicxml: "Partition",
+  pdf: "PDF",
 };
 
 type SongRenderPreferencesControlsProps = {
@@ -22,6 +31,22 @@ export function SongRenderPreferencesControls({
   const { preferences, resetPreferences, setPreferences } =
     useSongRenderPreferences();
 
+  function updateSourcePriority(index: number, value: SongSourceView) {
+    const nextPriority = preferences.sourcePriority.filter(
+      (source) => source !== value,
+    );
+    nextPriority.splice(index, 0, value);
+
+    setPreferences({
+      sourcePriority: [
+        ...nextPriority,
+        ...songSourceViewOptions.filter(
+          (source) => !nextPriority.includes(source),
+        ),
+      ],
+    });
+  }
+
   return (
     <div className="song-render-preferences">
       {showDescription ? (
@@ -30,7 +55,7 @@ export function SongRenderPreferencesControls({
             <h3>Rendu par défaut</h3>
             <p>
               Ces préférences sont mémorisées sur cet appareil et réutilisées
-              dans toutes les vues paroles et accords.
+              dans toutes les vues de lecture des chants.
             </p>
           </div>
           <button
@@ -44,6 +69,40 @@ export function SongRenderPreferencesControls({
       ) : null}
 
       <div className="song-render-preferences__section">
+        <div className="song-render-preferences__group">
+          <div className="song-render-preferences__group-copy">
+            <h4>Source d’ouverture</h4>
+            <p>
+              Définissez l’ordre de priorité utilisé quand un chant s’ouvre.
+              Si une source manque, l’application choisit la suivante.
+            </p>
+          </div>
+          <div className="song-render-preferences__priority-list">
+            {preferences.sourcePriority.map((source, index) => (
+              <label className="sheet-controls__field" key={`${source}-${index}`}>
+                <span>Priorité {index + 1}</span>
+                <select
+                  aria-label={`Source prioritaire ${index + 1}`}
+                  onChange={(event) =>
+                    updateSourcePriority(
+                      index,
+                      event.target.value as SongSourceView,
+                    )
+                  }
+                  value={source}
+                >
+                  {songSourceViewOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {sourceLabels[option]}
+                    </option>
+                  ))}
+                </select>
+                <strong>{sourceLabels[source]}</strong>
+              </label>
+            ))}
+          </div>
+        </div>
+
         <label className="sheet-controls__field">
           <span>Couleur des accords</span>
           <select

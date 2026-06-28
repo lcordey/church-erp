@@ -93,7 +93,11 @@ export function SongPageWorkspace({
             song={adminSong}
           />
         ) : (
-          <SongDetailView canAccessScores={canAccessScores} song={readableSong} />
+          <SongDetailView
+            canAccessScores={canAccessScores}
+            key={readableSong.id}
+            song={readableSong}
+          />
         )}
       </div>
     </main>

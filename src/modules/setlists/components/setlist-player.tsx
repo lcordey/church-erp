@@ -132,6 +132,7 @@ export function SetlistPlayer({
         <SongDetailView
           canAccessScores={canAccessScores}
           eyebrow={`${setlist.title} · ${currentIndex + 1}/${setlist.items.length}`}
+          key={`${currentItem.song.id}-${currentIndex}`}
           song={currentItem.song}
         />
       </div>

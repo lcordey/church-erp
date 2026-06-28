@@ -5,14 +5,22 @@ export const songRenderPreferenceChangeEvent =
   "church-erp-song-render-preferences-change";
 
 export const chordColorOptions = ["warm", "accent", "ink"] as const;
+export const songSourceViewOptions = [
+  "lyrics",
+  "chordpro",
+  "pdf",
+  "musicxml",
+] as const;
 
 export type ChordColorPreference = (typeof chordColorOptions)[number];
+export type SongSourceView = (typeof songSourceViewOptions)[number];
 
 export type SongRenderPreferences = {
   chordColor: ChordColorPreference;
   chordFontScale: number;
   lyricsFontScale: number;
   lineHeight: number;
+  sourcePriority: SongSourceView[];
 };
 
 export const defaultSongRenderPreferences: SongRenderPreferences = {
@@ -20,10 +28,28 @@ export const defaultSongRenderPreferences: SongRenderPreferences = {
   chordFontScale: 0.82,
   lyricsFontScale: 1,
   lineHeight: 1.18,
+  sourcePriority: ["lyrics", "chordpro", "pdf", "musicxml"],
 };
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function normalizeSourcePriority(value: unknown): SongSourceView[] {
+  if (!Array.isArray(value)) {
+    return defaultSongRenderPreferences.sourcePriority;
+  }
+
+  const uniqueValidValues = value.filter(
+    (item, index): item is SongSourceView =>
+      songSourceViewOptions.includes(item as SongSourceView) &&
+      value.indexOf(item) === index,
+  );
+
+  return [
+    ...uniqueValidValues,
+    ...songSourceViewOptions.filter((option) => !uniqueValidValues.includes(option)),
+  ];
 }
 
 export function normalizeSongRenderPreferences(
@@ -53,6 +79,7 @@ export function normalizeSongRenderPreferences(
       typeof candidate.lineHeight === "number"
         ? clamp(candidate.lineHeight, 0.96, 1.5)
         : defaultSongRenderPreferences.lineHeight,
+    sourcePriority: normalizeSourcePriority(candidate.sourcePriority),
   };
 }
 
@@ -68,4 +95,15 @@ export function readSongRenderPreferences(
   } catch {
     return defaultSongRenderPreferences;
   }
+}
+
+export function resolvePreferredSongSource(
+  sourcePriority: SongSourceView[],
+  availableSources: SongSourceView[],
+): SongSourceView {
+  return (
+    sourcePriority.find((source) => availableSources.includes(source)) ??
+    availableSources[0] ??
+    "lyrics"
+  );
 }

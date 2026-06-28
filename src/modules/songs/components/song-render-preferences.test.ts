@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   defaultSongRenderPreferences,
   readSongRenderPreferences,
+  resolvePreferredSongSource,
 } from "./song-render-preferences";
 
 describe("song render preferences", () => {
@@ -20,6 +21,7 @@ describe("song render preferences", () => {
           chordFontScale: 4,
           lyricsFontScale: 0.4,
           lineHeight: 8,
+          sourcePriority: ["pdf", "pdf", "unknown"],
         }),
       ),
     ).toEqual({
@@ -27,6 +29,7 @@ describe("song render preferences", () => {
       chordFontScale: 1.24,
       lyricsFontScale: 0.9,
       lineHeight: 1.5,
+      sourcePriority: ["pdf", "lyrics", "chordpro", "musicxml"],
     });
   });
 
@@ -38,6 +41,7 @@ describe("song render preferences", () => {
           chordFontScale: 0.94,
           lyricsFontScale: 1.12,
           lineHeight: 1.26,
+          sourcePriority: ["musicxml", "pdf", "chordpro", "lyrics"],
         }),
       ),
     ).toEqual({
@@ -45,6 +49,16 @@ describe("song render preferences", () => {
       chordFontScale: 0.94,
       lyricsFontScale: 1.12,
       lineHeight: 1.26,
+      sourcePriority: ["musicxml", "pdf", "chordpro", "lyrics"],
     });
+  });
+
+  it("resolves the first available preferred source", () => {
+    expect(
+      resolvePreferredSongSource(
+        ["musicxml", "pdf", "chordpro", "lyrics"],
+        ["lyrics", "pdf"],
+      ),
+    ).toBe("pdf");
   });
 });
