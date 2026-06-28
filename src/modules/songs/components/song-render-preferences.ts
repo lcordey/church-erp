@@ -30,7 +30,7 @@ export const defaultSongRenderPreferences: SongRenderPreferences = {
   chordFontScale: 0.82,
   lyricsFontScale: 1,
   lineHeight: 1.18,
-  sourcePriority: ["lyrics", "chordpro", "pdf", "musicxml"],
+  sourcePriority: ["chordpro", "lyrics", "pdf", "musicxml"],
 };
 
 function clamp(value: number, min: number, max: number) {
