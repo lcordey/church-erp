@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   extractMusicXmlDefaultKey,
   generateChordProFromMusicXml,
+  generateChordProFromMusicXmlWithIronssAlgorithm,
 } from "./musicxml-to-chordpro";
 
 const sampleMusicXml = `<?xml version="1.0" encoding="utf-8"?>
@@ -170,5 +171,36 @@ describe("musicxml to chordpro", () => {
       "Une même\nNouvelle ligne",
     );
     expect(result.chordProContent).not.toContain("Une\nmême");
+  });
+
+  it("supports the ironss-style alternative algorithm", () => {
+    const result = generateChordProFromMusicXmlWithIronssAlgorithm(`
+      <score-partwise>
+        <work><work-title>Hosanna</work-title></work>
+        <part id="P1">
+          <measure number="1">
+            <harmony>
+              <root><root-step>C</root-step></root>
+              <kind>major</kind>
+            </harmony>
+            <note>
+              <lyric><syllabic>begin</syllabic><text>Ho</text></lyric>
+            </note>
+          </measure>
+          <measure number="2">
+            <harmony>
+              <root><root-step>G</root-step></root>
+              <kind>major</kind>
+            </harmony>
+            <note>
+              <lyric><syllabic>end</syllabic><text>sanna</text></lyric>
+            </note>
+          </measure>
+        </part>
+      </score-partwise>
+    `);
+
+    expect(result.chordProContent).toContain("{title: Hosanna}");
+    expect(result.chordProContent).toContain("[C]Ho-[G]sanna");
   });
 });

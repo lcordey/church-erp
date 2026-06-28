@@ -15,9 +15,13 @@ import type {
   AdminSongInput,
   AdminSongListItem,
   GeneratedChordProResult,
+  MusicXmlChordProGenerationAlgorithm,
 } from "../types/admin-song";
 import type { AdminSongValidationErrors } from "../validation/admin-song-input";
-import { generateChordProFromMusicXml } from "./musicxml-to-chordpro";
+import {
+  generateChordProFromMusicXml,
+  generateChordProFromMusicXmlWithIronssAlgorithm,
+} from "./musicxml-to-chordpro";
 
 const songPdfMimeType = "application/pdf";
 const maxSongPdfSizeBytes = 20 * 1024 * 1024;
@@ -256,6 +260,7 @@ export async function deleteAttachedSongMusicXml(
 
 export async function generateAdminSongChordProFromMusicXml(
   id: string,
+  algorithm: MusicXmlChordProGenerationAlgorithm = "default",
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<GeneratedChordProResult | null> {
   await requireAdminAccess();
@@ -272,7 +277,11 @@ export async function generateAdminSongChordProFromMusicXml(
   }
 
   try {
-    return generateChordProFromMusicXml(musicXmlSource.content, {
+    const generator = algorithm === "ironss"
+      ? generateChordProFromMusicXmlWithIronssAlgorithm
+      : generateChordProFromMusicXml;
+
+    return generator(musicXmlSource.content, {
       title: song.title,
       author: song.author,
       defaultKey: song.defaultKey,

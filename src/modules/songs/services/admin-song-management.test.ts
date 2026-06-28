@@ -277,6 +277,7 @@ describe("admin song management", () => {
 
     const generated = await generateAdminSongChordProFromMusicXml(
       draftSong.id,
+      "default",
       repository,
     );
 
@@ -289,8 +290,27 @@ describe("admin song management", () => {
     const repository = createRepository();
 
     await expect(
-      generateAdminSongChordProFromMusicXml(draftSong.id, repository),
+      generateAdminSongChordProFromMusicXml(draftSong.id, "default", repository),
     ).rejects.toBeInstanceOf(MissingSongMusicXmlError);
+  });
+
+  it("supports generation with the alternative ironss algorithm", async () => {
+    const repository = createRepository();
+    repository.findMusicXmlSourceById = vi.fn(async () => ({
+      content: `<score-partwise><work><work-title>Hosanna</work-title></work><part id="P1"><measure><harmony><root><root-step>C</root-step></root><kind>major</kind></harmony><note><lyric><syllabic>begin</syllabic><text>Ho</text></lyric></note></measure><measure><harmony><root><root-step>G</root-step></root><kind>major</kind></harmony><note><lyric><syllabic>end</syllabic><text>sanna</text></lyric></note></measure></part></score-partwise>`,
+      fileName: "hosanna.musicxml",
+      mimeType: "application/vnd.recordare.musicxml+xml",
+      fileSizeBytes: 128,
+      downloadUrl: `/api/songs/${draftSong.slug}/musicxml`,
+    }));
+
+    const generated = await generateAdminSongChordProFromMusicXml(
+      draftSong.id,
+      "ironss",
+      repository,
+    );
+
+    expect(generated?.chordProContent).toContain("[C]Ho-[G]sanna");
   });
 
   it("deletes a draft", async () => {

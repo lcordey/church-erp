@@ -35,9 +35,12 @@ export function ChordSheet({
         {
           "--chord-sheet-chord-color": `var(--${chordColor})`,
           "--chord-sheet-chord-font-size": `${chordFontScale}em`,
-          "--chord-sheet-font-size": `${lyricsFontScale}em`,
+          "--chord-sheet-lyrics-font-size": `${lyricsFontScale}em`,
           "--chord-sheet-line-height": `${lineHeight}`,
-          "--chord-sheet-line-min-height": `${Math.max(lineHeight + 1.42, 2.15)}em`,
+          "--chord-sheet-line-min-height": `${Math.max(
+            lineHeight * lyricsFontScale + chordFontScale + 0.72,
+            2.15,
+          )}em`,
         } as CSSProperties
       }
       aria-label="Paroles et accords"

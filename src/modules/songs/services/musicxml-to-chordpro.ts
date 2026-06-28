@@ -193,6 +193,20 @@ function extractPreferredPart(content: string) {
   });
 }
 
+function extractPartVerseIds(part: string) {
+  return [
+    ...new Set(
+      [...part.matchAll(/<lyric\b([^>]*)>/gi)]
+        .map((match) =>
+          extractAttribute(match[1], "number") ??
+          extractAttribute(match[1], "name") ??
+          "1"
+        )
+        .filter(Boolean),
+    ),
+  ].sort(compareVerseIds);
+}
+
 function extractMusicSystems(content: string) {
   const part = extractPreferredPart(content);
 
@@ -540,6 +554,174 @@ export function generateChordProFromMusicXml(
       defaultKey ? `{key: ${defaultKey}}` : null,
       "",
       body,
+    ]
+      .filter((line): line is string => line !== null)
+      .join("\n"),
+    defaultKey,
+  };
+}
+
+function extractVerseSyllables(noteXml: string, verseId: string) {
+  const syllables: { text: string; syllabic: Syllabic }[] = [];
+
+  for (const match of noteXml.matchAll(
+    /<lyric\b([^>]*)>([\s\S]*?)<\/lyric>/gi,
+  )) {
+    const attributes = match[1];
+    const lyricXml = match[2];
+    const lyricVerseId =
+      extractAttribute(attributes, "number") ??
+      extractAttribute(attributes, "name") ??
+      "1";
+
+    if (lyricVerseId !== verseId) {
+      continue;
+    }
+
+    const textParts = [...lyricXml.matchAll(/<text>([\s\S]*?)<\/text>/gi)]
+      .map((textMatch) => cleanupText(textMatch[1]))
+      .filter(Boolean);
+
+    if (textParts.length === 0) {
+      continue;
+    }
+
+    syllables.push({
+      text: normalizeLyricText(textParts.join("")),
+      syllabic: normalizeSyllabic(
+        extractFirst(lyricXml, /<syllabic>(.*?)<\/syllabic>/i),
+      ),
+    });
+  }
+
+  return syllables;
+}
+
+function buildIronssVerseLines(part: string, verseId: string) {
+  const measures = [...part.matchAll(/<measure\b[^>]*>([\s\S]*?)<\/measure>/gi)];
+  const lines: string[] = [];
+  let currentLine = "";
+  let currentSyllabic: Syllabic = "single";
+
+  for (let measureIndex = 0; measureIndex < measures.length; measureIndex += 1) {
+    const measureXml = measures[measureIndex][1];
+
+    for (const eventMatch of measureXml.matchAll(
+      /<harmony\b[\s\S]*?<\/harmony>|<note\b[\s\S]*?<\/note>/gi,
+    )) {
+      const eventXml = eventMatch[0];
+
+      if (/^<harmony\b/i.test(eventXml)) {
+        const chord = extractHarmonyChord(eventXml);
+
+        if (!chord) {
+          continue;
+        }
+
+        if (
+          currentLine &&
+          (currentSyllabic === "begin" || currentSyllabic === "middle")
+        ) {
+          currentLine += "-";
+        }
+
+        currentLine += `[${chord}]`;
+        continue;
+      }
+
+      const syllables = extractVerseSyllables(eventXml, verseId);
+
+      for (const syllable of syllables) {
+        currentLine += syllable.text;
+        currentSyllabic = syllable.syllabic;
+
+        if (
+          syllable.syllabic === "single" ||
+          syllable.syllabic === "end"
+        ) {
+          currentLine += " ";
+        }
+      }
+    }
+
+    if ((measureIndex + 1) % 4 === 0) {
+      const trimmedLine = currentLine.trim();
+
+      if (trimmedLine) {
+        lines.push(trimmedLine);
+      }
+
+      currentLine = "";
+      currentSyllabic = "single";
+    }
+  }
+
+  const trailingLine = currentLine.trim();
+
+  if (trailingLine) {
+    lines.push(trailingLine);
+  }
+
+  return lines;
+}
+
+export function generateChordProFromMusicXmlWithIronssAlgorithm(
+  content: string,
+  options?: {
+    title?: string | null;
+    author?: string | null;
+    defaultKey?: string | null;
+  },
+) {
+  const title =
+    extractFirst(content, /<work-title>([\s\S]*?)<\/work-title>/i) ??
+    extractFirst(content, /<movement-title>([\s\S]*?)<\/movement-title>/i) ??
+    options?.title ??
+    "Chant";
+  const author =
+    extractFirst(content, /<creator[^>]*>([\s\S]*?)<\/creator>/i) ??
+    options?.author ??
+    null;
+  const defaultKey = extractMusicXmlDefaultKey(content) ?? options?.defaultKey ?? null;
+  const part = extractPreferredPart(content);
+
+  if (!part) {
+    throw new Error("The MusicXML file does not contain any renderable lyrics or harmony.");
+  }
+
+  const verseIds = extractPartVerseIds(part);
+  const blocks = verseIds
+    .map((verseId) => {
+      const lines = buildIronssVerseLines(part, verseId);
+
+      if (lines.length === 0) {
+        return null;
+      }
+
+      if (verseIds.length === 1) {
+        return lines.join("\n");
+      }
+
+      return [
+        `{start_of_verse: Couplet ${verseId}}`,
+        ...lines,
+        "{end_of_verse}",
+      ].join("\n");
+    })
+    .filter((block): block is string => block !== null)
+    .join("\n\n");
+
+  if (!blocks) {
+    throw new Error("The MusicXML file does not contain any renderable lyrics or harmony.");
+  }
+
+  return {
+    chordProContent: [
+      `{title: ${title}}`,
+      author ? `{subtitle: ${author}}` : null,
+      defaultKey ? `{key: ${defaultKey}}` : null,
+      "",
+      blocks,
     ]
       .filter((line): line is string => line !== null)
       .join("\n"),

@@ -401,7 +401,7 @@ export function AdminSongForm({
     }
   }
 
-  async function generateChordProFromMusicXml() {
+  async function generateChordProFromMusicXml(algorithm: "default" | "ironss") {
     if (!song) {
       return;
     }
@@ -411,7 +411,7 @@ export function AdminSongForm({
 
     try {
       const response = await fetch(
-        `/api/admin/songs/${song.id}/chordpro/generate`,
+        `/api/admin/songs/${song.id}/chordpro/generate?algorithm=${algorithm}`,
         { method: "POST" },
       );
       const payload = (await response.json()) as ApiError & {
@@ -433,7 +433,9 @@ export function AdminSongForm({
       }));
       setErrors((current) => ({ ...current, chordProContent: undefined }));
       setMessage(
-        "Source ChordPro générée depuis la partition. Vérifie le résultat avant d’enregistrer.",
+        algorithm === "ironss"
+          ? "Source ChordPro générée avec l’algo alternatif. Vérifie le résultat avant d’enregistrer."
+          : "Source ChordPro générée depuis la partition. Vérifie le résultat avant d’enregistrer.",
       );
     } finally {
       setIsChordProGenerationPending(false);
@@ -670,12 +672,22 @@ export function AdminSongForm({
                 <button
                   className="admin-button admin-button--quiet"
                   disabled={isChordProGenerationPending}
-                  onClick={() => void generateChordProFromMusicXml()}
+                  onClick={() => void generateChordProFromMusicXml("default")}
                   type="button"
                 >
                   {isChordProGenerationPending
                     ? "Génération…"
                     : "Générer depuis la partition"}
+                </button>
+                <button
+                  className="admin-button admin-button--quiet"
+                  disabled={isChordProGenerationPending}
+                  onClick={() => void generateChordProFromMusicXml("ironss")}
+                  type="button"
+                >
+                  {isChordProGenerationPending
+                    ? "Génération…"
+                    : "Générer avec l’algo alternatif"}
                 </button>
               </div>
             ) : null}

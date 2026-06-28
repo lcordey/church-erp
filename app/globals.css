@@ -1996,13 +1996,13 @@ a {
 .chord-sheet {
   --chord-sheet-chord-color: var(--warm);
   --chord-sheet-chord-font-size: 0.82em;
-  --chord-sheet-font-size: 1em;
+  --chord-sheet-lyrics-font-size: 1em;
   --chord-sheet-line-height: 1.18;
   --chord-sheet-line-min-height: 2.6em;
   max-width: 980px;
   color: var(--ink);
   font-family: Georgia, "Times New Roman", serif;
-  font-size: calc(clamp(0.92rem, 1.8vw, 1.12rem) * var(--chord-sheet-font-size));
+  font-size: clamp(0.92rem, 1.8vw, 1.12rem);
   line-height: var(--chord-sheet-line-height);
 }
 
@@ -2036,6 +2036,7 @@ a {
 
 .chord-sheet__lyrics {
   color: var(--ink);
+  font-size: var(--chord-sheet-lyrics-font-size);
 }
 
 .chord-sheet__blank {

@@ -52,4 +52,8 @@ export type GeneratedChordProResult = {
   defaultKey: string | null;
 };
 
+export type MusicXmlChordProGenerationAlgorithm =
+  | "default"
+  | "ironss";
+
 export type AdminSongListItem = Omit<AdminSong, "chordProContent">;

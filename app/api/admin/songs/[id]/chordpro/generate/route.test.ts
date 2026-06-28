@@ -45,6 +45,24 @@ describe("POST /api/admin/songs/:id/chordpro/generate", () => {
     });
     expect(generateAdminSongChordProFromMusicXml).toHaveBeenCalledWith(
       "11111111-1111-4111-8111-111111111111",
+      "default",
+    );
+  });
+
+  it("passes the requested alternative algorithm", async () => {
+    generateAdminSongChordProFromMusicXml.mockResolvedValue({
+      chordProContent: "{title: Hosanna}\n[C]Ho-[G]sanna",
+      defaultKey: "C",
+    });
+
+    const response = await POST(new Request("http://localhost?algorithm=ironss", {
+      method: "POST",
+    }), context);
+
+    expect(response.status).toBe(200);
+    expect(generateAdminSongChordProFromMusicXml).toHaveBeenCalledWith(
+      "11111111-1111-4111-8111-111111111111",
+      "ironss",
     );
   });
 
