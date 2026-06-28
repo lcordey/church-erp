@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 
-import { formatSongCollectionLabel } from "../collections/song-collection";
+import { getSongCollectionLabel } from "../collections/song-collection";
 import type { PublicSongSummary } from "../types/public-song";
-import { MusicalKeyText } from "./musical-key-text";
 
 type SongCardProps = {
   song: PublicSongSummary;
-  index: number;
   isActive?: boolean;
   mode?: "selection" | "edition";
   onAddToSetlist?: (song: PublicSongSummary) => void;
@@ -41,7 +39,6 @@ function stopEvent(event: {
 
 export function SongCard({
   song,
-  index,
   isActive = false,
   mode = "selection",
   onAddToSetlist,
@@ -51,10 +48,9 @@ export function SongCard({
   const hasQuickActions = mode === "selection" && Boolean(onEdit || onAddToSetlist);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const collectionLabel = formatSongCollectionLabel(
-    song.collection,
-    song.collectionNumber,
-  );
+  const collectionLabel = song.collection
+    ? getSongCollectionLabel(song.collection)
+    : null;
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -87,29 +83,16 @@ export function SongCard({
       className={`song-card${isActive ? " song-card--active" : ""}${
         isMenuOpen ? " song-card--menu-open" : ""
       }`}
-      style={{ "--card-index": index } as React.CSSProperties}
     >
       <button
         className="song-card__open"
         onClick={() => onOpen?.(song)}
         type="button"
       >
-        <span className="song-card__number">
-          {song.collection && song.collectionNumber
-            ? String(song.collectionNumber).padStart(3, "0")
-            : String(index + 1).padStart(2, "0")}
-        </span>
         <span className="song-card__content">
           <span className="song-card__title">{song.title}</span>
           <span className="song-card__metadata">
             {collectionLabel ?? "Chant local"}
-            {song.author ? ` · ${song.author}` : ""}
-            {song.defaultKey ? (
-              <>
-                {" · Tonalité "}
-                <MusicalKeyText musicalKey={song.defaultKey} />
-              </>
-            ) : null}
           </span>
         </span>
         {mode === "edition" ? (

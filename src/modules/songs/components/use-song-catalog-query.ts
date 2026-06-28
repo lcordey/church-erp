@@ -49,6 +49,22 @@ function createQueryKey(options: {
   });
 }
 
+function mergeSongs<
+  TSong extends {
+    id: string;
+  },
+>(currentSongs: TSong[], nextSongs: TSong[]) {
+  const songsById = new Map(currentSongs.map((song) => [song.id, song]));
+
+  for (const song of nextSongs) {
+    if (!songsById.has(song.id)) {
+      songsById.set(song.id, song);
+    }
+  }
+
+  return [...songsById.values()];
+}
+
 async function fetchCatalog(options: {
   collections: string[];
   includeCollections?: boolean;
@@ -354,7 +370,7 @@ export function useSongCatalogQuery({
       setCatalog((current) => ({
         ...nextResults,
         collections: availableCollectionsRef.current,
-        songs: [...current.songs, ...nextResults.songs],
+        songs: mergeSongs(current.songs, nextResults.songs),
       }));
     } catch (error) {
       setErrorMessage(

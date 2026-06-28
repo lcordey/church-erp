@@ -87,7 +87,7 @@ export function SongCatalog({
   });
   const pageSize = catalog.limit;
   const loadedCount = catalog.songs.length;
-  const isCatalogLoading = isInitialLoading || isFetching || isLoadingMore;
+  const isCatalogLoading = isInitialLoading || isFetching;
 
   return (
     <>
@@ -145,7 +145,7 @@ export function SongCatalog({
         </fieldset>
       </form>
 
-      {isCatalogLoading ? (
+      {isInitialLoading && catalog.songs.length === 0 ? (
         <CatalogLoadingState />
       ) : errorMessage && catalog.songs.length === 0 ? (
         <div className="catalog-error" role="alert">
@@ -156,9 +156,8 @@ export function SongCatalog({
         </div>
       ) : catalog.songs.length > 0 ? (
         <div className="song-list" data-fetching={isFetching ? "true" : "false"}>
-          {catalog.songs.map((song, index) => (
+          {catalog.songs.map((song) => (
             <SongCard
-              index={index}
               isActive={activeSongSlug === song.slug}
               key={song.id}
               mode={activeMode}
