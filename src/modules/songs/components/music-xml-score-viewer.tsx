@@ -16,6 +16,10 @@ import {
   isMusicalKey,
   transposeChord,
 } from "../music/musical-key";
+import {
+  analyzeMusicXmlDisplay,
+  type MusicXmlLayoutMode,
+} from "./music-xml-display";
 import { useMusicNotation } from "./music-notation-provider";
 import { buildSongDocumentFileStem } from "./song-document-file-name";
 
@@ -41,10 +45,19 @@ const MOBILE_SCORE_RENDER_WIDTH = 1120;
 const MOBILE_DEFAULT_SCORE_ZOOM = 0.4;
 const DEFAULT_MEASURES_PER_LINE = 4;
 const DEFAULT_LYRICS_SPACING = 1;
+const DEFAULT_NOTE_SPACING = 0.82;
 const MIN_SCORE_ZOOM = 0.2;
 const MAX_SCORE_ZOOM = 1.8;
 const SCORE_ZOOM_STEP = 0.1;
 const SCORE_LAYOUT_UPDATE_DELAY = 180;
+const BASE_COMPACT_VOICE_SPACING_MULTIPLIER = 0.65;
+const BASE_COMPACT_VOICE_SPACING_ADDEND = 2;
+const BASE_COMPACT_MIN_NOTE_DISTANCE = 2;
+const BASE_COMPACT_CHORD_SPACING = 1;
+
+function clampNoteSpacing(value: number) {
+  return Math.min(1.2, Math.max(0.65, Math.round(value * 100) / 100));
+}
 
 function applyScoreTransposition(
   osmd: OpenSheetMusicDisplayInstance,
@@ -200,15 +213,21 @@ export const MusicXmlScoreViewer = forwardRef<
   );
   const isMobileRenderingRef = useRef<boolean | null>(null);
   const [stageWidth, setStageWidth] = useState(0);
+  const [layoutMode, setLayoutMode] = useState<MusicXmlLayoutMode>("original");
+  const [hasSourceLayoutHints, setHasSourceLayoutHints] = useState(false);
   const [measuresPerLine, setMeasuresPerLine] = useState(
     DEFAULT_MEASURES_PER_LINE,
   );
   const [lyricsSpacing, setLyricsSpacing] = useState(DEFAULT_LYRICS_SPACING);
+  const [noteSpacing, setNoteSpacing] = useState(DEFAULT_NOTE_SPACING);
   const [appliedMeasuresPerLine, setAppliedMeasuresPerLine] = useState(
     DEFAULT_MEASURES_PER_LINE,
   );
   const [appliedLyricsSpacing, setAppliedLyricsSpacing] = useState(
     DEFAULT_LYRICS_SPACING,
+  );
+  const [appliedNoteSpacing, setAppliedNoteSpacing] = useState(
+    DEFAULT_NOTE_SPACING,
   );
   const [zoom, setZoom] = useState(DEFAULT_SCORE_ZOOM);
   const canonicalDefaultKey =
@@ -231,6 +250,7 @@ export const MusicXmlScoreViewer = forwardRef<
       : isMobileRendering
         ? MOBILE_SCORE_RENDER_WIDTH
         : stageWidth;
+  const useSourceLayout = hasSourceLayoutHints && layoutMode === "original";
   renderWidthRef.current = renderWidth;
   zoomRef.current = zoom;
 
@@ -263,10 +283,11 @@ export const MusicXmlScoreViewer = forwardRef<
     const timeout = window.setTimeout(() => {
       setAppliedMeasuresPerLine(measuresPerLine);
       setAppliedLyricsSpacing(lyricsSpacing);
+      setAppliedNoteSpacing(noteSpacing);
     }, SCORE_LAYOUT_UPDATE_DELAY);
 
     return () => window.clearTimeout(timeout);
-  }, [lyricsSpacing, measuresPerLine]);
+  }, [lyricsSpacing, measuresPerLine, noteSpacing]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -591,11 +612,15 @@ export const MusicXmlScoreViewer = forwardRef<
         }
 
         const musicXml = await sourceResponse.text();
+        const analysis = analyzeMusicXmlDisplay(musicXml);
 
         if (isCancelled) {
           return;
         }
 
+        setHasSourceLayoutHints(
+          analysis.hasExplicitSystemBreaks || analysis.hasExplicitPageBreaks,
+        );
         container.style.width = `${Math.round(renderWidth)}px`;
 
         const osmd = new OpenSheetMusicDisplay(container, {
@@ -612,11 +637,15 @@ export const MusicXmlScoreViewer = forwardRef<
           drawTitle: true,
           drawingParameters: "compact",
           measureNumberInterval: 4,
+          newPageFromXML: useSourceLayout,
+          newSystemFromNewPageInXML: useSourceLayout,
+          newSystemFromXML: useSourceLayout,
+          pageFormat: useSourceLayout ? "A4_P" : "Endless",
           pageBackgroundColor: "#fffdf7",
         });
 
         osmd.TransposeCalculator = new TransposeCalculator();
-        await osmd.load(musicXml, title);
+        await osmd.load(analysis.sanitizedXml, title);
 
         if (isCancelled) {
           return;
@@ -628,15 +657,35 @@ export const MusicXmlScoreViewer = forwardRef<
           osmd.Sheet.CopyrightString = copyright;
         }
 
-        osmd.EngravingRules.RenderXMeasuresPerLineAkaSystem =
-          appliedMeasuresPerLine;
+        osmd.EngravingRules.RenderXMeasuresPerLineAkaSystem = useSourceLayout
+          ? 0
+          : appliedMeasuresPerLine;
         osmd.EngravingRules.TitleBottomDistance = 5.5;
         osmd.EngravingRules.LyricsUseXPaddingForLongLyrics = true;
         osmd.EngravingRules.LyricsXPaddingFactorForLongLyrics =
-          1.25 * appliedLyricsSpacing;
+          1.15 * appliedLyricsSpacing * appliedNoteSpacing;
         osmd.EngravingRules.MaximumLyricsElongationFactor = 2.4;
         osmd.EngravingRules.BetweenSyllableMinimumDistance =
-          0.8 * appliedLyricsSpacing;
+          0.7 * appliedLyricsSpacing * appliedNoteSpacing;
+        osmd.EngravingRules.ChordSymbolXSpacing = Math.max(
+          0.45,
+          BASE_COMPACT_CHORD_SPACING * appliedNoteSpacing,
+        );
+        osmd.EngravingRules.MinNoteDistance = Math.max(
+          1,
+          BASE_COMPACT_MIN_NOTE_DISTANCE * appliedNoteSpacing,
+        );
+        osmd.EngravingRules.VoiceSpacingAddendVexflow = Math.max(
+          0.9,
+          BASE_COMPACT_VOICE_SPACING_ADDEND * appliedNoteSpacing,
+        );
+        osmd.EngravingRules.VoiceSpacingMultiplierVexflow = Math.max(
+          0.44,
+          BASE_COMPACT_VOICE_SPACING_MULTIPLIER * appliedNoteSpacing,
+        );
+        osmd.EngravingRules.LastSystemMaxScalingFactor = useSourceLayout
+          ? 1.08
+          : 1.18;
 
         osmdRef.current = osmd;
         applyScoreTransposition(
@@ -669,10 +718,12 @@ export const MusicXmlScoreViewer = forwardRef<
   }, [
     appliedLyricsSpacing,
     appliedMeasuresPerLine,
+    appliedNoteSpacing,
     copyright,
     renderWidth,
     sourceUrl,
     title,
+    useSourceLayout,
   ]);
 
   useEffect(() => {
@@ -816,45 +867,86 @@ export const MusicXmlScoreViewer = forwardRef<
 
       <div ref={stageRef} className="song-document-viewer__stage">
         {showSettings ? (
-          <div className="song-score-viewer__display-controls">
-            <div className="song-score-viewer__display-fields">
-            <label className="song-score-viewer__field">
-              <span className="song-score-viewer__field-heading">
-                <span>Mesures par ligne</span>
-                <output>{measuresPerLine}</output>
-              </span>
-              <input
-                aria-label="Nombre de mesures par ligne"
-                max="6"
-                min="2"
-                onChange={(event) => {
-                  setMeasuresPerLine(Number(event.target.value));
-                }}
-                step="1"
-                type="range"
-                value={measuresPerLine}
-              />
-            </label>
-            <label className="song-score-viewer__field">
-              <span className="song-score-viewer__field-heading">
-                <span>Espacement des paroles</span>
-                <output>{Math.round(lyricsSpacing * 100)} %</output>
-              </span>
-              <input
-                aria-label="Espacement horizontal des paroles"
-                max="1.8"
-                min="0.6"
-                onChange={(event) => {
-                  setLyricsSpacing(Number(event.target.value));
-                }}
-                step="0.1"
-                type="range"
-                value={lyricsSpacing}
-              />
-            </label>
-              {renderZoomControls()}
+            <div className="song-score-viewer__display-controls">
+              <div className="song-score-viewer__display-fields">
+                {hasSourceLayoutHints ? (
+                  <label className="song-score-viewer__field">
+                    <span className="song-score-viewer__field-heading">
+                      <span>Mise en page</span>
+                    </span>
+                    <select
+                      aria-label="Mode de mise en page de la partition"
+                      className="song-score-viewer__select"
+                      value={layoutMode}
+                      onChange={(event) =>
+                        setLayoutMode(event.target.value as MusicXmlLayoutMode)
+                      }
+                    >
+                      <option value="original">Respecter la partition source</option>
+                      <option value="custom">Réglages personnalisés</option>
+                    </select>
+                  </label>
+                ) : null}
+                <label className="song-score-viewer__field">
+                  <span className="song-score-viewer__field-heading">
+                    <span>Mesures par ligne</span>
+                    <output>{measuresPerLine}</output>
+                  </span>
+                  <input
+                    aria-label="Nombre de mesures par ligne"
+                    disabled={useSourceLayout}
+                    max="6"
+                    min="2"
+                    onChange={(event) => {
+                      setMeasuresPerLine(Number(event.target.value));
+                    }}
+                    step="1"
+                    type="range"
+                    value={measuresPerLine}
+                  />
+                </label>
+                <label className="song-score-viewer__field">
+                  <span className="song-score-viewer__field-heading">
+                    <span>Densité horizontale</span>
+                    <output>{Math.round(noteSpacing * 100)} %</output>
+                  </span>
+                  <input
+                    aria-label="Densité horizontale de la partition"
+                    max="1.2"
+                    min="0.65"
+                    onChange={(event) => {
+                      setNoteSpacing(clampNoteSpacing(Number(event.target.value)));
+                    }}
+                    step="0.01"
+                    type="range"
+                    value={noteSpacing}
+                  />
+                </label>
+                <label className="song-score-viewer__field">
+                  <span className="song-score-viewer__field-heading">
+                    <span>Espacement des paroles</span>
+                    <output>{Math.round(lyricsSpacing * 100)} %</output>
+                  </span>
+                  <input
+                    aria-label="Espacement horizontal des paroles"
+                    max="1.8"
+                    min="0.6"
+                    onChange={(event) => {
+                      setLyricsSpacing(Number(event.target.value));
+                    }}
+                    step="0.1"
+                    type="range"
+                    value={lyricsSpacing}
+                  />
+                </label>
+                {renderZoomControls()}
+              </div>
             </div>
-          </div>
+          ) : null}
+        {showSettings && useSourceLayout ? (
+          <p className="song-document-viewer__status">
+            La partition suit les sauts de ligne et de page du MusicXML source.
+          </p>
         ) : null}
         {status ? (
           <div className="song-document-viewer__status-row">
