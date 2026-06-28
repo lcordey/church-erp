@@ -775,6 +775,80 @@ a {
   text-transform: uppercase;
 }
 
+.catalog-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.catalog-filter-dropdown {
+  position: relative;
+  min-width: min(280px, 100%);
+}
+
+.catalog-filter-dropdown summary {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0 14px;
+  background: rgb(255 253 247 / 72%);
+  cursor: pointer;
+}
+
+.catalog-filter-dropdown summary::-webkit-details-marker {
+  display: none;
+}
+
+.catalog-filter-dropdown summary span {
+  color: var(--ink);
+  font: 800 0.8rem/1 var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.catalog-filter-dropdown summary small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.catalog-filter-dropdown[open] summary {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgb(49 91 120 / 10%);
+}
+
+.catalog-filter-dropdown[open] > fieldset {
+  display: flex;
+}
+
+.catalog-filter-dropdown > fieldset {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  display: none;
+  width: min(420px, calc(100vw - 40px));
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 16px;
+  background:
+    linear-gradient(180deg, rgb(255 253 247 / 98%), rgb(247 244 236 / 96%)),
+    var(--paper-strong);
+  box-shadow: 0 20px 44px rgb(24 36 58 / 14%);
+}
+
+.catalog-filter-dropdown__hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
 .catalog-collections {
   display: flex;
   flex-direction: column;
@@ -815,6 +889,14 @@ a {
   width: 16px;
   height: 16px;
   accent-color: var(--accent);
+}
+
+.catalog-collections--placeholder label {
+  opacity: 0.72;
+}
+
+.catalog-collections--placeholder input {
+  cursor: not-allowed;
 }
 
 .song-list {

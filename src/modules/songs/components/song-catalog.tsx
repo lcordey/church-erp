@@ -29,6 +29,15 @@ function getCollectionLabel(collection: string): string {
   return getSongCollectionLabel(collection);
 }
 
+const placeholderThemeLabels = [
+  "Adoration",
+  "Louange",
+  "Pâques",
+  "Noël",
+  "Sainte-Cène",
+  "Espérance",
+] as const;
+
 function CatalogLoadingState() {
   return (
     <div
@@ -88,6 +97,10 @@ export function SongCatalog({
   const pageSize = catalog.limit;
   const loadedCount = catalog.songs.length;
   const isCatalogLoading = isInitialLoading || isFetching;
+  const selectedCollectionsLabel =
+    selectedCollections.length > 0
+      ? `${selectedCollections.length} sélectionné${selectedCollections.length > 1 ? "s" : ""}`
+      : "Tous les recueils";
 
   return (
     <>
@@ -128,21 +141,50 @@ export function SongCatalog({
             </button>
           ) : null}
         </div>
-        <fieldset className="catalog-collections">
-          <legend>Recueils</legend>
-          <div className="catalog-collections__options">
-            {availableCollections.map((collection) => (
-              <label key={collection}>
-                <input
-                  checked={selectedCollections.includes(collection)}
-                  onChange={() => toggleCollection(collection)}
-                  type="checkbox"
-                />
-                <span>{getCollectionLabel(collection)}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <div className="catalog-filters">
+          <details className="catalog-filter-dropdown">
+            <summary>
+              <span>Recueils</span>
+              <small>{selectedCollectionsLabel}</small>
+            </summary>
+            <fieldset className="catalog-collections">
+              <legend className="sr-only">Recueils</legend>
+              <div className="catalog-collections__options">
+                {availableCollections.map((collection) => (
+                  <label key={collection}>
+                    <input
+                      checked={selectedCollections.includes(collection)}
+                      onChange={() => toggleCollection(collection)}
+                      type="checkbox"
+                    />
+                    <span>{getCollectionLabel(collection)}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </details>
+
+          <details className="catalog-filter-dropdown">
+            <summary>
+              <span>Thèmes</span>
+              <small>Bientôt disponible</small>
+            </summary>
+            <fieldset className="catalog-collections catalog-collections--placeholder">
+              <legend className="sr-only">Thèmes</legend>
+              <p className="catalog-filter-dropdown__hint">
+                Prévisualisation d’un futur filtre par thèmes.
+              </p>
+              <div className="catalog-collections__options">
+                {placeholderThemeLabels.map((themeLabel) => (
+                  <label key={themeLabel}>
+                    <input disabled type="checkbox" />
+                    <span>{themeLabel}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </details>
+        </div>
       </form>
 
       {isInitialLoading && catalog.songs.length === 0 ? (
