@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   defaultSongRenderPreferences,
   readSongRenderPreferences,
+  reorderSongSourcePriority,
   resolvePreferredSongSource,
+  shiftSongSourcePriority,
 } from "./song-render-preferences";
 
 describe("song render preferences", () => {
@@ -60,5 +62,25 @@ describe("song render preferences", () => {
         ["lyrics", "pdf"],
       ),
     ).toBe("pdf");
+  });
+
+  it("reorders a source before another source", () => {
+    expect(
+      reorderSongSourcePriority(
+        ["lyrics", "chordpro", "pdf", "musicxml"],
+        "musicxml",
+        "chordpro",
+      ),
+    ).toEqual(["lyrics", "musicxml", "chordpro", "pdf"]);
+  });
+
+  it("moves a source by offset within the fixed priority list", () => {
+    expect(
+      shiftSongSourcePriority(
+        ["lyrics", "chordpro", "pdf", "musicxml"],
+        "chordpro",
+        2,
+      ),
+    ).toEqual(["lyrics", "pdf", "musicxml", "chordpro"]);
   });
 });

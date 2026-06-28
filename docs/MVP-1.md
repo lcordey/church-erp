@@ -115,7 +115,7 @@ Livre :
 - action enregistrer et publier
 - publication, retrait et suppression securisee des brouillons
 - champs YAGNI retires du modele MVP-1: langue et titre original
-- copyright, numero de recueil, URL officielle et verrouillage d'edition pour les chants officiels JEMAF
+- copyright, numero de recueil, URL officielle et verrouillage partiel des metadonnees de provenance pour les chants officiels JEMAF
 - recherche publique par titre ou numero de recueil
 - filtre public par recueil, incluant les recueils JEMAF importes et `LeMont`
 - creation admin assignee automatiquement a la collection `LeMont`

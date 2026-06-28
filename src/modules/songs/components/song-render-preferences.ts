@@ -23,6 +23,8 @@ export type SongRenderPreferences = {
   sourcePriority: SongSourceView[];
 };
 
+export type SongSourcePriorityPlacement = "before" | "after";
+
 export const defaultSongRenderPreferences: SongRenderPreferences = {
   chordColor: "warm",
   chordFontScale: 0.82,
@@ -106,4 +108,55 @@ export function resolvePreferredSongSource(
     availableSources[0] ??
     "lyrics"
   );
+}
+
+export function reorderSongSourcePriority(
+  sourcePriority: SongSourceView[],
+  source: SongSourceView,
+  target: SongSourceView,
+  placement: SongSourcePriorityPlacement = "before",
+): SongSourceView[] {
+  if (source === target) {
+    return sourcePriority;
+  }
+
+  const nextPriority = sourcePriority.filter((item) => item !== source);
+  const targetIndex = nextPriority.indexOf(target);
+
+  if (targetIndex === -1) {
+    return sourcePriority;
+  }
+
+  nextPriority.splice(targetIndex + (placement === "after" ? 1 : 0), 0, source);
+
+  return nextPriority;
+}
+
+export function shiftSongSourcePriority(
+  sourcePriority: SongSourceView[],
+  source: SongSourceView,
+  offset: number,
+): SongSourceView[] {
+  const sourceIndex = sourcePriority.indexOf(source);
+
+  if (sourceIndex === -1) {
+    return sourcePriority;
+  }
+
+  const targetIndex = clamp(
+    sourceIndex + offset,
+    0,
+    sourcePriority.length - 1,
+  );
+
+  if (targetIndex === sourceIndex) {
+    return sourcePriority;
+  }
+
+  const nextPriority = [...sourcePriority];
+  const [movedSource] = nextPriority.splice(sourceIndex, 1);
+
+  nextPriority.splice(targetIndex, 0, movedSource);
+
+  return nextPriority;
 }

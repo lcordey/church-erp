@@ -30,6 +30,7 @@ import {
   MissingSongMusicXmlError,
   publishSong,
   PublishedSongDeletionError,
+  RestrictedSongMetadataEditError,
   unpublishSong,
   updateAdminSong,
 } from "./admin-song-management";
@@ -133,15 +134,47 @@ describe("admin song management", () => {
     const repository = createRepository({
       ...draftSong,
       isEditable: false,
+      collection: "JEM",
+      collectionNumber: 42,
+      sourcePageUrl: "https://jemaf.fr/chant/jem042",
     });
+    const partialUpdate = {
+      ...input,
+      title: "Mon chant adapte",
+      chordProContent: "[G]Paroles adaptees",
+    };
 
     await expect(
-      updateAdminSong(draftSong.id, input, repository),
+      updateAdminSong(draftSong.id, partialUpdate, repository),
     ).resolves.toEqual({
       ...draftSong,
       isEditable: false,
+      collection: "JEM",
+      collectionNumber: 42,
+      sourcePageUrl: "https://jemaf.fr/chant/jem042",
     });
-    expect(repository.update).toHaveBeenCalledWith(draftSong.id, input);
+    expect(repository.update).toHaveBeenCalledWith(draftSong.id, partialUpdate);
+  });
+
+  it("refuses to change locked metadata on an official song", async () => {
+    const repository = createRepository({
+      ...draftSong,
+      isEditable: false,
+      author: "Auteur officiel",
+      copyright: "© JEM",
+      collection: "JEM",
+      collectionNumber: 42,
+      sourcePageUrl: "https://jemaf.fr/chant/jem042",
+    });
+
+    await expect(
+      updateAdminSong(draftSong.id, {
+        ...input,
+        author: "Auteur modifie",
+        copyright: "© Local",
+      }, repository),
+    ).rejects.toBeInstanceOf(RestrictedSongMetadataEditError);
+    expect(repository.update).not.toHaveBeenCalled();
   });
 
   it("attaches one PDF source to a song", async () => {

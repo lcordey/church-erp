@@ -10,6 +10,7 @@ import {
   musicalKeys,
 } from "../music/musical-key";
 import { formatSongCollectionLabel } from "../collections/song-collection";
+import { hasLockedOfficialMetadata } from "../song-edit-rules";
 import type { AdminSong } from "../types/admin-song";
 import type { GeneratedChordProResult } from "../types/admin-song";
 import type {
@@ -119,6 +120,9 @@ export function AdminSongForm({
   const [isChordProGenerationPending, setIsChordProGenerationPending] = useState(false);
   const [isPending, startTransition] = useTransition();
   const isEditing = Boolean(song);
+  const hasOfficialMetadataLock = song
+    ? hasLockedOfficialMetadata(song)
+    : false;
 
   function updateField(field: AdminSongField, value: string) {
     setForm((current) => {
@@ -495,25 +499,42 @@ export function AdminSongForm({
           <label className="field">
             <span>Auteur</span>
             <input
+              disabled={hasOfficialMetadataLock}
               value={form.author}
               onChange={(event) => updateField("author", event.target.value)}
             />
+            {hasOfficialMetadataLock ? (
+              <p className="field__hint">
+                Conservé depuis la source officielle.
+              </p>
+            ) : null}
           </label>
 
           <label className="field">
             <span>Copyright</span>
             <input
+              disabled={hasOfficialMetadataLock}
               value={form.copyright}
               onChange={(event) => updateField("copyright", event.target.value)}
             />
+            {hasOfficialMetadataLock ? (
+              <p className="field__hint">
+                Conservé depuis la source officielle.
+              </p>
+            ) : null}
           </label>
 
-          {song?.collection && song.collectionNumber ? (
+          {song?.collection ? (
             <div className="field field--readonly">
               <span>Recueil</span>
               <strong>
                 {formatSongCollectionLabel(song.collection, song.collectionNumber)}
               </strong>
+              {hasOfficialMetadataLock ? (
+                <p className="field__hint">
+                  Le recueil d’un chant officiel reste verrouillé.
+                </p>
+              ) : null}
             </div>
           ) : null}
 

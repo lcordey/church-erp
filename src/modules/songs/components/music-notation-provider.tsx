@@ -21,6 +21,7 @@ const MusicNotationContext = createContext<MusicNotationContextValue>({
 
 const storageKey = "church-erp-music-notation";
 const notationChangeEvent = "church-erp-music-notation-change";
+let cachedNotation: MusicNotation = "english";
 
 function subscribe(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -33,9 +34,15 @@ function subscribe(callback: () => void) {
 }
 
 function getSnapshot(): MusicNotation {
-  const storedNotation = window.localStorage.getItem(storageKey);
+  try {
+    const storedNotation = window.localStorage.getItem(storageKey);
 
-  return storedNotation === "french" ? "french" : "english";
+    cachedNotation = storedNotation === "french" ? "french" : "english";
+  } catch {
+    return cachedNotation;
+  }
+
+  return cachedNotation;
 }
 
 function getServerSnapshot(): MusicNotation {
@@ -50,7 +57,12 @@ export function MusicNotationProvider({ children }: { children: ReactNode }) {
   );
 
   function setNotation(value: MusicNotation) {
-    window.localStorage.setItem(storageKey, value);
+    cachedNotation = value;
+
+    try {
+      window.localStorage.setItem(storageKey, value);
+    } catch {}
+
     window.dispatchEvent(new Event(notationChangeEvent));
   }
 

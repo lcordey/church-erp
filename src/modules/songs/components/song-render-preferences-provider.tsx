@@ -28,6 +28,8 @@ const SongRenderPreferencesContext =
     setPreferences: () => undefined,
   });
 
+let cachedPreferences = defaultSongRenderPreferences;
+
 function subscribe(callback: () => void) {
   window.addEventListener("storage", callback);
   window.addEventListener(songRenderPreferenceChangeEvent, callback);
@@ -39,9 +41,15 @@ function subscribe(callback: () => void) {
 }
 
 function getSnapshot(): SongRenderPreferences {
-  return readSongRenderPreferences(
-    window.localStorage.getItem(songRenderPreferenceStorageKey),
-  );
+  try {
+    cachedPreferences = readSongRenderPreferences(
+      window.localStorage.getItem(songRenderPreferenceStorageKey),
+    );
+  } catch {
+    return cachedPreferences;
+  }
+
+  return cachedPreferences;
 }
 
 function getServerSnapshot(): SongRenderPreferences {
@@ -60,10 +68,15 @@ export function SongRenderPreferencesProvider({
   );
 
   function commit(next: SongRenderPreferences) {
-    window.localStorage.setItem(
-      songRenderPreferenceStorageKey,
-      JSON.stringify(next),
-    );
+    cachedPreferences = next;
+
+    try {
+      window.localStorage.setItem(
+        songRenderPreferenceStorageKey,
+        JSON.stringify(next),
+      );
+    } catch {}
+
     window.dispatchEvent(new Event(songRenderPreferenceChangeEvent));
   }
 

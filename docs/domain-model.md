@@ -84,7 +84,7 @@ Represents the shared identity and metadata of a song, regardless of how the son
 - `is_editable`
   - type: `boolean`
   - required: yes
-  - notes: false for official imported songs that must not be edited directly
+  - notes: false for official imported songs whose provenance metadata must stay locked
 
 - `created_at`
   - type: `timestamptz`
@@ -267,7 +267,7 @@ Recommended indexes:
 - temporary transposition changes rendered chords only and does not update `default_key` or ChordPro content
 - official JEM songs are imported with `is_editable = false`
 - manually created MVP-1 songs are assigned to collection `LeMont`
-- read-only songs cannot be edited or deleted directly through admin services
+- official songs keep locked provenance metadata while remaining editable for adapted content
 - search in MVP-1 covers title and collection number
 - the public catalog can be filtered by collection through fixed checkbox options
 

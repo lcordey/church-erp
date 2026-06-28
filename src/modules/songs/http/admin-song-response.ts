@@ -9,6 +9,7 @@ import {
   InvalidSongPdfError,
   MissingSongMusicXmlError,
   PublishedSongDeletionError,
+  RestrictedSongMetadataEditError,
 } from "../services/admin-song-management";
 import type { AdminSongValidationErrors } from "../validation/admin-song-input";
 
@@ -88,6 +89,20 @@ export function adminSongErrorResponse(error: unknown) {
           code: "MISSING_MUSICXML",
           message:
             "Ajoute d’abord une partition MusicXML avant de générer le ChordPro.",
+        },
+      },
+      { status: 409 },
+    );
+  }
+
+  if (error instanceof RestrictedSongMetadataEditError) {
+    return Response.json(
+      {
+        error: {
+          code: "RESTRICTED_SONG_METADATA",
+          message:
+            "Les informations de provenance d’un chant officiel ne peuvent pas être modifiées.",
+          fields: error.fields,
         },
       },
       { status: 409 },

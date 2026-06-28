@@ -264,6 +264,53 @@ MusicXML payload in PostgreSQL, generates a minimal placeholder ChordPro source
 so the songs appear in the catalog, and uploads matching PDFs when the target
 Supabase Storage credentials are available.
 
+For a local ChordPro-first collection import such as `Exo2`, where songs ship
+with canonical ChordPro files and matching PDFs:
+
+```bash
+pnpm songs:import-chordpro-catalog -- \
+  --collection Exo2 \
+  --namespace exo2 \
+  --chordpro-dir /home/lcordey/work/download_for_church_erp/Exo_2_ChordPro/Exo_2_ChordPro \
+  --pdf-dir "/home/lcordey/work/download_for_church_erp/Exo 2"
+```
+
+This importer creates or updates published songs in the requested collection,
+stores the ChordPro payload in PostgreSQL, and uploads matching PDFs when the
+target Supabase Storage credentials are available. For a remote Supabase
+project, export `DATABASE_URL`, `SUPABASE_URL`, and
+`SUPABASE_SERVICE_ROLE_KEY` explicitly before running the same command.
+
+For a mixed collection where some songs have `ChordPro`, some have `MusicXML`,
+and some have both, use the importers in sequence:
+
+```bash
+pnpm songs:import-chordpro-catalog -- \
+  --collection LeMont \
+  --namespace lemont \
+  --chordpro-dir /home/lcordey/work/download_for_church_erp/LeMont_ChordPro/chordpro \
+  --pdf-dir /home/lcordey/work/download_for_church_erp/LeMont
+
+pnpm songs:import-musicxml-catalog -- \
+  --collection LeMont \
+  --namespace lemont \
+  --musicxml-dir /home/lcordey/work/download_for_church_erp/LeMont_MusicXML/musicxml \
+  --pdf-dir /home/lcordey/work/download_for_church_erp/LeMont
+```
+
+The `MusicXML` step attaches scores to already imported songs when it finds a
+match and creates additional published songs with placeholder `ChordPro` only
+for the `MusicXML` files that do not match an existing song.
+
+If a collection must be replaced once before reimporting, delete it explicitly:
+
+```bash
+pnpm songs:delete-collection -- --collection LeMont
+```
+
+This is a manual maintenance command. The regular importers do not delete
+collections automatically.
+
 Never use `drizzle-kit push` for project schema changes. Committed migrations
 must remain the reproducible source of database changes.
 

@@ -20,7 +20,7 @@ publier automatiquement et supprimer des chants depuis leur ecran d'edition.
 - ajouter, remplacer ou retirer une partition MusicXML attachee au chant
 - generer une proposition de source ChordPro a partir du MusicXML attache
 - consulter les metadonnees utiles cote administration
-- consulter les chants officiels importes en lecture seule
+- consulter les chants officiels importes avec edition partielle
 
 ## Regles metier
 
@@ -30,8 +30,9 @@ publier automatiquement et supprimer des chants depuis leur ecran d'edition.
 - un chant publie doit d'abord etre retire du catalogue avant suppression ; l'interface peut enchainer ce retrait puis la suppression dans la meme action
 - un meme chant pourra a terme posseder plusieurs sources dans plusieurs formats
 - un chant MVP-1 possede au maximum une source ChordPro active, une source PDF active et une source MusicXML active
-- les chants officiels JEMAF importes ne sont pas editables directement
-- le verrouillage d'edition est applique cote service, pas seulement dans l'interface
+- les chants provenant d'une source officielle hors collection locale `LeMont` restent modifiables pour le titre, la tonalite, les sources et le contenu ChordPro
+- l'auteur, le copyright et le recueil d'un chant provenant d'une source officielle hors collection locale `LeMont` restent verrouilles
+- le verrouillage des metadonnees officielles est applique cote service, pas seulement dans l'interface
 - les chants crees manuellement dans MVP-1 sont automatiquement rattaches a la collection locale `LeMont`
 - le choix de collection n'est pas visible dans le formulaire tant qu'il depend implicitement de l'eglise courante
 - le formulaire pre-remplit actuellement `Auteur` et `Copyright` avec `LeMont`
@@ -103,7 +104,7 @@ Implementation actuelle :
 - feedback de validation en cas de saisie invalide
 - previsualisation ChordPro en direct
 - tonalite validee avec affichage anglais ou francais
-- affichage non editable pour les chants officiels importes
+- verrouillage visuel de l'auteur et du copyright pour les chants officiels
 - rattachement automatique des nouveaux chants a `LeMont`
 - aide initiale pour la syntaxe ChordPro supportee par le rendu
 - template ChordPro base sur des directives nommees comme `{start_of_verse: Couplet 1}`

@@ -9,12 +9,14 @@ import {
   createAdminSongRepository,
   type AdminSongRepository,
 } from "../repositories/admin-song-repository";
+import { hasLockedOfficialMetadata } from "../song-edit-rules";
 import type {
   AdminSong,
   AdminSongInput,
   AdminSongListItem,
   GeneratedChordProResult,
 } from "../types/admin-song";
+import type { AdminSongValidationErrors } from "../validation/admin-song-input";
 import { generateChordProFromMusicXml } from "./musicxml-to-chordpro";
 
 const songPdfMimeType = "application/pdf";
@@ -64,6 +66,24 @@ export async function updateAdminSong(
     return null;
   }
 
+  if (hasLockedOfficialMetadata(song)) {
+    const fields: AdminSongValidationErrors = {};
+
+    if (input.author !== song.author) {
+      fields.author =
+        "L’auteur d’un chant provenant d’une source officielle ne peut pas être modifié.";
+    }
+
+    if (input.copyright !== song.copyright) {
+      fields.copyright =
+        "Le copyright d’un chant provenant d’une source officielle ne peut pas être modifié.";
+    }
+
+    if (Object.keys(fields).length > 0) {
+      throw new RestrictedSongMetadataEditError(fields);
+    }
+  }
+
   return repository.update(id, input);
 }
 
@@ -88,6 +108,12 @@ export class InvalidSongMusicXmlError extends Error {
 export class MissingSongMusicXmlError extends Error {
   constructor() {
     super("The song has no active MusicXML source.");
+  }
+}
+
+export class RestrictedSongMetadataEditError extends Error {
+  constructor(readonly fields: AdminSongValidationErrors) {
+    super("Official song provenance fields cannot be edited.");
   }
 }
 
