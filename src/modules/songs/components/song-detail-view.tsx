@@ -67,16 +67,6 @@ function DownloadIcon() {
   );
 }
 
-function ExternalLinkIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24">
-      <path d="M14 5h5v5" />
-      <path d="m10 14 9-9" />
-      <path d="M19 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4" />
-    </svg>
-  );
-}
-
 type SongDetailViewProps = {
   song: PublicSongDetail | AdminSong;
   actions?: ReactNode;
@@ -149,74 +139,44 @@ export function SongDetailView({
     await textViewerRef.current?.downloadPdf();
   }
 
-  function openActiveDocument() {
-    if (sourceView === "pdf" && song.pdfSource) {
-      const popup = window.open(song.pdfSource.downloadUrl, "_blank");
-
-      if (popup) {
-        popup.opener = null;
-      }
-
-      return;
-    }
-
-    if (sourceView === "musicxml") {
-      musicXmlViewerRef.current?.openDocument();
-      return;
-    }
-
-    textViewerRef.current?.openDocument();
-  }
-
   return (
     <section className="song-detail-view">
-      <header className="song-header song-header--compact">
-        <div className="song-source-toggle" aria-label="Source du chant">
-          <button
-            aria-pressed={sourceView === "lyrics"}
-            onClick={() => setSourceView("lyrics")}
-            type="button"
-          >
-            Paroles
-          </button>
-          {hasChords ? (
-            <button
-              aria-pressed={sourceView === "chordpro"}
-              onClick={() => setSourceView("chordpro")}
-              type="button"
-            >
-              Accords
-            </button>
-          ) : null}
-          {canAccessScores && song.pdfSource ? (
-            <button
-              aria-pressed={sourceView === "pdf"}
-              onClick={() => setSourceView("pdf")}
-              type="button"
-            >
-              PDF
-            </button>
-          ) : null}
-          {canAccessScores && song.musicXmlSource ? (
-            <button
-              aria-pressed={sourceView === "musicxml"}
-              onClick={() => setSourceView("musicxml")}
-              type="button"
-            >
-              Partition
-            </button>
-          ) : null}
-        </div>
-
-        {actions ? <div className="song-detail-view__actions">{actions}</div> : null}
-      </header>
-
       <section
         className={`song-document-viewer song-document-viewer--${sourceView} ${
           isViewerFullscreen ? "song-document-viewer--fullscreen" : ""
         }`}
       >
         <header className="song-document-viewer__toolbar">
+          <div className="song-document-viewer__source">
+            <label className="sr-only" htmlFor={`song-source-${song.id}`}>
+              Source du chant
+            </label>
+            <select
+              id={`song-source-${song.id}`}
+              onChange={(event) => {
+                setSourceView(
+                  event.target.value as
+                    | "chordpro"
+                    | "lyrics"
+                    | "pdf"
+                    | "musicxml",
+                );
+              }}
+              value={sourceView}
+            >
+              <option value="lyrics">Paroles</option>
+              {hasChords ? <option value="chordpro">Accords</option> : null}
+              {canAccessScores && song.pdfSource ? (
+                <option value="pdf">PDF</option>
+              ) : null}
+              {canAccessScores && song.musicXmlSource ? (
+                <option value="musicxml">Partition</option>
+              ) : null}
+            </select>
+            {actions ? (
+              <div className="song-detail-view__actions">{actions}</div>
+            ) : null}
+          </div>
           <div className="song-document-viewer__actions">
             {hasDisplaySettings ? (
               <button
@@ -259,15 +219,6 @@ export function SongDetailView({
               type="button"
             >
               <DownloadIcon />
-            </button>
-            <button
-              aria-label="Ouvrir le document dans un nouvel onglet"
-              className="icon-button song-document-viewer__icon-button"
-              onClick={openActiveDocument}
-              title="Ouvrir"
-              type="button"
-            >
-              <ExternalLinkIcon />
             </button>
           </div>
         </header>

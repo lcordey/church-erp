@@ -856,15 +856,11 @@ export const MusicXmlScoreViewer = forwardRef<
             </div>
           </div>
         ) : null}
-        <div className="song-document-viewer__status-row">
-          {status ? (
+        {status ? (
+          <div className="song-document-viewer__status-row">
             <p className="song-document-viewer__status">{status}</p>
-          ) : (
-            <p className="song-document-viewer__status song-document-viewer__status--ready">
-              Partition rendue en MusicXML.
-            </p>
-          )}
-        </div>
+          </div>
+        ) : null}
         <div ref={viewportRef} className="song-score-viewer__viewport">
           <div
             ref={containerRef}

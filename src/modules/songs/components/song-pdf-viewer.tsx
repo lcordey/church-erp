@@ -16,7 +16,6 @@ export function SongPdfViewer({
   const stageRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState("Chargement du PDF…");
-  const [pageCount, setPageCount] = useState<number | null>(null);
   const [stageWidth, setStageWidth] = useState(0);
 
   useEffect(() => {
@@ -68,7 +67,6 @@ export function SongPdfViewer({
 
       if (isInitialRender) {
         setStatus("Chargement du PDF…");
-        setPageCount(null);
       }
 
       try {
@@ -96,8 +94,6 @@ export function SongPdfViewer({
         if (isCancelled) {
           return;
         }
-
-        setPageCount(pdf.numPages);
 
         const pageSpacing = stageWidth < 720 ? 16 : 24;
         const targetWidth = Math.max(stageWidth - pageSpacing * 2, 220);
@@ -172,15 +168,11 @@ export function SongPdfViewer({
       ref={stageRef}
       className="song-document-viewer__stage song-document-viewer__stage--pdf"
     >
-      <div className="song-document-viewer__status-row">
-        <p className="song-document-viewer__status">
-          {status ||
-            (pageCount ? `${pageCount} page${pageCount > 1 ? "s" : ""}` : "")}
-        </p>
-      </div>
-      <header className="song-document-sheet__header">
-        <h2 className="song-document-sheet__title">{title}</h2>
-      </header>
+      {status ? (
+        <div className="song-document-viewer__status-row">
+          <p className="song-document-viewer__status">{status}</p>
+        </div>
+      ) : null}
       <div
         ref={containerRef}
         aria-label={`Partition PDF de ${title}`}
