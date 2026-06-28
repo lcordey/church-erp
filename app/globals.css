@@ -783,7 +783,17 @@ a {
 
 .catalog-filter-dropdown {
   position: relative;
+  z-index: 31;
   min-width: min(280px, 100%);
+}
+
+.catalog-filter-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  border: 0;
+  padding: 0;
+  background: transparent;
 }
 
 .catalog-filter-dropdown summary {
