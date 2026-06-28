@@ -1924,6 +1924,15 @@ a {
   line-height: var(--chord-sheet-line-height);
 }
 
+.song-text-sheet__title {
+  margin: 0 0 1.2em;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
 .chord-sheet__line {
   display: flex;
   flex-wrap: wrap;

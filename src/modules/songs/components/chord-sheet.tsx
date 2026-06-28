@@ -12,6 +12,7 @@ type ChordSheetProps = {
   content: string;
   lineHeight?: number;
   lyricsFontScale?: number;
+  title: string;
   transposeBy?: number;
 };
 
@@ -21,6 +22,7 @@ export function ChordSheet({
   content,
   lineHeight = 1.18,
   lyricsFontScale = 1,
+  title,
   transposeBy = 0,
 }: ChordSheetProps) {
   const { notation } = useMusicNotation();
@@ -40,6 +42,7 @@ export function ChordSheet({
       }
       aria-label="Paroles et accords"
     >
+      <h1 className="song-text-sheet__title">{title}</h1>
       {lines.map((line, lineIndex) => {
         if (line.type === "blank") {
           return <div className="chord-sheet__blank" key={lineIndex} />;

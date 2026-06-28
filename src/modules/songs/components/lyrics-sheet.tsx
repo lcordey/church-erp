@@ -7,9 +7,14 @@ import { parseChordPro } from "../services/chordpro";
 type LyricsSheetProps = {
   content: string;
   fontScale?: number;
+  title: string;
 };
 
-export function LyricsSheet({ content, fontScale = 1 }: LyricsSheetProps) {
+export function LyricsSheet({
+  content,
+  fontScale = 1,
+  title,
+}: LyricsSheetProps) {
   const lines = parseChordPro(content);
 
   return (
@@ -22,6 +27,7 @@ export function LyricsSheet({ content, fontScale = 1 }: LyricsSheetProps) {
         } as CSSProperties
       }
     >
+      <h1 className="song-text-sheet__title">{title}</h1>
       {lines.map((line, lineIndex) => {
         if (line.type === "blank") {
           return <div className="lyrics-sheet__blank" key={lineIndex} />;

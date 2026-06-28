@@ -753,7 +753,7 @@ export function AdminSongForm({
           </span>
         </div>
         <div className="admin-preview__sheet">
-          <ChordSheet content={form.chordProContent} />
+          <ChordSheet content={form.chordProContent} title={form.title} />
         </div>
       </aside>
     </div>

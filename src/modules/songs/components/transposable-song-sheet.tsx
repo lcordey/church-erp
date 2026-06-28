@@ -338,12 +338,14 @@ export const TransposableSongSheet = forwardRef<
               content={content}
               lineHeight={preferences.lineHeight}
               lyricsFontScale={preferences.lyricsFontScale}
+              title={title}
               transposeBy={transposeBy}
             />
           ) : (
             <LyricsSheet
               content={content}
               fontScale={preferences.lyricsFontScale}
+              title={title}
             />
           )}
           {copyright ? (
