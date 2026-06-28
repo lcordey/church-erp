@@ -786,6 +786,18 @@ a {
   min-width: min(280px, 100%);
 }
 
+.catalog-filter-dropdown[open] {
+  z-index: 33;
+}
+
+.catalog-filter-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
 .catalog-filter-dropdown summary {
   display: flex;
   min-height: 48px;
@@ -830,7 +842,7 @@ a {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  z-index: 30;
+  z-index: 34;
   display: none;
   width: min(420px, calc(100vw - 40px));
   border: 1px solid var(--line);
@@ -1049,6 +1061,7 @@ a {
 
 .song-card__content {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 8px;
 }
@@ -3136,7 +3149,7 @@ a {
   }
 
   .song-card__open {
-    grid-template-columns: 38px minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 12px;
     min-height: 112px;
   }
