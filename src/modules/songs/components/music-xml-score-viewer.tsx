@@ -720,10 +720,10 @@ export const MusicXmlScoreViewer = forwardRef<
       }
     };
   }, [
-    appliedLyricsSpacing,
     appliedMeasuresPerLine,
-    appliedNoteSpacing,
     copyright,
+    effectiveLyricsSpacing,
+    effectiveNoteSpacing,
     renderWidth,
     sourceUrl,
     title,

@@ -8,7 +8,7 @@ export type MusicXmlDisplayAnalysis = {
 };
 
 const ARTIFACT_LYRIC_PATTERN =
-  /^(?:\d+(?:st|nd|rd|th)|(?:maj|min|sus|add|dim|aug|m)[a-z0-9#b/()+-]*|[a-g](?:[#b])?(?:maj|min|m|sus|add|dim|aug)[a-z0-9#b/()+-]*)$/i;
+  /^(?:\d+(?:st|nd|rd|th)|(?:maj|min|sus|add|dim|aug|m)(?![a-z])[a-z0-9#b/()+-]*|[a-g](?:[#b])?(?:maj|min|m|sus|add|dim|aug)(?![a-z])[a-z0-9#b/()+-]*)$/i;
 
 const PRINT_NEW_SYSTEM_PATTERN = /<print\b[^>]*\bnew-system="yes"[^>]*\/?>/i;
 const PRINT_NEW_PAGE_PATTERN = /<print\b[^>]*\bnew-page="yes"[^>]*\/?>/i;

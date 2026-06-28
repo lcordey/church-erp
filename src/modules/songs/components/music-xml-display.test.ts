@@ -48,4 +48,31 @@ describe("analyzeMusicXmlDisplay", () => {
     expect(analysis.sanitizedXml).not.toContain("Maj7(add9)");
     expect(analysis.sanitizedXml).not.toContain("2nd");
   });
+
+  it("does not mistake French lyrics starting with chord-quality letters for artifacts", () => {
+    const xml = `
+      <score-partwise>
+        <part id="P1">
+          <measure number="1">
+            <note><lyric number="1"><text>mour</text></lyric></note>
+            <note><lyric number="1"><text>mon</text></lyric></note>
+            <note><lyric number="1"><text>dimanche</text></lyric></note>
+            <note><lyric number="1"><text>addition</text></lyric></note>
+            <note><lyric number="2"><text>m7</text></lyric></note>
+            <note><lyric number="2"><text>C#m7</text></lyric></note>
+          </measure>
+        </part>
+      </score-partwise>
+    `;
+
+    const analysis = analyzeMusicXmlDisplay(xml);
+
+    expect(analysis.removedArtifactLyricsCount).toBe(2);
+    expect(analysis.sanitizedXml).toContain("<text>mour</text>");
+    expect(analysis.sanitizedXml).toContain("<text>mon</text>");
+    expect(analysis.sanitizedXml).toContain("<text>dimanche</text>");
+    expect(analysis.sanitizedXml).toContain("<text>addition</text>");
+    expect(analysis.sanitizedXml).not.toContain("<text>m7</text>");
+    expect(analysis.sanitizedXml).not.toContain("<text>C#m7</text>");
+  });
 });
