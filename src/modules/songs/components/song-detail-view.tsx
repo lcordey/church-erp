@@ -73,7 +73,7 @@ export function SongDetailView({
   );
   const musicXmlViewerRef = useRef<MusicXmlScoreViewerHandle>(null);
   const textViewerRef = useRef<TransposableSongSheetHandle>(null);
-  const [areSettingsVisible, setAreSettingsVisible] = useState(true);
+  const [areSettingsVisible, setAreSettingsVisible] = useState(false);
   const [areDetailsVisible, setAreDetailsVisible] = useState(false);
 
   function getDownloadHref(sourceUrl: string) {

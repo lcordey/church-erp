@@ -20,6 +20,8 @@ import { ChordSheet } from "./chord-sheet";
 import { LyricsSheet } from "./lyrics-sheet";
 import { useMusicNotation } from "./music-notation-provider";
 import { buildSongDocumentFileStem } from "./song-document-file-name";
+import { SongRenderPreferencesControls } from "./song-render-preferences-controls";
+import { useSongRenderPreferences } from "./song-render-preferences-provider";
 
 type TransposableSongSheetProps = {
   content: string;
@@ -64,6 +66,7 @@ export const TransposableSongSheet = forwardRef<
   ref,
 ) {
   const { notation } = useMusicNotation();
+  const { preferences } = useSongRenderPreferences();
   const canonicalDefaultKey =
     defaultKey && isMusicalKey(defaultKey) ? defaultKey : null;
   const [selectedKey, setSelectedKey] = useState(canonicalDefaultKey ?? "");
@@ -77,7 +80,6 @@ export const TransposableSongSheet = forwardRef<
       ? transposeChord(defaultKey, manualOffset)
       : null;
   const isResetDisabled = transposeBy === 0 && manualOffset === 0;
-  const [lineHeight, setLineHeight] = useState(1.18);
 
   const getPrintableLines = useCallback((): PrintableLine[] => {
     return parseChordPro(content).map((line) => {
@@ -321,23 +323,7 @@ export const TransposableSongSheet = forwardRef<
             </div>
           </div>
 
-          <div className="sheet-controls">
-            <label className="sheet-controls__field">
-              <span>Interligne</span>
-              <input
-                aria-label="Interligne du rendu accords"
-                max="1.4"
-                min="0.92"
-                onChange={(event) =>
-                  setLineHeight(Number.parseFloat(event.target.value))
-                }
-                step="0.02"
-                type="range"
-                value={lineHeight}
-              />
-              <strong>{lineHeight.toFixed(2)}</strong>
-            </label>
-          </div>
+          <SongRenderPreferencesControls />
         </div>
       ) : null}
 
@@ -345,23 +331,20 @@ export const TransposableSongSheet = forwardRef<
         <article
           className={`sheet-card ${displayMode === "lyrics" ? "sheet-card--lyrics" : ""}`}
         >
-          <header className="sheet-card__header">
-            <h2 className="sheet-card__title">{title}</h2>
-            {displayMode === "chords" && displayedKey ? (
-              <p className="sheet-card__subtitle">
-                Tonalité{" "}
-                <strong>{formatMusicalKey(displayedKey, notation)}</strong>
-              </p>
-            ) : null}
-          </header>
           {displayMode === "chords" ? (
             <ChordSheet
+              chordColor={preferences.chordColor}
+              chordFontScale={preferences.chordFontScale}
               content={content}
-              lineHeight={lineHeight}
+              lineHeight={preferences.lineHeight}
+              lyricsFontScale={preferences.lyricsFontScale}
               transposeBy={transposeBy}
             />
           ) : (
-            <LyricsSheet content={content} />
+            <LyricsSheet
+              content={content}
+              fontScale={preferences.lyricsFontScale}
+            />
           )}
           {copyright ? (
             <footer className="sheet-card__footer">{copyright}</footer>

@@ -607,6 +607,11 @@ a {
   align-items: flex-start;
 }
 
+.settings-section--stacked {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
 .settings-badge {
   display: inline-flex;
   min-height: 34px;
@@ -1179,10 +1184,6 @@ a {
   min-height: 0;
 }
 
-.song-detail-view .sheet-card {
-  box-shadow: 0 18px 50px rgb(24 36 58 / 14%);
-}
-
 .song-header__top-row {
   display: flex;
   align-items: flex-start;
@@ -1209,16 +1210,16 @@ a {
   position: relative;
   z-index: 5;
   display: flex;
-  min-height: 58px;
+  min-height: 54px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  border-bottom: 1px solid rgb(49 91 120 / 10%);
-  padding: 8px 14px;
+  gap: 12px;
+  border-bottom: 1px solid rgb(49 91 120 / 8%);
+  padding: 6px 12px;
   color: var(--ink);
-  background: rgb(246 241 232 / 96%);
-  backdrop-filter: blur(12px);
+  background: rgb(247 244 236 / 88%);
+  backdrop-filter: blur(16px);
 }
 
 .song-document-viewer__source {
@@ -1229,12 +1230,12 @@ a {
 }
 
 .song-document-viewer__source select {
-  min-height: 40px;
-  border: 1px solid rgb(49 91 120 / 18%);
-  border-radius: 12px;
-  padding: 0 34px 0 12px;
+  min-height: 38px;
+  border: 1px solid rgb(49 91 120 / 14%);
+  border-radius: 999px;
+  padding: 0 34px 0 14px;
   color: var(--ink);
-  background-color: rgb(255 253 247 / 72%);
+  background-color: rgb(255 253 247 / 84%);
   cursor: pointer;
   font: 750 0.82rem/1 var(--sans);
 }
@@ -1246,23 +1247,22 @@ a {
 
 .song-document-viewer__actions {
   display: flex;
-  flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
 }
 
 .song-document-viewer__details {
   position: absolute;
-  top: calc(100% - 4px);
+  top: calc(100% + 6px);
   right: 12px;
   z-index: 8;
   width: min(320px, calc(100vw - 24px));
-  padding: 18px;
+  padding: 16px;
   border: 1px solid rgb(49 91 120 / 14%);
-  border-radius: 14px;
+  border-radius: 16px;
   color: var(--ink);
   background: rgb(255 253 247 / 98%);
-  box-shadow: 0 18px 48px rgb(24 36 58 / 18%);
+  box-shadow: 0 16px 34px rgb(24 36 58 / 10%);
 }
 
 .song-document-viewer__details > strong {
@@ -1792,7 +1792,7 @@ a {
 
 .song-page--immersive .song-pdf-viewer__page canvas {
   border-radius: 2px;
-  box-shadow: 0 8px 28px rgb(24 36 58 / 12%);
+  box-shadow: 0 6px 20px rgb(24 36 58 / 8%);
 }
 
 .back-link {
@@ -1896,12 +1896,15 @@ a {
 }
 
 .chord-sheet {
+  --chord-sheet-chord-color: var(--warm);
+  --chord-sheet-chord-font-size: 0.82em;
+  --chord-sheet-font-size: 1em;
   --chord-sheet-line-height: 1.18;
   --chord-sheet-line-min-height: 2.6em;
   max-width: 980px;
   color: var(--ink);
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(0.92rem, 1.8vw, 1.12rem);
+  font-size: calc(clamp(0.92rem, 1.8vw, 1.12rem) * var(--chord-sheet-font-size));
   line-height: var(--chord-sheet-line-height);
 }
 
@@ -1919,8 +1922,8 @@ a {
 
 .chord-sheet__chord {
   min-height: 1.4em;
-  color: var(--warm);
-  font-size: 0.82em;
+  color: var(--chord-sheet-chord-color);
+  font-size: var(--chord-sheet-chord-font-size);
   font-weight: 800;
 }
 
@@ -1946,6 +1949,7 @@ a {
 }
 
 .lyrics-sheet {
+  --lyrics-sheet-font-size: 1em;
   max-width: 1040px;
   color: var(--ink);
   font-family: Georgia, "Times New Roman", serif;
@@ -1953,7 +1957,7 @@ a {
 
 .lyrics-sheet__line {
   margin: 0;
-  font-size: clamp(1.08rem, 1.7vw, 1.28rem);
+  font-size: calc(clamp(1.08rem, 1.7vw, 1.28rem) * var(--lyrics-sheet-font-size));
   line-height: 1.42;
   white-space: pre-wrap;
 }
@@ -1989,19 +1993,13 @@ a {
 }
 
 .song-render-settings {
-  border-bottom: 1px solid var(--line);
-  background: rgb(255 253 247 / 54%);
+  border-bottom: 1px solid rgb(49 91 120 / 8%);
+  background: rgb(247 244 236 / 72%);
 }
 
 .song-render-settings .transpose-toolbar {
   margin: 0;
   border-width: 0 0 1px;
-  background: transparent;
-}
-
-.song-render-settings .sheet-controls {
-  margin: 0;
-  border: 0;
   background: transparent;
 }
 
@@ -2016,8 +2014,22 @@ a {
   text-transform: uppercase;
 }
 
+.sheet-controls__field select,
 .sheet-controls__field input[type="range"] {
   width: 100%;
+}
+
+.sheet-controls__field select {
+  min-height: 40px;
+  border: 1px solid rgb(49 91 120 / 14%);
+  border-radius: 12px;
+  padding: 0 12px;
+  color: var(--ink);
+  background: rgb(255 253 247 / 84%);
+  font: 700 0.9rem/1 var(--sans);
+}
+
+.sheet-controls__field input[type="range"] {
   accent-color: var(--accent);
 }
 
@@ -2026,6 +2038,51 @@ a {
   color: var(--ink);
   font-size: 0.78rem;
   text-align: right;
+}
+
+.song-render-preferences {
+  display: grid;
+  gap: 0;
+}
+
+.song-render-preferences__intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 16px 0;
+}
+
+.song-render-preferences__intro h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.song-render-preferences__intro p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.song-render-preferences__section {
+  display: grid;
+  gap: 0;
+  padding-top: 8px;
+}
+
+.song-render-settings .song-render-preferences__section {
+  padding-top: 0;
+}
+
+.song-render-preferences__section .sheet-controls__field {
+  padding: 14px 16px;
+}
+
+.song-render-preferences__section .sheet-controls__field + .sheet-controls__field {
+  border-top: 1px solid rgb(49 91 120 / 8%);
 }
 
 .not-found {
@@ -2818,6 +2875,11 @@ a {
     flex-direction: column;
   }
 
+  .song-render-preferences__intro {
+    flex-direction: column;
+    padding-right: 0;
+  }
+
   .song-card {
     min-height: 112px;
   }
@@ -2870,7 +2932,7 @@ a {
   }
 
   .sheet-card {
-    padding: 34px 20px 42px 28px;
+    padding: 26px 18px 36px 22px;
   }
 
   .chord-sheet,

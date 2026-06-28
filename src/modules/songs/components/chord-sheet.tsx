@@ -7,14 +7,20 @@ import { parseChordPro } from "../services/chordpro";
 import { useMusicNotation } from "./music-notation-provider";
 
 type ChordSheetProps = {
+  chordColor?: "warm" | "accent" | "ink";
+  chordFontScale?: number;
   content: string;
   lineHeight?: number;
+  lyricsFontScale?: number;
   transposeBy?: number;
 };
 
 export function ChordSheet({
+  chordColor = "warm",
+  chordFontScale = 0.82,
   content,
   lineHeight = 1.18,
+  lyricsFontScale = 1,
   transposeBy = 0,
 }: ChordSheetProps) {
   const { notation } = useMusicNotation();
@@ -25,6 +31,9 @@ export function ChordSheet({
       className="chord-sheet"
       style={
         {
+          "--chord-sheet-chord-color": `var(--${chordColor})`,
+          "--chord-sheet-chord-font-size": `${chordFontScale}em`,
+          "--chord-sheet-font-size": `${lyricsFontScale}em`,
           "--chord-sheet-line-height": `${lineHeight}`,
           "--chord-sheet-line-min-height": `${Math.max(lineHeight + 1.42, 2.15)}em`,
         } as CSSProperties

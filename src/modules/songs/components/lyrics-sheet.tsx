@@ -1,16 +1,27 @@
 "use client";
 
+import type { CSSProperties } from "react";
+
 import { parseChordPro } from "../services/chordpro";
 
 type LyricsSheetProps = {
   content: string;
+  fontScale?: number;
 };
 
-export function LyricsSheet({ content }: LyricsSheetProps) {
+export function LyricsSheet({ content, fontScale = 1 }: LyricsSheetProps) {
   const lines = parseChordPro(content);
 
   return (
-    <div className="lyrics-sheet" aria-label="Paroles">
+    <div
+      className="lyrics-sheet"
+      aria-label="Paroles"
+      style={
+        {
+          "--lyrics-sheet-font-size": `${fontScale}em`,
+        } as CSSProperties
+      }
+    >
       {lines.map((line, lineIndex) => {
         if (line.type === "blank") {
           return <div className="lyrics-sheet__blank" key={lineIndex} />;

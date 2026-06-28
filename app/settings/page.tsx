@@ -1,4 +1,5 @@
 import { MusicNotationToggle } from "@/src/modules/songs/components/music-notation-toggle";
+import { SongRenderPreferencesControls } from "@/src/modules/songs/components/song-render-preferences-controls";
 
 export default function SettingsPage() {
   return (
@@ -22,12 +23,23 @@ export default function SettingsPage() {
           <MusicNotationToggle />
         </div>
 
+        <div className="settings-section settings-section--stacked">
+          <div>
+            <h2>Lecture des chants</h2>
+            <p>
+              Définissez le rendu par défaut des paroles et des accords. Ces
+              préférences sont conservées localement sur l’appareil.
+            </p>
+          </div>
+          <SongRenderPreferencesControls showDescription />
+        </div>
+
         <div className="settings-section settings-section--placeholder">
           <div>
-            <h2>Thème</h2>
+            <h2>Application</h2>
             <p>
-              Le choix du thème visuel sera ajouté ici quand la direction
-              d’interface sera stabilisée.
+              D’autres sous-sections globales seront ajoutées ici quand les
+              préférences de navigation et d’interface seront stabilisées.
             </p>
           </div>
           <span className="settings-badge">Bientôt</span>

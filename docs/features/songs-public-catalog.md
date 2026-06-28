@@ -108,6 +108,7 @@ Implementation actuelle :
 - le titre, l'auteur, le recueil, la tonalite et la provenance restent accessibles dans un panneau d'information sans etre affiches en permanence sous le rendu
 - les vues `Paroles` et `Accords` utilisent une feuille de document sobre, proche du rendu pagine des PDF
 - les vues `Accords` et `Partition` exposent leurs reglages dans un panneau commun affichable ou masquable
+- le panneau de reglages du lecteur est masque par defaut et s'ouvre a la demande
 - le PDF conserve les pages deja rendues pendant son adaptation a un changement de taille
 - la vue `PDF` propose le telechargement du fichier source
 - la vue `Partition` propose le telechargement d'un PDF genere cote client
@@ -115,8 +116,10 @@ Implementation actuelle :
 - sur mobile, la partition conserve une largeur de gravure stable independante du viewport; le rendu desktop continue de suivre la largeur disponible
 - le zoom initial s'ajuste ensuite au viewport actif pour eviter le scroll horizontal; sa valeur reste modifiable manuellement entre 20 % et 180 %
 - le nom du PDF genere pour la partition reutilise le titre du chant et, si disponible, son recueil et numero
-- le mode `Accords` permet d'ajuster l'interligne pour densifier ou aerer l'affichage
+- les vues `Paroles` et `Accords` suppriment les entetes internes redondants afin de laisser plus de place au contenu
+- le mode `Accords` permet d'ajuster globalement la couleur des accords, la taille des accords, la taille du texte et l'interligne
 - preference persistante de notation anglaise ou francaise
+- preference persistante du rendu paroles et accords, configurable aussi depuis la page `Reglages`
 - le catalogue conserve la recherche et les filtres tant que l'utilisateur reste sur la page catalogue
 
 ## Tests
