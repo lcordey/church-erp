@@ -106,7 +106,7 @@ export function SetlistPlayer({
 
   return (
     <main
-      className="song-page setlist-player"
+      className="song-page song-page--immersive setlist-player"
       onTouchEnd={(event) => {
         if (touchStart === null) {
           return;
@@ -122,7 +122,7 @@ export function SetlistPlayer({
       }}
       onTouchStart={(event) => setTouchStart(event.touches[0].clientX)}
     >
-      <div className="song-page__shell">
+      <div className="song-page__shell song-page__shell--immersive">
         <AppTopBar
           actions={headerActions}
           backHref="/setlist"

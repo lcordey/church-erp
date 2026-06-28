@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { formatSongCollectionLabel } from "../collections/song-collection";
 import type { AdminSong } from "../types/admin-song";
@@ -31,28 +31,12 @@ function SettingsIcon() {
   );
 }
 
-function MaximizeIcon() {
+function InfoIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
-      <path d="M8 4H4v4" />
-      <path d="M16 4h4v4" />
-      <path d="M20 16v4h-4" />
-      <path d="M4 16v4h4" />
-    </svg>
-  );
-}
-
-function MinimizeIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24">
-      <path d="M9 4H4v5" />
-      <path d="M15 4h5v5" />
-      <path d="M20 15v5h-5" />
-      <path d="M4 15v5h5" />
-      <path d="m9 9-5-5" />
-      <path d="m15 9 5-5" />
-      <path d="m15 15 5 5" />
-      <path d="m9 15-5 5" />
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v6" />
+      <path d="M12 7h.01" />
     </svg>
   );
 }
@@ -89,36 +73,13 @@ export function SongDetailView({
   );
   const musicXmlViewerRef = useRef<MusicXmlScoreViewerHandle>(null);
   const textViewerRef = useRef<TransposableSongSheetHandle>(null);
-  const [isViewerFullscreen, setIsViewerFullscreen] = useState(false);
   const [areSettingsVisible, setAreSettingsVisible] = useState(true);
+  const [areDetailsVisible, setAreDetailsVisible] = useState(false);
 
   function getDownloadHref(sourceUrl: string) {
     const separator = sourceUrl.includes("?") ? "&" : "?";
     return `${sourceUrl}${separator}download=1`;
   }
-
-  useEffect(() => {
-    if (!isViewerFullscreen) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-
-    document.body.style.overflow = "hidden";
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setIsViewerFullscreen(false);
-      }
-    }
-
-    window.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [isViewerFullscreen]);
 
   const hasDisplaySettings =
     sourceView === "chordpro" || sourceView === "musicxml";
@@ -142,9 +103,7 @@ export function SongDetailView({
   return (
     <section className="song-detail-view">
       <section
-        className={`song-document-viewer song-document-viewer--${sourceView} ${
-          isViewerFullscreen ? "song-document-viewer--fullscreen" : ""
-        }`}
+        className={`song-document-viewer song-document-viewer--${sourceView}`}
       >
         <header className="song-document-viewer__toolbar">
           <div className="song-document-viewer__source">
@@ -178,6 +137,20 @@ export function SongDetailView({
             ) : null}
           </div>
           <div className="song-document-viewer__actions">
+            <button
+              aria-expanded={areDetailsVisible}
+              aria-label={
+                areDetailsVisible
+                  ? "Masquer les informations du chant"
+                  : "Afficher les informations du chant"
+              }
+              className="icon-button song-document-viewer__icon-button"
+              onClick={() => setAreDetailsVisible((current) => !current)}
+              title="Informations"
+              type="button"
+            >
+              <InfoIcon />
+            </button>
             {hasDisplaySettings ? (
               <button
                 aria-pressed={areSettingsVisible}
@@ -199,19 +172,6 @@ export function SongDetailView({
               </button>
             ) : null}
             <button
-              aria-label={
-                isViewerFullscreen
-                  ? "Quitter le plein écran"
-                  : "Passer en plein écran"
-              }
-              className="icon-button song-document-viewer__icon-button"
-              onClick={() => setIsViewerFullscreen((current) => !current)}
-              title={isViewerFullscreen ? "Quitter le plein écran" : "Plein écran"}
-              type="button"
-            >
-              {isViewerFullscreen ? <MinimizeIcon /> : <MaximizeIcon />}
-            </button>
-            <button
               aria-label="Télécharger le document"
               className="icon-button song-document-viewer__icon-button"
               onClick={() => void downloadActiveDocument()}
@@ -221,6 +181,46 @@ export function SongDetailView({
               <DownloadIcon />
             </button>
           </div>
+          {areDetailsVisible ? (
+            <aside
+              aria-label="Informations du chant"
+              className="song-document-viewer__details"
+            >
+              <strong>{song.title}</strong>
+              <dl>
+                {collectionLabel ? (
+                  <div>
+                    <dt>Recueil</dt>
+                    <dd>{collectionLabel}</dd>
+                  </div>
+                ) : null}
+                <div>
+                  <dt>Auteur</dt>
+                  <dd>{song.author ?? "Non renseigné"}</dd>
+                </div>
+                {song.defaultKey ? (
+                  <div>
+                    <dt>Tonalité</dt>
+                    <dd>
+                      <MusicalKeyText musicalKey={song.defaultKey} />
+                    </dd>
+                  </div>
+                ) : null}
+              </dl>
+              {song.sourcePageUrl ? (
+                <a
+                  href={song.sourcePageUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Consulter la source
+                </a>
+              ) : null}
+              {"isEditable" in song && !song.isEditable ? (
+                <small>Source officielle</small>
+              ) : null}
+            </aside>
+          ) : null}
         </header>
 
         {canAccessScores && sourceView === "pdf" && song.pdfSource ? (
@@ -258,30 +258,6 @@ export function SongDetailView({
         )}
       </section>
 
-      <div className="song-detail-view__meta-footer">
-        <div className="song-header__metadata song-header__metadata--footer">
-          {collectionLabel ? <span>{collectionLabel}</span> : null}
-          <span>{song.author ?? "Auteur non renseigné"}</span>
-          {song.defaultKey ? (
-            <span>
-              Tonalité <MusicalKeyText musicalKey={song.defaultKey} />
-            </span>
-          ) : null}
-          {song.sourcePageUrl ? (
-            <a
-              className="song-source-button"
-              href={song.sourcePageUrl}
-              rel="noreferrer"
-              target="_blank"
-            >
-              Source JEMAF
-            </a>
-          ) : null}
-          {"isEditable" in song && !song.isEditable ? (
-            <span>Source officielle</span>
-          ) : null}
-        </div>
-      </div>
     </section>
   );
 }

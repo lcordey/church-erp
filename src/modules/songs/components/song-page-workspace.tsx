@@ -57,10 +57,18 @@ export function SongPageWorkspace({
   );
 
   return (
-    <main className={mode === "edition" ? "admin-page admin-page--editor" : "song-page"}>
+    <main
+      className={
+        mode === "edition"
+          ? "admin-page admin-page--editor"
+          : "song-page song-page--immersive"
+      }
+    >
       <div
         className={
-          mode === "edition" ? "admin-editor-shell" : "song-page__shell"
+          mode === "edition"
+            ? "admin-editor-shell"
+            : "song-page__shell song-page__shell--immersive"
         }
       >
         <AppTopBar

@@ -48,7 +48,8 @@ de les modifier, puis de les jouer en mode lecture.
 - `/setlist/:id/play` lance le mode lecture
 - le mode lecture reutilise le rendu de chant public
 - l'ajout de chants reutilise le catalogue public pagine, avec la meme recherche serveur et les memes filtres
-- le rendu chant propose un toggle clair entre accords ChordPro et PDF integre quand un PDF existe
+- le mode lecture immersif conserve le header de la setlist et ses actions precedent/suivant
+- le rendu chant utilise le meme selecteur compact de source que la page detail, avec le PDF integre quand il existe
 
 ## Tests
 

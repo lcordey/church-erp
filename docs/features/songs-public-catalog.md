@@ -100,20 +100,20 @@ Implementation actuelle :
 - route publique de detail sur `/chants/:slug`
 - controle de transposition temporaire sur la page detail
 - mode `Paroles` sur la page detail pour afficher uniquement les paroles issues de la source ChordPro
-- lien `PDF` sur la page detail connectee quand une partition est disponible
+- option `PDF` dans le selecteur de source quand une partition est disponible
 - mode `Partition` sur la page detail connectee quand une partition MusicXML est disponible
 - le rendu PDF integre fonctionne aussi sur mobile et ne depend pas du viewer PDF natif du navigateur
-- les vues `PDF` et `Partition` partagent un shell visuel clair et epure, coherent avec le reste du site
-- les quatre vues `Paroles`, `Accords`, `PDF` et `Partition` partagent les actions `Plein ecran`, `Telecharger` et `Ouvrir`
+- les quatre vues `Paroles`, `Accords`, `PDF` et `Partition` partagent un mode lecture immersif qui occupe l'espace disponible sous le header applicatif
+- le selecteur de source, les informations du chant, les reglages disponibles et le telechargement sont regroupes dans une barre de lecture compacte
+- le titre, l'auteur, le recueil, la tonalite et la provenance restent accessibles dans un panneau d'information sans etre affiches en permanence sous le rendu
 - les vues `Paroles` et `Accords` utilisent une feuille de document sobre, proche du rendu pagine des PDF
-- les vues `Accords` et `Partition` exposent leurs reglages dans un panneau commun affichable ou masquable, en vue normale comme en plein ecran
-- le PDF conserve les pages deja rendues pendant son adaptation a un changement de taille ou au plein ecran
-- la vue `PDF` propose `Ouvrir` et `Telecharger`
-- la vue `Partition` propose `Ouvrir` dans un onglet dedie et `Telecharger` en PDF genere cote client
+- les vues `Accords` et `Partition` exposent leurs reglages dans un panneau commun affichable ou masquable
+- le PDF conserve les pages deja rendues pendant son adaptation a un changement de taille
+- la vue `PDF` propose le telechargement du fichier source
+- la vue `Partition` propose le telechargement d'un PDF genere cote client
 - la vue `Partition` permet d'ajuster le nombre de mesures par ligne et l'espacement horizontal des paroles avec des sliders
 - sur mobile, la partition conserve une largeur de gravure stable independante du viewport; le rendu desktop continue de suivre la largeur disponible
 - le zoom initial s'ajuste ensuite au viewport actif pour eviter le scroll horizontal; sa valeur reste modifiable manuellement entre 20 % et 180 %
-- le plein ecran conserve un header compact pour le zoom et la fermeture, avec un viewport scrollable distinct et un fond de partition unique
 - le nom du PDF genere pour la partition reutilise le titre du chant et, si disponible, son recueil et numero
 - le mode `Accords` permet d'ajuster l'interligne pour densifier ou aerer l'affichage
 - preference persistante de notation anglaise ou francaise
