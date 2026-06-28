@@ -4,7 +4,10 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentActor } from "@/src/infrastructure/auth/require-admin";
 import { SongPageWorkspace } from "@/src/modules/songs/components/song-page-workspace";
 import { getAdminSong } from "@/src/modules/songs/services/admin-song-management";
-import { getPublicSongBySlug } from "@/src/modules/songs/services/public-song-catalog";
+import {
+  getPublicSongBySlug,
+  getPublicSongNavigation,
+} from "@/src/modules/songs/services/public-song-catalog";
 import { getLoginHref } from "@/src/shared/navigation/login-redirect";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +32,10 @@ export default async function SongPage({ params, searchParams }: SongPageProps) 
     redirect(getLoginHref(`/chants/${slug}?mode=edition`));
   }
 
-  const song = await getPublicSongBySlug(slug);
+  const [song, navigation] = await Promise.all([
+    getPublicSongBySlug(slug),
+    getPublicSongNavigation(slug),
+  ]);
 
   if (!song) {
     notFound();
@@ -43,6 +49,7 @@ export default async function SongPage({ params, searchParams }: SongPageProps) 
       canAccessScores={isAuthenticated}
       isAuthenticated={isAuthenticated}
       initialMode={mode === "edition" ? "edition" : "selection"}
+      navigation={navigation}
       song={song}
     />
   );

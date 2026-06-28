@@ -52,6 +52,13 @@ export type PublicSongDetail = PublicSongSummary & {
   musicXmlSource: SongMusicXmlSource | null;
 };
 
+export type PublicSongNavigation = {
+  nextSlug: string | null;
+  position: number;
+  previousSlug: string | null;
+  total: number;
+};
+
 export type SongCatalogListRecord = PublicSongSummary & {
   status: SongPublicationStatus;
 };

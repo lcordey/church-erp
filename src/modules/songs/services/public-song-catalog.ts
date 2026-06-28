@@ -8,6 +8,7 @@ import type {
   PublicSongCatalogPage,
   PublicSongCatalogResults,
   PublicSongDetail,
+  PublicSongNavigation,
   PublicSongSummary,
   SongCatalogListRecord,
   SongCatalogRecord,
@@ -117,6 +118,19 @@ export async function getPublicSongBySlug(
   const song = await repository.findPublishedBySlug(normalizedSlug);
 
   return song && isPublicSong(song) ? toDetail(song) : null;
+}
+
+export async function getPublicSongNavigation(
+  slug: string,
+  repository: SongCatalogRepository = createSongCatalogRepository(),
+): Promise<PublicSongNavigation | null> {
+  const normalizedSlug = slug.trim().toLowerCase();
+
+  if (!normalizedSlug) {
+    return null;
+  }
+
+  return repository.findPublishedNavigationBySlug(normalizedSlug);
 }
 
 export async function getPublicSongPdfBySlug(

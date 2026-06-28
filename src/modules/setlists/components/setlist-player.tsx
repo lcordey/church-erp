@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
 import { SongDetailView } from "@/src/modules/songs/components/song-detail-view";
+import { SongNavigationActions } from "@/src/modules/songs/components/song-navigation-actions";
 
 import type { SetlistDetail } from "../types/setlist";
 
@@ -11,22 +12,6 @@ type SetlistPlayerProps = {
   canAccessScores: boolean;
   setlist: SetlistDetail;
 };
-
-function ArrowLeftIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24">
-      <path d="m15 18-6-6 6-6" />
-    </svg>
-  );
-}
-
-function ArrowRightIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24">
-      <path d="m9 18 6-6-6-6" />
-    </svg>
-  );
-}
 
 export function SetlistPlayer({
   canAccessScores,
@@ -60,29 +45,14 @@ export function SetlistPlayer({
 
   const headerActions = useMemo(
     () => (
-      <>
-        <span className="setlist-player__count">
-          {currentIndex + 1} / {setlist.items.length}
-        </span>
-        <button
-          aria-label="Chant précédent"
-          className="icon-button"
-          disabled={currentIndex === 0}
-          onClick={() => goTo(currentIndex - 1)}
-          type="button"
-        >
-          <ArrowLeftIcon />
-        </button>
-        <button
-          aria-label="Chant suivant"
-          className="icon-button icon-button--primary"
-          disabled={currentIndex === setlist.items.length - 1}
-          onClick={() => goTo(currentIndex + 1)}
-          type="button"
-        >
-          <ArrowRightIcon />
-        </button>
-      </>
+      <SongNavigationActions
+        nextDisabled={currentIndex === setlist.items.length - 1}
+        onNext={() => goTo(currentIndex + 1)}
+        onPrevious={() => goTo(currentIndex - 1)}
+        position={currentIndex + 1}
+        previousDisabled={currentIndex === 0}
+        total={setlist.items.length}
+      />
     ),
     [currentIndex, goTo, setlist.items.length],
   );
