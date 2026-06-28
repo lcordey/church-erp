@@ -251,6 +251,10 @@ export const MusicXmlScoreViewer = forwardRef<
         ? MOBILE_SCORE_RENDER_WIDTH
         : stageWidth;
   const useSourceLayout = hasSourceLayoutHints && layoutMode === "original";
+  const effectiveLyricsSpacing = useSourceLayout
+    ? DEFAULT_LYRICS_SPACING
+    : appliedLyricsSpacing;
+  const effectiveNoteSpacing = useSourceLayout ? 1 : appliedNoteSpacing;
   renderWidthRef.current = renderWidth;
   zoomRef.current = zoom;
 
@@ -663,25 +667,25 @@ export const MusicXmlScoreViewer = forwardRef<
         osmd.EngravingRules.TitleBottomDistance = 5.5;
         osmd.EngravingRules.LyricsUseXPaddingForLongLyrics = true;
         osmd.EngravingRules.LyricsXPaddingFactorForLongLyrics =
-          1.15 * appliedLyricsSpacing * appliedNoteSpacing;
+          1.15 * effectiveLyricsSpacing * effectiveNoteSpacing;
         osmd.EngravingRules.MaximumLyricsElongationFactor = 2.4;
         osmd.EngravingRules.BetweenSyllableMinimumDistance =
-          0.7 * appliedLyricsSpacing * appliedNoteSpacing;
+          0.7 * effectiveLyricsSpacing * effectiveNoteSpacing;
         osmd.EngravingRules.ChordSymbolXSpacing = Math.max(
           0.45,
-          BASE_COMPACT_CHORD_SPACING * appliedNoteSpacing,
+          BASE_COMPACT_CHORD_SPACING * effectiveNoteSpacing,
         );
         osmd.EngravingRules.MinNoteDistance = Math.max(
           1,
-          BASE_COMPACT_MIN_NOTE_DISTANCE * appliedNoteSpacing,
+          BASE_COMPACT_MIN_NOTE_DISTANCE * effectiveNoteSpacing,
         );
         osmd.EngravingRules.VoiceSpacingAddendVexflow = Math.max(
           0.9,
-          BASE_COMPACT_VOICE_SPACING_ADDEND * appliedNoteSpacing,
+          BASE_COMPACT_VOICE_SPACING_ADDEND * effectiveNoteSpacing,
         );
         osmd.EngravingRules.VoiceSpacingMultiplierVexflow = Math.max(
           0.44,
-          BASE_COMPACT_VOICE_SPACING_MULTIPLIER * appliedNoteSpacing,
+          BASE_COMPACT_VOICE_SPACING_MULTIPLIER * effectiveNoteSpacing,
         );
         osmd.EngravingRules.LastSystemMaxScalingFactor = useSourceLayout
           ? 1.08
@@ -912,6 +916,7 @@ export const MusicXmlScoreViewer = forwardRef<
                   </span>
                   <input
                     aria-label="Densité horizontale de la partition"
+                    disabled={useSourceLayout}
                     max="1.2"
                     min="0.65"
                     onChange={(event) => {
@@ -929,6 +934,7 @@ export const MusicXmlScoreViewer = forwardRef<
                   </span>
                   <input
                     aria-label="Espacement horizontal des paroles"
+                    disabled={useSourceLayout}
                     max="1.8"
                     min="0.6"
                     onChange={(event) => {
@@ -946,6 +952,7 @@ export const MusicXmlScoreViewer = forwardRef<
         {showSettings && useSourceLayout ? (
           <p className="song-document-viewer__status">
             La partition suit les sauts de ligne et de page du MusicXML source.
+            Les réglages de densité et d’espacement sont désactivés dans ce mode.
           </p>
         ) : null}
         {status ? (
