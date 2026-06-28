@@ -19,17 +19,28 @@ export const metadata: Metadata = {
 
 type SongPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ mode?: string }>;
+  searchParams: Promise<{ mode?: string; returnTo?: string }>;
 };
 
 export default async function SongPage({ params, searchParams }: SongPageProps) {
   const { slug } = await params;
-  const { mode } = await searchParams;
+  const { mode, returnTo } = await searchParams;
   const actor = await getCurrentActor();
   const isAuthenticated = actor !== null;
+  const backHref =
+    typeof returnTo === "string" && returnTo.startsWith("/worship")
+      ? returnTo
+      : "/worship";
 
   if (mode === "edition" && !isAuthenticated) {
-    redirect(getLoginHref(`/chants/${slug}?mode=edition`));
+    const editionUrl = new URL(`/chants/${slug}`, "http://localhost");
+    editionUrl.searchParams.set("mode", "edition");
+
+    if (backHref !== "/worship") {
+      editionUrl.searchParams.set("returnTo", backHref);
+    }
+
+    redirect(getLoginHref(`${editionUrl.pathname}${editionUrl.search}`));
   }
 
   const [song, navigation] = await Promise.all([
@@ -46,6 +57,7 @@ export default async function SongPage({ params, searchParams }: SongPageProps) 
   return (
     <SongPageWorkspace
       adminSong={adminSong}
+      backHref={backHref}
       canAccessScores={isAuthenticated}
       isAuthenticated={isAuthenticated}
       initialMode={mode === "edition" ? "edition" : "selection"}

@@ -17,6 +17,7 @@ import { SongNavigationActions } from "./song-navigation-actions";
 
 type SongPageWorkspaceProps = {
   adminSong: AdminSong | null;
+  backHref: string;
   canAccessScores: boolean;
   initialMode: "selection" | "edition";
   isAuthenticated: boolean;
@@ -24,8 +25,29 @@ type SongPageWorkspaceProps = {
   song: PublicSongDetail;
 };
 
+function createSongHref(
+  slug: string,
+  options: {
+    backHref: string;
+    mode?: "selection" | "edition";
+  },
+) {
+  const url = new URL(`/chants/${slug}`, "http://localhost");
+
+  if (options.mode === "edition") {
+    url.searchParams.set("mode", "edition");
+  }
+
+  if (options.backHref !== "/worship") {
+    url.searchParams.set("returnTo", options.backHref);
+  }
+
+  return `${url.pathname}${url.search}`;
+}
+
 export function SongPageWorkspace({
   adminSong: initialAdminSong,
+  backHref,
   canAccessScores,
   initialMode,
   isAuthenticated,
@@ -41,33 +63,32 @@ export function SongPageWorkspace({
   const navigateToSong = useCallback(
     (slug: string | null) => {
       if (slug) {
-        router.push(`/chants/${slug}`);
+        router.push(createSongHref(slug, { backHref }));
       }
     },
-    [router],
+    [backHref, router],
   );
 
   const updateMode = useCallback(
     (nextMode: "selection" | "edition") => {
       if (nextMode === "edition" && !adminSong) {
         if (!isAuthenticated) {
-          router.push(
-            getLoginHref(`/chants/${readableSong.slug}?mode=edition`),
-          );
+          router.push(getLoginHref(createSongHref(readableSong.slug, {
+            backHref,
+            mode: "edition",
+          })));
         }
 
         return;
       }
 
       setMode(nextMode);
-      router.replace(
-        nextMode === "edition"
-          ? `/chants/${readableSong.slug}?mode=edition`
-          : `/chants/${readableSong.slug}`,
-        { scroll: false },
-      );
+      router.replace(createSongHref(readableSong.slug, {
+        backHref,
+        mode: nextMode,
+      }), { scroll: false });
     },
-    [adminSong, isAuthenticated, readableSong.slug, router],
+    [adminSong, backHref, isAuthenticated, readableSong.slug, router],
   );
   const headerActions = useMemo(
     () =>
@@ -102,7 +123,7 @@ export function SongPageWorkspace({
         <AppTopBar
           activeViewMode={mode}
           actions={headerActions}
-          backHref="/worship"
+          backHref={backHref}
           backIconOnly
           backLabel="Retour au répertoire"
           mode={mode === "edition" ? "admin" : "public"}
@@ -111,10 +132,13 @@ export function SongPageWorkspace({
 
         {mode === "edition" && adminSong ? (
           <AdminSongForm
-            onDeleted={() => router.push("/worship")}
+            onDeleted={() => router.push(backHref)}
             onSaved={(savedSong) => {
               setAdminSong(savedSong);
-              router.replace(`/chants/${savedSong.slug}?mode=edition`, {
+              router.replace(createSongHref(savedSong.slug, {
+                backHref,
+                mode: "edition",
+              }), {
                 scroll: false,
               });
             }}

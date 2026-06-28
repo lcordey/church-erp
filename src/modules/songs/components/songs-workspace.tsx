@@ -43,7 +43,10 @@ export function SongsWorkspace({
   const [setlists, setSetlists] = useState<SetlistSummary[]>([]);
 
   function openSong(song: PublicSongSummary) {
-    router.push(`/chants/${song.slug}`);
+    const returnTo = `${window.location.pathname}${window.location.search}`;
+    const songUrl = new URL(`/chants/${song.slug}`, window.location.origin);
+    songUrl.searchParams.set("returnTo", returnTo);
+    router.push(`${songUrl.pathname}${songUrl.search}`);
   }
 
   async function openSetlistDialog(song: PublicSongSummary) {
