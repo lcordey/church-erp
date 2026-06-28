@@ -110,6 +110,7 @@ Implementation actuelle :
 - les vues `Paroles` et `Accords` utilisent une feuille de document sobre, proche du rendu pagine des PDF
 - les vues `Accords` et `Partition` exposent leurs reglages dans un panneau commun affichable ou masquable
 - le panneau de reglages du lecteur est masque par defaut et s'ouvre a la demande
+- l'ordre prioritaire des sources est modifiable uniquement dans les reglages generaux, pas dans le panneau de lecture d'un chant
 - le lecteur propose un mode focus plein ecran qui masque le header applicatif et les commandes secondaires; un bouton temporaire permet de quitter ce mode
 - le PDF conserve les pages deja rendues pendant son adaptation a un changement de taille
 - la vue `PDF` propose le telechargement du fichier source

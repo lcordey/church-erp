@@ -38,6 +38,7 @@ const sourceDescriptions: Record<SongSourceView, string> = {
 
 type SongRenderPreferencesControlsProps = {
   showDescription?: boolean;
+  showSourcePriority?: boolean;
 };
 
 type DropIndicator = {
@@ -47,6 +48,7 @@ type DropIndicator = {
 
 export function SongRenderPreferencesControls({
   showDescription = false,
+  showSourcePriority = true,
 }: SongRenderPreferencesControlsProps) {
   const { preferences, resetPreferences, setPreferences } =
     useSongRenderPreferences();
@@ -213,96 +215,101 @@ export function SongRenderPreferencesControls({
       ) : null}
 
       <div className="song-render-preferences__section">
-        <div className="song-render-preferences__group">
-          <div className="song-render-preferences__group-copy">
-            <h4>Source d’ouverture</h4>
-            <p>
-              Glissez les 4 sources pour définir l’ordre utilisé quand un chant
-              s’ouvre. Si une source manque, l’application choisit la suivante.
-            </p>
-          </div>
-          <div
-            aria-label="Ordre de priorité des sources"
-            className="song-render-preferences__priority-list"
-            role="list"
-          >
-            {preferences.sourcePriority.map((source, index) => (
-              <div
-                className={[
-                  "song-render-preferences__priority-item",
-                  draggedSource === source
-                    ? "song-render-preferences__priority-item--dragging"
-                    : "",
-                  dropIndicator?.target === source &&
-                  dropIndicator.placement === "before"
-                    ? "song-render-preferences__priority-item--drop-before"
-                    : "",
-                  dropIndicator?.target === source &&
-                  dropIndicator.placement === "after"
-                    ? "song-render-preferences__priority-item--drop-after"
-                    : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                data-song-source-priority={source}
-                key={source}
-                onDragOver={(event) => handleDragOver(source, event)}
-                onDrop={(event) => handleDrop(source, event)}
-                role="listitem"
-              >
-                <div className="song-render-preferences__priority-main">
-                  <span className="song-render-preferences__priority-rank">
-                    {index + 1}
-                  </span>
-                  <div className="song-render-preferences__priority-copy">
-                    <strong>{sourceLabels[source]}</strong>
-                    <p>{sourceDescriptions[source]}</p>
+        {showSourcePriority ? (
+          <div className="song-render-preferences__group">
+            <div className="song-render-preferences__group-copy">
+              <h4>Source d’ouverture</h4>
+              <p>
+                Glissez les 4 sources pour définir l’ordre utilisé quand un
+                chant s’ouvre. Si une source manque, l’application choisit la
+                suivante.
+              </p>
+            </div>
+            <div
+              aria-label="Ordre de priorité des sources"
+              className="song-render-preferences__priority-list"
+              role="list"
+            >
+              {preferences.sourcePriority.map((source, index) => (
+                <div
+                  className={[
+                    "song-render-preferences__priority-item",
+                    draggedSource === source
+                      ? "song-render-preferences__priority-item--dragging"
+                      : "",
+                    dropIndicator?.target === source &&
+                    dropIndicator.placement === "before"
+                      ? "song-render-preferences__priority-item--drop-before"
+                      : "",
+                    dropIndicator?.target === source &&
+                    dropIndicator.placement === "after"
+                      ? "song-render-preferences__priority-item--drop-after"
+                      : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  data-song-source-priority={source}
+                  key={source}
+                  onDragOver={(event) => handleDragOver(source, event)}
+                  onDrop={(event) => handleDrop(source, event)}
+                  role="listitem"
+                >
+                  <div className="song-render-preferences__priority-main">
+                    <span className="song-render-preferences__priority-rank">
+                      {index + 1}
+                    </span>
+                    <div className="song-render-preferences__priority-copy">
+                      <strong>{sourceLabels[source]}</strong>
+                      <p>{sourceDescriptions[source]}</p>
+                    </div>
+                  </div>
+
+                  <div className="song-render-preferences__priority-actions">
+                    <button
+                      aria-label={`Glisser ${sourceLabels[source]}`}
+                      className="song-render-preferences__priority-button song-render-preferences__drag-handle"
+                      draggable
+                      onDragEnd={clearDragState}
+                      onDragStart={(event) => handleDragStart(source, event)}
+                      onPointerCancel={clearDragState}
+                      onPointerDown={(event) => handlePointerDown(source, event)}
+                      onPointerMove={(event) => handlePointerMove(source, event)}
+                      onPointerUp={(event) => handlePointerUp(source, event)}
+                      type="button"
+                    >
+                      Glisser
+                    </button>
+                    <button
+                      aria-label={`Monter ${sourceLabels[source]}`}
+                      className="song-render-preferences__priority-button"
+                      disabled={index === 0}
+                      onClick={() => moveSource(source, -1)}
+                      type="button"
+                    >
+                      Monter
+                    </button>
+                    <button
+                      aria-label={`Descendre ${sourceLabels[source]}`}
+                      className="song-render-preferences__priority-button"
+                      disabled={
+                        index === preferences.sourcePriority.length - 1
+                      }
+                      onClick={() => moveSource(source, 1)}
+                      type="button"
+                    >
+                      Descendre
+                    </button>
                   </div>
                 </div>
-
-                <div className="song-render-preferences__priority-actions">
-                  <button
-                    aria-label={`Glisser ${sourceLabels[source]}`}
-                    className="song-render-preferences__priority-button song-render-preferences__drag-handle"
-                    draggable
-                    onDragEnd={clearDragState}
-                    onDragStart={(event) => handleDragStart(source, event)}
-                    onPointerCancel={clearDragState}
-                    onPointerDown={(event) => handlePointerDown(source, event)}
-                    onPointerMove={(event) => handlePointerMove(source, event)}
-                    onPointerUp={(event) => handlePointerUp(source, event)}
-                    type="button"
-                  >
-                    Glisser
-                  </button>
-                  <button
-                    aria-label={`Monter ${sourceLabels[source]}`}
-                    className="song-render-preferences__priority-button"
-                    disabled={index === 0}
-                    onClick={() => moveSource(source, -1)}
-                    type="button"
-                  >
-                    Monter
-                  </button>
-                  <button
-                    aria-label={`Descendre ${sourceLabels[source]}`}
-                    className="song-render-preferences__priority-button"
-                    disabled={index === preferences.sourcePriority.length - 1}
-                    onClick={() => moveSource(source, 1)}
-                    type="button"
-                  >
-                    Descendre
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <p className="song-render-preferences__priority-help">
+              Astuce: sur mobile, maintenez le bouton &quot;Glisser&quot;, puis
+              déplacez la carte. Les boutons Monter et Descendre restent
+              disponibles.
+            </p>
           </div>
-          <p className="song-render-preferences__priority-help">
-            Astuce: sur mobile, maintenez le bouton &quot;Glisser&quot;, puis
-            déplacez la carte. Les boutons Monter et Descendre restent
-            disponibles.
-          </p>
-        </div>
+        ) : null}
 
         <label className="sheet-controls__field">
           <span>Couleur des accords</span>

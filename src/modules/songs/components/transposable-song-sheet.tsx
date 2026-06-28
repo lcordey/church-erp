@@ -323,7 +323,7 @@ export const TransposableSongSheet = forwardRef<
             </div>
           </div>
 
-          <SongRenderPreferencesControls />
+          <SongRenderPreferencesControls showSourcePriority={false} />
         </div>
       ) : null}
 
