@@ -107,7 +107,6 @@ function SetlistCard({
         onClick={() => onOpen(setlist)}
         type="button"
       >
-        <span className="song-card__number">{String(index + 1).padStart(2, "0")}</span>
         <span className="song-card__content">
           <span className="song-card__title">{setlist.title}</span>
           <span className="song-card__metadata">
