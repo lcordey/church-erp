@@ -17,6 +17,7 @@ export type AppHeaderConfig = {
   mode?: HeaderMode;
   backHref?: string;
   backLabel?: string;
+  backIconOnly?: boolean;
   actions?: ReactNode;
 };
 
@@ -33,6 +34,14 @@ function MenuIcon() {
       <path d="M4 7h16" />
       <path d="M4 12h16" />
       <path d="M4 17h16" />
+    </svg>
+  );
+}
+
+function ArrowLeftIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="m15 18-6-6 6-6" />
     </svg>
   );
 }
@@ -61,16 +70,37 @@ function currentSection(pathname: string) {
   return "ChurchERP";
 }
 
-function defaultHeader(pathname: string): AppHeaderConfig {
+function currentSectionHref(pathname: string) {
+  if (
+    pathname === "/worship" ||
+    pathname.startsWith("/chants/") ||
+    pathname.startsWith("/admin/chants")
+  ) {
+    return "/worship";
+  }
+
+  if (pathname === "/setlist" || pathname.startsWith("/setlist/")) {
+    return "/setlist";
+  }
+
+  if (pathname === "/settings") {
+    return "/settings";
+  }
+
+  if (pathname === "/profile") {
+    return "/profile";
+  }
+
+  return "/worship";
+}
+
+function defaultHeader(): AppHeaderConfig {
   return {
     backHref: undefined,
     backLabel: undefined,
+    backIconOnly: false,
     mode: "public",
-    actions: (
-      <Link className="app-top-bar__brand" href="/worship">
-        {currentSection(pathname)}
-      </Link>
-    ),
+    actions: null,
   };
 }
 
@@ -115,8 +145,8 @@ export function AppShellHeader({
   }
 
   const resolvedHeader = useMemo(
-    () => ({ ...defaultHeader(pathname), ...context.header }),
-    [context.header, pathname],
+    () => ({ ...defaultHeader(), ...context.header }),
+    [context.header],
   );
 
   return (
@@ -135,21 +165,28 @@ export function AppShellHeader({
           </button>
 
           {resolvedHeader.backHref && resolvedHeader.backLabel ? (
-            <Link className="app-top-bar__back" href={resolvedHeader.backHref}>
-              <span aria-hidden="true">←</span>
-              {resolvedHeader.backLabel}
+            <Link
+              aria-label={resolvedHeader.backLabel}
+              className={`app-top-bar__back${
+                resolvedHeader.backIconOnly ? " app-top-bar__back--icon-only" : ""
+              }`}
+              href={resolvedHeader.backHref}
+              title={resolvedHeader.backLabel}
+            >
+              <ArrowLeftIcon />
+              {resolvedHeader.backIconOnly ? (
+                <span className="sr-only">{resolvedHeader.backLabel}</span>
+              ) : (
+                resolvedHeader.backLabel
+              )}
             </Link>
           ) : (
-            <>
-              <div className="site-mark" aria-hidden="true">
-                <span />
-                <span />
-                <span />
-              </div>
-              <Link className="app-top-bar__brand" href="/worship">
-                ChurchERP
-              </Link>
-            </>
+            <Link
+              className="app-top-bar__title"
+              href={currentSectionHref(pathname)}
+            >
+              {currentSection(pathname)}
+            </Link>
           )}
         </div>
 

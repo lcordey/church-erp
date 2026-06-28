@@ -19,6 +19,15 @@ type SongsWorkspaceProps = {
   loadCatalogOnMount?: boolean;
 };
 
+function PlusIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
 export function SongsWorkspace({
   initialCollections,
   initialSearch = "",
@@ -121,13 +130,16 @@ export function SongsWorkspace({
   const headerActions = useMemo(
     () => (
       <Link
-        className="admin-button admin-button--primary"
-        href="/admin/chants/nouveau"
+        aria-label="Créer un chant"
+        className="icon-button icon-button--primary"
+        href={isAuthenticated ? "/admin/chants/nouveau" : getLoginHref("/admin/chants/nouveau")}
+        title="Créer un chant"
       >
-        Nouveau chant
+        <PlusIcon />
+        <span className="sr-only">Créer un chant</span>
       </Link>
     ),
-    [],
+    [isAuthenticated],
   );
 
   return (
@@ -136,27 +148,21 @@ export function SongsWorkspace({
       <div className="catalog-shell">
         <AppTopBar actions={headerActions} mode="public" />
 
-        <section className="catalog-hero">
-          <div>
-            <p className="eyebrow">Équipe louange</p>
-            <h1>Des chants prêts à être partagés.</h1>
-          </div>
-          <p className="catalog-hero__intro">
-            Retrouvez les paroles, accords et informations utiles des chants
-            publiés par l’équipe.
-          </p>
-        </section>
-
         <div className="catalog-workspace">
-          <section className="catalog-section" aria-labelledby="catalog-title">
+          <section className="catalog-section" aria-label="Répertoire">
             <SongCatalog
               initialCatalog={initialCatalog}
               initialCollections={initialCollections}
               initialSearch={initialSearch}
               loadOnMount={loadCatalogOnMount}
-              onAddToSetlist={openSetlistDialog}
-              onEditSong={(song) => router.push(`/admin/chants/${song.id}`)}
+              onAddToSetlist={isAuthenticated ? openSetlistDialog : undefined}
+              onEditSong={
+                isAuthenticated
+                  ? (song) => router.push(`/admin/chants/${song.id}`)
+                  : undefined
+              }
               onOpenSong={openSong}
+              showHeading={false}
             />
           </section>
         </div>
@@ -224,10 +230,6 @@ export function SongsWorkspace({
           </div>
         ) : null}
 
-        <footer className="site-footer">
-          <span>Lecture publique</span>
-          <span>Mis à jour par l’équipe louange</span>
-        </footer>
       </div>
     </main>
   );

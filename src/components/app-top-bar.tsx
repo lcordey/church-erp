@@ -10,6 +10,7 @@ type AppTopBarProps = {
   activeViewMode?: "selection" | "edition";
   backHref?: string;
   backLabel?: string;
+  backIconOnly?: boolean;
   actions?: ReactNode;
   onViewModeChange?: (mode: "selection" | "edition") => void;
   showViewModeToggle?: boolean;
@@ -20,6 +21,7 @@ export function AppTopBar({
   activeViewMode,
   backHref,
   backLabel,
+  backIconOnly,
   actions,
   onViewModeChange,
   showViewModeToggle = Boolean(onViewModeChange),
@@ -45,9 +47,10 @@ export function AppTopBar({
       mode,
       backHref,
       backLabel,
+      backIconOnly,
       actions: headerActions,
     }),
-    [backHref, backLabel, headerActions, mode],
+    [backHref, backIconOnly, backLabel, headerActions, mode],
   );
 
   useAppHeader(headerConfig);

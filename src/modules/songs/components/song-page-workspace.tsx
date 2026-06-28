@@ -66,6 +66,7 @@ export function SongPageWorkspace({
         <AppTopBar
           activeViewMode={mode}
           backHref="/worship"
+          backIconOnly
           backLabel="Retour au répertoire"
           mode={mode === "edition" ? "admin" : "public"}
           onViewModeChange={updateMode}

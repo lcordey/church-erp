@@ -18,6 +18,65 @@ import {
   type TransposableSongSheetHandle,
 } from "./transposable-song-sheet";
 
+function SettingsIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M4 7h10" />
+      <path d="M18 7h2" />
+      <path d="M14 7a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z" />
+      <path d="M4 17h2" />
+      <path d="M10 17h10" />
+      <path d="M6 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z" />
+    </svg>
+  );
+}
+
+function MaximizeIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M8 4H4v4" />
+      <path d="M16 4h4v4" />
+      <path d="M20 16v4h-4" />
+      <path d="M4 16v4h4" />
+    </svg>
+  );
+}
+
+function MinimizeIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M9 4H4v5" />
+      <path d="M15 4h5v5" />
+      <path d="M20 15v5h-5" />
+      <path d="M4 15v5h5" />
+      <path d="m9 9-5-5" />
+      <path d="m15 9 5-5" />
+      <path d="m15 15 5 5" />
+      <path d="m9 15-5 5" />
+    </svg>
+  );
+}
+
+function DownloadIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M12 4v11" />
+      <path d="m7 11 5 5 5-5" />
+      <path d="M5 20h14" />
+    </svg>
+  );
+}
+
+function ExternalLinkIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M14 5h5v5" />
+      <path d="m10 14 9-9" />
+      <path d="M19 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4" />
+    </svg>
+  );
+}
+
 type SongDetailViewProps = {
   song: PublicSongDetail | AdminSong;
   actions?: ReactNode;
@@ -29,7 +88,6 @@ export function SongDetailView({
   song,
   actions,
   canAccessScores = false,
-  eyebrow = "Chant publié",
 }: SongDetailViewProps) {
   const hasChords = hasChordProChords(song.chordProContent);
   const [sourceView, setSourceView] = useState<
@@ -72,20 +130,6 @@ export function SongDetailView({
     };
   }, [isViewerFullscreen]);
 
-  const documentLabel =
-    sourceView === "lyrics"
-      ? "Paroles"
-      : sourceView === "chordpro"
-        ? "Paroles et accords"
-        : sourceView === "pdf"
-          ? "Partition PDF"
-          : "Partition";
-  const documentDetail =
-    sourceView === "pdf" && song.pdfSource
-      ? (song.pdfSource.fileName ?? song.title)
-      : sourceView === "musicxml" && song.musicXmlSource
-        ? (song.musicXmlSource.fileName ?? song.title)
-        : song.title;
   const hasDisplaySettings =
     sourceView === "chordpro" || sourceView === "musicxml";
 
@@ -127,13 +171,6 @@ export function SongDetailView({
   return (
     <section className="song-detail-view">
       <header className="song-header song-header--compact">
-        <div className="song-header__top-row">
-          <div>
-            <p className="eyebrow">{eyebrow}</p>
-            <h1>{song.title}</h1>
-          </div>
-        </div>
-
         <div className="song-source-toggle" aria-label="Source du chant">
           <button
             aria-pressed={sourceView === "lyrics"}
@@ -180,41 +217,57 @@ export function SongDetailView({
         }`}
       >
         <header className="song-document-viewer__toolbar">
-          <div>
-            <span>{documentLabel}</span>
-            <small>{documentDetail}</small>
-          </div>
           <div className="song-document-viewer__actions">
             {hasDisplaySettings ? (
               <button
                 aria-pressed={areSettingsVisible}
-                className="admin-button"
+                aria-label={
+                  areSettingsVisible
+                    ? "Masquer les réglages d’affichage"
+                    : "Afficher les réglages d’affichage"
+                }
+                className="icon-button song-document-viewer__icon-button"
                 onClick={() => setAreSettingsVisible((current) => !current)}
+                title={
+                  areSettingsVisible
+                    ? "Masquer les réglages"
+                    : "Afficher les réglages"
+                }
                 type="button"
               >
-                Réglages
+                <SettingsIcon />
               </button>
             ) : null}
             <button
-              className="admin-button"
+              aria-label={
+                isViewerFullscreen
+                  ? "Quitter le plein écran"
+                  : "Passer en plein écran"
+              }
+              className="icon-button song-document-viewer__icon-button"
               onClick={() => setIsViewerFullscreen((current) => !current)}
+              title={isViewerFullscreen ? "Quitter le plein écran" : "Plein écran"}
               type="button"
             >
-              {isViewerFullscreen ? "Quitter" : "Plein écran"}
+              {isViewerFullscreen ? <MinimizeIcon /> : <MaximizeIcon />}
             </button>
             <button
-              className="admin-button"
+              aria-label="Télécharger le document"
+              className="icon-button song-document-viewer__icon-button"
               onClick={() => void downloadActiveDocument()}
+              title="Télécharger"
               type="button"
             >
-              Télécharger
+              <DownloadIcon />
             </button>
             <button
-              className="admin-button admin-button--primary"
+              aria-label="Ouvrir le document dans un nouvel onglet"
+              className="icon-button song-document-viewer__icon-button"
               onClick={openActiveDocument}
+              title="Ouvrir"
               type="button"
             >
-              Ouvrir
+              <ExternalLinkIcon />
             </button>
           </div>
         </header>

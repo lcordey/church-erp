@@ -21,6 +21,7 @@ type SongCatalogProps = {
   searchInputId?: string;
   searchLabel?: string;
   searchPlaceholder?: string;
+  showHeading?: boolean;
   showOpenIndicator?: boolean;
   syncUrl?: boolean;
 };
@@ -62,6 +63,7 @@ export function SongCatalog({
   searchInputId = "song-search",
   searchLabel = "Recherche",
   searchPlaceholder = "Titre ou numéro de recueil",
+  showHeading = true,
   showOpenIndicator = true,
   syncUrl = true,
 }: SongCatalogProps) {
@@ -91,21 +93,23 @@ export function SongCatalog({
 
   return (
     <>
-      <div className="catalog-section__heading">
-        <div>
-          <h2 id={headingId}>{heading}</h2>
+      {showHeading ? (
+        <div className="catalog-section__heading">
+          <div>
+            <h2 id={headingId}>{heading}</h2>
+          </div>
+          <div className="catalog-section__heading-actions">
+            {isCatalogLoading && !isInitialLoading ? (
+              <span aria-live="polite">Mise à jour…</span>
+            ) : null}
+            {!isCatalogLoading ? (
+              <span>
+                {catalog.total} {catalog.total > 1 ? "chants" : "chant"}
+              </span>
+            ) : null}
+          </div>
         </div>
-        <div className="catalog-section__heading-actions">
-          {isCatalogLoading && !isInitialLoading ? (
-            <span aria-live="polite">Mise à jour…</span>
-          ) : null}
-          {!isCatalogLoading ? (
-            <span>
-              {catalog.total} {catalog.total > 1 ? "chants" : "chant"}
-            </span>
-          ) : null}
-        </div>
-      </div>
+      ) : null}
 
       <form
         className="catalog-search"
