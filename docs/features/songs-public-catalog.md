@@ -116,7 +116,7 @@ Implementation actuelle :
 - le PDF conserve les pages deja rendues pendant son adaptation a un changement de taille
 - la vue `PDF` propose le telechargement du fichier source
 - la vue `Partition` propose le telechargement d'un PDF genere cote client
-- la vue `Partition` permet d'ajuster le nombre de mesures par ligne et l'espacement horizontal des paroles avec des sliders
+- la vue `Partition` permet d'ajuster le nombre de mesures par ligne, la densite horizontale, l'espacement des paroles et les marges laterales avec des sliders
 - sur mobile, la partition conserve une largeur de gravure stable independante du viewport; le rendu desktop continue de suivre la largeur disponible
 - le zoom initial s'ajuste ensuite au viewport actif pour eviter le scroll horizontal; sa valeur reste modifiable manuellement entre 20 % et 180 %
 - le nom du PDF genere pour la partition reutilise le titre du chant et, si disponible, son recueil et numero
