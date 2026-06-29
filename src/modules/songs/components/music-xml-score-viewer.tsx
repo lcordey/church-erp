@@ -46,6 +46,8 @@ const MOBILE_DEFAULT_SCORE_ZOOM = 0.4;
 const DEFAULT_MEASURES_PER_LINE = 4;
 const DEFAULT_LYRICS_SPACING = 1;
 const DEFAULT_NOTE_SPACING = 0.82;
+const DEFAULT_SIDE_MARGIN_PERCENT = 15;
+const OSMD_UNIT_IN_RENDER_PIXELS = 10;
 const MIN_SCORE_ZOOM = 0.2;
 const MAX_SCORE_ZOOM = 1.8;
 const SCORE_ZOOM_STEP = 0.1;
@@ -57,6 +59,20 @@ const BASE_COMPACT_CHORD_SPACING = 1;
 
 function clampNoteSpacing(value: number) {
   return Math.min(1.2, Math.max(0.65, Math.round(value * 100) / 100));
+}
+
+function clampSideMarginPercent(value: number) {
+  return Math.min(35, Math.max(0, Math.round(value)));
+}
+
+function getSideMarginOsmdUnit(renderWidth: number, sideMarginPercent: number) {
+  if (renderWidth <= 0) {
+    return 0;
+  }
+
+  const marginInPixels = renderWidth * (sideMarginPercent / 100);
+
+  return marginInPixels / OSMD_UNIT_IN_RENDER_PIXELS;
 }
 
 function applyScoreTransposition(
@@ -220,6 +236,7 @@ export const MusicXmlScoreViewer = forwardRef<
   );
   const [lyricsSpacing, setLyricsSpacing] = useState(DEFAULT_LYRICS_SPACING);
   const [noteSpacing, setNoteSpacing] = useState(DEFAULT_NOTE_SPACING);
+  const [sideMargin, setSideMargin] = useState(DEFAULT_SIDE_MARGIN_PERCENT);
   const [appliedMeasuresPerLine, setAppliedMeasuresPerLine] = useState(
     DEFAULT_MEASURES_PER_LINE,
   );
@@ -228,6 +245,9 @@ export const MusicXmlScoreViewer = forwardRef<
   );
   const [appliedNoteSpacing, setAppliedNoteSpacing] = useState(
     DEFAULT_NOTE_SPACING,
+  );
+  const [appliedSideMargin, setAppliedSideMargin] = useState(
+    DEFAULT_SIDE_MARGIN_PERCENT,
   );
   const [zoom, setZoom] = useState(DEFAULT_SCORE_ZOOM);
   const canonicalDefaultKey =
@@ -288,10 +308,11 @@ export const MusicXmlScoreViewer = forwardRef<
       setAppliedMeasuresPerLine(measuresPerLine);
       setAppliedLyricsSpacing(lyricsSpacing);
       setAppliedNoteSpacing(noteSpacing);
+      setAppliedSideMargin(sideMargin);
     }, SCORE_LAYOUT_UPDATE_DELAY);
 
     return () => window.clearTimeout(timeout);
-  }, [lyricsSpacing, measuresPerLine, noteSpacing]);
+  }, [lyricsSpacing, measuresPerLine, noteSpacing, sideMargin]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -516,6 +537,8 @@ export const MusicXmlScoreViewer = forwardRef<
   }, [
     appliedLyricsSpacing,
     appliedMeasuresPerLine,
+    appliedNoteSpacing,
+    appliedSideMargin,
     isFullscreenOpen,
     renderWidth,
     status,
@@ -664,6 +687,12 @@ export const MusicXmlScoreViewer = forwardRef<
         osmd.EngravingRules.RenderXMeasuresPerLineAkaSystem = useSourceLayout
           ? 0
           : appliedMeasuresPerLine;
+        const sideMarginOsmdUnit = getSideMarginOsmdUnit(
+          renderWidth,
+          appliedSideMargin,
+        );
+        osmd.EngravingRules.PageLeftMargin = sideMarginOsmdUnit;
+        osmd.EngravingRules.PageRightMargin = sideMarginOsmdUnit;
         osmd.EngravingRules.TitleBottomDistance = 5.5;
         osmd.EngravingRules.LyricsUseXPaddingForLongLyrics = true;
         osmd.EngravingRules.LyricsXPaddingFactorForLongLyrics =
@@ -721,6 +750,7 @@ export const MusicXmlScoreViewer = forwardRef<
     };
   }, [
     appliedMeasuresPerLine,
+    appliedSideMargin,
     copyright,
     effectiveLyricsSpacing,
     effectiveNoteSpacing,
@@ -891,6 +921,25 @@ export const MusicXmlScoreViewer = forwardRef<
                     </select>
                   </label>
                 ) : null}
+                <label className="song-score-viewer__field">
+                  <span className="song-score-viewer__field-heading">
+                    <span>Marges latérales</span>
+                    <output>{sideMargin} %</output>
+                  </span>
+                  <input
+                    aria-label="Marges latérales de la partition"
+                    max="35"
+                    min="0"
+                    onChange={(event) => {
+                      setSideMargin(
+                        clampSideMarginPercent(Number(event.target.value)),
+                      );
+                    }}
+                    step="1"
+                    type="range"
+                    value={sideMargin}
+                  />
+                </label>
                 <label className="song-score-viewer__field">
                   <span className="song-score-viewer__field-heading">
                     <span>Mesures par ligne</span>
