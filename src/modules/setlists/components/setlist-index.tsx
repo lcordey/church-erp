@@ -50,22 +50,24 @@ function stopEvent(event: {
 }
 
 type SetlistCardProps = {
+  editHref: string;
   index: number;
+  openHref: string;
   isAuthenticated: boolean;
   isPending: boolean;
   onDelete: (setlist: SetlistSummary) => void;
   onEdit: (setlist: SetlistSummary) => void;
-  onOpen: (setlist: SetlistSummary) => void;
   setlist: SetlistSummary;
 };
 
 function SetlistCard({
+  editHref,
   index,
   isAuthenticated,
   isPending,
+  openHref,
   onDelete,
   onEdit,
-  onOpen,
   setlist,
 }: SetlistCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -102,11 +104,7 @@ function SetlistCard({
       className={`song-card setlist-card${isMenuOpen ? " song-card--menu-open" : ""}`}
       style={{ "--card-index": index } as React.CSSProperties}
     >
-      <button
-        className="song-card__open"
-        onClick={() => onOpen(setlist)}
-        type="button"
-      >
+      <Link className="song-card__open" href={openHref}>
         <span className="song-card__content">
           <span className="song-card__title">{setlist.title}</span>
           <span className="song-card__metadata">
@@ -116,7 +114,7 @@ function SetlistCard({
         {isAuthenticated ? (
           <span className="song-card__action-space" aria-hidden="true" />
         ) : null}
-      </button>
+      </Link>
 
       {isAuthenticated ? (
         <div className="song-card__menu" ref={menuRef}>
@@ -148,11 +146,22 @@ function SetlistCard({
                   onEdit(setlist);
                 }}
                 onPointerDown={(event) => event.stopPropagation()}
-                role="menuitem"
-                type="button"
+                  role="menuitem"
+                  type="button"
               >
                 Modifier la setlist
               </button>
+              <Link
+                href={editHref}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setIsMenuOpen(false);
+                }}
+                onPointerDown={(event) => event.stopPropagation()}
+                role="menuitem"
+              >
+                Ouvrir l’édition dans un onglet
+              </Link>
               <button
                 disabled={isPending}
                 onClick={(event) => {
@@ -277,17 +286,18 @@ export function SetlistIndex({
             <div className="setlist-cards">
               {setlists.map((setlist, index) => (
                 <SetlistCard
+                  editHref={`/setlist/${setlist.id}`}
                   index={index}
                   isAuthenticated={isAuthenticated}
                   isPending={isPending}
                   key={setlist.id}
+                  openHref={`/setlist/${setlist.id}/play`}
                   onDelete={(nextSetlist) => {
                     startTransition(() => {
                       void deleteSetlist(nextSetlist);
                     });
                   }}
                   onEdit={(nextSetlist) => router.push(`/setlist/${nextSetlist.id}`)}
-                  onOpen={(nextSetlist) => router.push(`/setlist/${nextSetlist.id}/play`)}
                   setlist={setlist}
                 />
               ))}

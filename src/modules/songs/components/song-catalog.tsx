@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { getSongCollectionLabel } from "../collections/song-collection";
 import type { PublicSongCatalogPage, PublicSongSummary } from "../types/public-song";
 import { SongCard } from "./song-card";
@@ -15,6 +17,7 @@ type SongCatalogProps = {
   heading?: string;
   headingId?: string;
   emptyMessage?: string;
+  getSongHref?: (song: PublicSongSummary) => string;
   onAddToSetlist?: (song: PublicSongSummary) => void;
   onEditSong?: (song: PublicSongSummary) => void;
   onOpenSong?: (song: PublicSongSummary) => void;
@@ -65,6 +68,7 @@ export function SongCatalog({
   heading = "Chants publiés",
   headingId = "catalog-title",
   emptyMessage = "Aucun chant ne correspond à cette recherche.",
+  getSongHref,
   onAddToSetlist,
   onEditSong,
   onOpenSong,
@@ -94,6 +98,9 @@ export function SongCatalog({
     loadOnMount,
     syncUrl,
   });
+  const [openFilter, setOpenFilter] = useState<"collections" | "themes" | null>(
+    null,
+  );
   const pageSize = catalog.limit;
   const loadedCount = catalog.songs.length;
   const isCatalogLoading = isInitialLoading || isFetching;
@@ -142,8 +149,18 @@ export function SongCatalog({
           ) : null}
         </div>
         <div className="catalog-filters">
-          <details className="catalog-filter-dropdown">
-            <summary>
+          <details
+            className="catalog-filter-dropdown"
+            open={openFilter === "collections"}
+          >
+            <summary
+              onClick={(event) => {
+                event.preventDefault();
+                setOpenFilter((current) =>
+                  current === "collections" ? null : "collections",
+                );
+              }}
+            >
               <span>Recueils</span>
               <small>{selectedCollectionsLabel}</small>
             </summary>
@@ -164,8 +181,18 @@ export function SongCatalog({
             </fieldset>
           </details>
 
-          <details className="catalog-filter-dropdown">
-            <summary>
+          <details
+            className="catalog-filter-dropdown"
+            open={openFilter === "themes"}
+          >
+            <summary
+              onClick={(event) => {
+                event.preventDefault();
+                setOpenFilter((current) =>
+                  current === "themes" ? null : "themes",
+                );
+              }}
+            >
               <span>Thèmes</span>
               <small>Bientôt disponible</small>
             </summary>
@@ -187,6 +214,15 @@ export function SongCatalog({
         </div>
       </form>
 
+      {openFilter ? (
+        <button
+          aria-label="Fermer le filtre"
+          className="catalog-filter-backdrop"
+          onClick={() => setOpenFilter(null)}
+          type="button"
+        />
+      ) : null}
+
       {isInitialLoading && catalog.songs.length === 0 ? (
         <CatalogLoadingState />
       ) : errorMessage && catalog.songs.length === 0 ? (
@@ -200,6 +236,7 @@ export function SongCatalog({
         <div className="song-list" data-fetching={isFetching ? "true" : "false"}>
           {catalog.songs.map((song) => (
             <SongCard
+              href={getSongHref?.(song)}
               isActive={activeSongSlug === song.slug}
               key={song.id}
               mode={activeMode}

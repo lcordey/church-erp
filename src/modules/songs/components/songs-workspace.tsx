@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
@@ -28,6 +28,14 @@ function PlusIcon() {
   );
 }
 
+function createSongCatalogHref(song: PublicSongSummary, returnTo: string) {
+  const songUrl = new URL(`/chants/${song.slug}`, "http://localhost");
+
+  songUrl.searchParams.set("returnTo", returnTo);
+
+  return `${songUrl.pathname}${songUrl.search}`;
+}
+
 export function SongsWorkspace({
   initialCollections,
   initialSearch = "",
@@ -35,19 +43,15 @@ export function SongsWorkspace({
   isAuthenticated = true,
   loadCatalogOnMount = false,
 }: SongsWorkspaceProps) {
+  const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [setlistMessage, setSetlistMessage] = useState("");
   const [isSetlistDialogOpen, setIsSetlistDialogOpen] = useState(false);
   const [isSetlistDialogPending, setIsSetlistDialogPending] = useState(false);
   const [selectedSong, setSelectedSong] = useState<PublicSongSummary | null>(null);
   const [setlists, setSetlists] = useState<SetlistSummary[]>([]);
-
-  function openSong(song: PublicSongSummary) {
-    const returnTo = `${window.location.pathname}${window.location.search}`;
-    const songUrl = new URL(`/chants/${song.slug}`, window.location.origin);
-    songUrl.searchParams.set("returnTo", returnTo);
-    router.push(`${songUrl.pathname}${songUrl.search}`);
-  }
+  const currentCatalogHref = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
 
   async function openSetlistDialog(song: PublicSongSummary) {
     if (!isAuthenticated) {
@@ -157,6 +161,7 @@ export function SongsWorkspace({
               initialCatalog={initialCatalog}
               initialCollections={initialCollections}
               initialSearch={initialSearch}
+              getSongHref={(song) => createSongCatalogHref(song, currentCatalogHref)}
               loadOnMount={loadCatalogOnMount}
               onAddToSetlist={isAuthenticated ? openSetlistDialog : undefined}
               onEditSong={
@@ -164,7 +169,6 @@ export function SongsWorkspace({
                   ? (song) => router.push(`/admin/chants/${song.id}`)
                   : undefined
               }
-              onOpenSong={openSong}
               showHeading={false}
             />
           </section>
