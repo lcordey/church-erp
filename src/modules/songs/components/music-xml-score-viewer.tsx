@@ -46,7 +46,7 @@ const MOBILE_DEFAULT_SCORE_ZOOM = 0.4;
 const DEFAULT_MEASURES_PER_LINE = 4;
 const DEFAULT_LYRICS_SPACING = 1;
 const DEFAULT_NOTE_SPACING = 0.82;
-const DEFAULT_SIDE_MARGIN_PERCENT = 15;
+const DEFAULT_SIDE_MARGIN_PERCENT = 5;
 const OSMD_UNIT_IN_RENDER_PIXELS = 10;
 const MIN_SCORE_ZOOM = 0.2;
 const MAX_SCORE_ZOOM = 1.8;
@@ -62,7 +62,7 @@ function clampNoteSpacing(value: number) {
 }
 
 function clampSideMarginPercent(value: number) {
-  return Math.min(35, Math.max(0, Math.round(value)));
+  return Math.min(20, Math.max(0, Math.round(value)));
 }
 
 function getSideMarginOsmdUnit(renderWidth: number, sideMarginPercent: number) {
@@ -928,7 +928,7 @@ export const MusicXmlScoreViewer = forwardRef<
                   </span>
                   <input
                     aria-label="Marges latérales de la partition"
-                    max="35"
+                    max="20"
                     min="0"
                     onChange={(event) => {
                       setSideMargin(
