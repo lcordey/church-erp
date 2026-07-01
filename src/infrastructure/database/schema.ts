@@ -123,6 +123,86 @@ export const songSources = pgTable(
   ],
 );
 
+export const songThemes = pgTable(
+  "song_themes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("song_themes_name_unique").on(sql`lower(${table.name})`),
+    check("song_themes_name_not_blank", sql`btrim(${table.name}) <> ''`),
+  ],
+);
+
+export const songLabels = pgTable(
+  "song_labels",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("song_labels_name_unique").on(sql`lower(${table.name})`),
+    check("song_labels_name_not_blank", sql`btrim(${table.name}) <> ''`),
+  ],
+);
+
+export const songThemeAssignments = pgTable(
+  "song_theme_assignments",
+  {
+    songId: uuid("song_id")
+      .notNull()
+      .references(() => songs.id, { onDelete: "cascade" }),
+    themeId: uuid("theme_id")
+      .notNull()
+      .references(() => songThemes.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("song_theme_assignments_song_theme_unique").on(
+      table.songId,
+      table.themeId,
+    ),
+    index("song_theme_assignments_theme_id_index").on(table.themeId),
+  ],
+);
+
+export const songLabelAssignments = pgTable(
+  "song_label_assignments",
+  {
+    songId: uuid("song_id")
+      .notNull()
+      .references(() => songs.id, { onDelete: "cascade" }),
+    labelId: uuid("label_id")
+      .notNull()
+      .references(() => songLabels.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("song_label_assignments_song_label_unique").on(
+      table.songId,
+      table.labelId,
+    ),
+    index("song_label_assignments_label_id_index").on(table.labelId),
+  ],
+);
+
 export const setlists = pgTable(
   "setlists",
   {
@@ -170,6 +250,10 @@ export type Song = typeof songs.$inferSelect;
 export type NewSong = typeof songs.$inferInsert;
 export type SongSource = typeof songSources.$inferSelect;
 export type NewSongSource = typeof songSources.$inferInsert;
+export type SongTheme = typeof songThemes.$inferSelect;
+export type NewSongTheme = typeof songThemes.$inferInsert;
+export type SongLabel = typeof songLabels.$inferSelect;
+export type NewSongLabel = typeof songLabels.$inferInsert;
 export type Setlist = typeof setlists.$inferSelect;
 export type NewSetlist = typeof setlists.$inferInsert;
 export type SetlistItem = typeof setlistItems.$inferSelect;

@@ -1001,7 +1001,8 @@ export const MusicXmlScoreViewer = forwardRef<
         {showSettings && useSourceLayout ? (
           <p className="song-document-viewer__status">
             La partition suit les sauts de ligne et de page du MusicXML source.
-            Les réglages de densité et d’espacement sont désactivés dans ce mode.
+            Le nombre de mesures, la densité et l’espacement des paroles sont
+            désactivés dans ce mode. Les marges latérales restent réglables.
           </p>
         ) : null}
         {status ? (

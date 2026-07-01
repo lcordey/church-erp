@@ -11,6 +11,8 @@ type SongCatalogProps = {
   initialCatalog: PublicSongCatalogPage;
   initialCollections?: string[];
   initialSearch?: string;
+  initialThemeIds?: string[];
+  initialLabelIds?: string[];
   loadOnMount?: boolean;
   activeMode?: "selection" | "edition";
   activeSongSlug?: string | null;
@@ -31,15 +33,6 @@ type SongCatalogProps = {
 function getCollectionLabel(collection: string): string {
   return getSongCollectionLabel(collection);
 }
-
-const placeholderThemeLabels = [
-  "Adoration",
-  "Louange",
-  "Pâques",
-  "Noël",
-  "Sainte-Cène",
-  "Espérance",
-] as const;
 
 function CatalogLoadingState() {
   return (
@@ -62,6 +55,8 @@ export function SongCatalog({
   initialCollections,
   initialCatalog,
   initialSearch = "",
+  initialThemeIds = [],
+  initialLabelIds = [],
   loadOnMount = false,
   activeMode = "selection",
   activeSongSlug = null,
@@ -80,6 +75,8 @@ export function SongCatalog({
 }: SongCatalogProps) {
   const {
     availableCollections,
+    availableThemes,
+    availableLabels,
     catalog,
     errorMessage,
     isFetching,
@@ -89,18 +86,23 @@ export function SongCatalog({
     retry,
     search,
     selectedCollections,
+    selectedThemeIds,
+    selectedLabelIds,
     toggleCollection,
+    toggleTaxonomy,
     updateSearch,
   } = useSongCatalogQuery({
     initialCatalog,
     initialCollections,
     initialSearch,
+    initialThemeIds,
+    initialLabelIds,
     loadOnMount,
     syncUrl,
   });
-  const [openFilter, setOpenFilter] = useState<"collections" | "themes" | null>(
-    null,
-  );
+  const [openFilter, setOpenFilter] = useState<
+    "collections" | "themes" | "labels" | null
+  >(null);
   const pageSize = catalog.limit;
   const loadedCount = catalog.songs.length;
   const isCatalogLoading = isInitialLoading || isFetching;
@@ -108,6 +110,14 @@ export function SongCatalog({
     selectedCollections.length > 0
       ? `${selectedCollections.length} sélectionné${selectedCollections.length > 1 ? "s" : ""}`
       : "Tous les recueils";
+  const selectedThemesLabel =
+    selectedThemeIds.length > 0
+      ? `${selectedThemeIds.length} sélectionné${selectedThemeIds.length > 1 ? "s" : ""}`
+      : "Tous les thèmes";
+  const selectedLabelsLabel =
+    selectedLabelIds.length > 0
+      ? `${selectedLabelIds.length} sélectionné${selectedLabelIds.length > 1 ? "s" : ""}`
+      : "Tous les labels";
 
   return (
     <>
@@ -194,20 +204,63 @@ export function SongCatalog({
               }}
             >
               <span>Thèmes</span>
-              <small>Bientôt disponible</small>
+              <small>{selectedThemesLabel}</small>
             </summary>
-            <fieldset className="catalog-collections catalog-collections--placeholder">
+            <fieldset className="catalog-collections">
               <legend className="sr-only">Thèmes</legend>
-              <p className="catalog-filter-dropdown__hint">
-                Prévisualisation d’un futur filtre par thèmes.
-              </p>
               <div className="catalog-collections__options">
-                {placeholderThemeLabels.map((themeLabel) => (
-                  <label key={themeLabel}>
-                    <input disabled type="checkbox" />
-                    <span>{themeLabel}</span>
+                {availableThemes.map((theme) => (
+                  <label key={theme.id}>
+                    <input
+                      checked={selectedThemeIds.includes(theme.id)}
+                      onChange={() => toggleTaxonomy("theme", theme.id)}
+                      type="checkbox"
+                    />
+                    <span>{theme.name}</span>
                   </label>
                 ))}
+                {availableThemes.length === 0 ? (
+                  <p className="catalog-filter-dropdown__hint">
+                    Aucun thème associé aux chants publiés.
+                  </p>
+                ) : null}
+              </div>
+            </fieldset>
+          </details>
+
+          <details
+            className="catalog-filter-dropdown"
+            open={openFilter === "labels"}
+          >
+            <summary
+              onClick={(event) => {
+                event.preventDefault();
+                setOpenFilter((current) =>
+                  current === "labels" ? null : "labels",
+                );
+              }}
+            >
+              <span>Labels</span>
+              <small>{selectedLabelsLabel}</small>
+            </summary>
+            <fieldset className="catalog-collections">
+              <legend className="sr-only">Labels</legend>
+              <div className="catalog-collections__options">
+                {availableLabels.map((label) => (
+                  <label key={label.id}>
+                    <input
+                      checked={selectedLabelIds.includes(label.id)}
+                      onChange={() => toggleTaxonomy("label", label.id)}
+                      type="checkbox"
+                    />
+                    <span>{label.name}</span>
+                  </label>
+                ))}
+                {availableLabels.length === 0 ? (
+                  <p className="catalog-filter-dropdown__hint">
+                    Aucun label associé aux chants publiés.
+                  </p>
+                ) : null}
               </div>
             </fieldset>
           </details>

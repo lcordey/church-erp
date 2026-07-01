@@ -69,7 +69,7 @@ Ideas already mentioned and intentionally deferred:
 - dupliquer un chant officiel JEM vers une variante locale editable par l'eglise
 - remplacer la convention temporaire `LeMont` par la paroisse de l'utilisateur connecte
 - modeliser les paroisses, l'appartenance utilisateur-paroisse et les collections locales associees
-- rechercher les chants par auteur, paroles, themes ou index plein texte
+- rechercher les chants par auteur, paroles ou index plein texte
 - modeliser les contributeurs avec des roles precis plutot qu'un champ auteur brut
 - remettre des champs langue ou titre original si un vrai besoin de traduction apparait
 - convert ChordPro to PDF

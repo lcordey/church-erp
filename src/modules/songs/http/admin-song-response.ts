@@ -3,7 +3,10 @@ import {
   AuthenticationRequiredError,
 } from "@/src/infrastructure/auth/require-admin";
 
-import { SongSlugConflictError } from "../repositories/admin-song-repository";
+import {
+  InvalidSongTaxonomySelectionError,
+  SongSlugConflictError,
+} from "../repositories/admin-song-repository";
 import {
   InvalidSongMusicXmlError,
   InvalidSongPdfError,
@@ -121,6 +124,18 @@ export function adminSongErrorResponse(error: unknown) {
         },
       },
       { status: 409 },
+    );
+  }
+
+  if (error instanceof InvalidSongTaxonomySelectionError) {
+    return Response.json(
+      {
+        error: {
+          code: "INVALID_SONG_TAXONOMY",
+          message: "Un thème ou un label sélectionné n’existe plus.",
+        },
+      },
+      { status: 400 },
     );
   }
 

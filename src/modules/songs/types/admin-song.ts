@@ -3,6 +3,7 @@ import type {
   SongPdfSource,
   SongPublicationStatus,
 } from "./public-song";
+import type { SongTaxonomyItem } from "./song-taxonomy";
 
 export type AdminSong = {
   id: string;
@@ -20,6 +21,8 @@ export type AdminSong = {
   musicXmlSource: SongMusicXmlSource | null;
   isEditable: boolean;
   chordProContent: string;
+  themes: SongTaxonomyItem[];
+  labels: SongTaxonomyItem[];
   createdAt: Date;
   updatedAt: Date;
 };
@@ -31,6 +34,8 @@ export type AdminSongInput = {
   copyright: string | null;
   defaultKey: string | null;
   chordProContent: string;
+  themeIds: string[];
+  labelIds: string[];
 };
 
 export type AdminSongPdfInput = {

@@ -1,3 +1,5 @@
+import type { SongTaxonomyItem } from "./song-taxonomy";
+
 export type SongPublicationStatus = "draft" | "published";
 
 export type SongPdfSource = {
@@ -44,6 +46,8 @@ export type PublicSongCatalogResults = {
 
 export type PublicSongCatalogPage = PublicSongCatalogResults & {
   collections: string[];
+  themes: SongTaxonomyItem[];
+  labels: SongTaxonomyItem[];
 };
 
 export type PublicSongDetail = PublicSongSummary & {

@@ -42,6 +42,8 @@ const input: AdminSongInput = {
   copyright: null,
   defaultKey: "C",
   chordProContent: "[C]Paroles",
+  themeIds: [],
+  labelIds: [],
 };
 
 const draftSong: AdminSong = {
@@ -55,6 +57,8 @@ const draftSong: AdminSong = {
   pdfSource: null,
   musicXmlSource: null,
   isEditable: true,
+  themes: [],
+  labels: [],
   createdAt: new Date("2026-06-15T18:00:00Z"),
   updatedAt: new Date("2026-06-15T18:00:00Z"),
 };

@@ -42,7 +42,7 @@ describe("GET /api/songs", () => {
 
     const response = await GET(
       new Request(
-        "http://localhost/api/songs?q=jem&collections=JEM,LeMont&limit=20&offset=40",
+        "http://localhost/api/songs?q=jem&collections=JEM,LeMont&themes=11111111-1111-4111-8111-111111111111&labels=22222222-2222-4222-8222-222222222222,invalide&limit=20&offset=40",
       ),
     );
 
@@ -68,6 +68,8 @@ describe("GET /api/songs", () => {
       limit: 20,
       offset: 40,
       search: "jem",
+      themeIds: ["11111111-1111-4111-8111-111111111111"],
+      labelIds: ["22222222-2222-4222-8222-222222222222"],
     });
   });
 
@@ -79,6 +81,8 @@ describe("GET /api/songs", () => {
       offset: 0,
       hasMore: false,
       collections: ["Glorious", "JEM"],
+      themes: [],
+      labels: [],
     });
 
     const response = await GET(
@@ -94,6 +98,8 @@ describe("GET /api/songs", () => {
       limit: 20,
       offset: 0,
       search: "",
+      themeIds: [],
+      labelIds: [],
     });
     expect(listPublicSongResults).not.toHaveBeenCalled();
   });

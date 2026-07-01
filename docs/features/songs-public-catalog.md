@@ -22,6 +22,7 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 - chercher les chants publies par titre ou numero de recueil
 - filtrer le catalogue sans rechargement de page
 - filtrer par recueil via des cases a cocher fixes
+- filtrer par un ou plusieurs themes et labels
 - charger les chants par pages de 20 resultats
 
 ## Regles metier
@@ -37,19 +38,22 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 - le filtre par recueil propose les collections presentes dans le seed courant, y compris les recueils JEMAF importes et `LeMont`
 - le filtre par recueil n'est pas un champ libre
 - aucune case recueil cochee signifie que tous les recueils sont affiches
+- aucune case theme ou label cochee signifie qu'aucun filtre de ce type n'est applique
+- plusieurs themes selectionnes correspondent a au moins un des themes choisis; la meme regle s'applique aux labels
+- lorsqu'un filtre de themes et un filtre de labels sont actifs, un chant doit correspondre aux deux categories
 - a l'ouverture du repertoire sans filtre URL, les recueils `JEM`, `JEMK`, `LeMont` et `Glorious` sont coches par defaut
 - la page publique charge uniquement la premiere page de resultats
-- la recherche et le filtre par recueil sont appliques cote serveur avant pagination
+- la recherche et les filtres par recueil, theme et label sont appliques cote serveur avant pagination
 - la structure de la page repertoire est affichee sans attendre la base de donnees; la premiere page est chargee de facon asynchrone avec un etat de chargement et une action de relance en cas d'erreur
-- les recueils disponibles sont charges avec la premiere requete via `includeCollections=true`, puis conserves cote client pendant les recherches
-- l'API `GET /api/songs?q=...&collections=...&limit=20&offset=0` expose uniquement les resultats publics pages: `songs`, `total`, `limit`, `offset`, `hasMore`
-- l'API accepte `includeCollections=true` pour ajouter `collections` a la reponse initiale
+- les recueils, themes et labels disponibles sont charges avec la premiere requete via `includeCollections=true`, puis conserves cote client pendant les recherches
+- l'API `GET /api/songs?q=...&collections=...&themes=...&labels=...&limit=20&offset=0` expose uniquement les resultats publics pages: `songs`, `total`, `limit`, `offset`, `hasMore`
+- l'API accepte `includeCollections=true` pour ajouter `collections`, `themes` et `labels` a la reponse initiale
 - les reponses du catalogue peuvent etre mises en cache par le CDN pendant 60 secondes et servies en mode stale-while-revalidate pendant 5 minutes
 - la pagination MVP-1 utilise `limit` et `offset`; un curseur pourra remplacer ce mecanisme si le catalogue devient tres volumineux
 - la liste publique n'expose ni contenu ChordPro ni metadonnees de partitions; ces donnees sont chargees uniquement par les vues detail qui en ont besoin
 - le chemin Supabase Storage interne n'est jamais expose au navigateur
 - le seed local du catalogue public reste rejouable hors ligne meme si le snapshot JEMAF a ete collecte depuis le reseau
-- la recherche par auteur, paroles ou themes est reportee
+- la recherche textuelle par auteur ou paroles est reportee
 
 ## Donnees concernees
 
@@ -88,11 +92,12 @@ Implementation actuelle :
 - une page catalogue mobile-friendly
 - un champ de recherche sobre en haut du catalogue
 - des cases a cocher pour les recueils disponibles
+- des filtres a cases a cocher pour les themes et labels associes aux chants publies
 - un compteur de resultats qui suit le filtre courant
 - les resultats deja affiches restent visibles pendant le chargement d'un nouveau filtre
 - le premier chargement affiche un indicateur dedie sans bloquer le rendu du reste de la page
 - une erreur de chargement peut etre relancee sans recharger toute la page
-- le filtre par recueil declenche une mise a jour immediate; la recherche texte utilise un court debounce
+- les filtres declenchent une mise a jour immediate; la recherche texte utilise un court debounce
 - un bouton permet de charger les 20 chants suivants quand d'autres resultats existent
 - l'ouverture d'un chant depuis le catalogue navigue vers sa page detail
 - un bouton `Nouveau chant` reste accessible dans le header du catalogue
@@ -156,5 +161,5 @@ Implementation actuelle :
 - groupes, roles et permissions fines
 - edition admin
 - recherche avancee
-- recherche par paroles, auteur ou theme
+- recherche textuelle par paroles ou auteur
 - pagination avancee par curseur

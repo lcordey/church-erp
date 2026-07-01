@@ -24,6 +24,8 @@ export type PublicSongCatalogQuery = {
   limit?: number;
   offset?: number;
   search?: string;
+  themeIds?: string[];
+  labelIds?: string[];
 };
 
 export function isPublicSong(
@@ -71,6 +73,8 @@ export async function listPublicSongResults(
     limit,
     offset,
     search: options.search?.trim() ?? "",
+    themeIds: options.themeIds?.map((id) => id.trim()).filter(Boolean),
+    labelIds: options.labelIds?.map((id) => id.trim()).filter(Boolean),
   });
   const songs = result.songs.filter(isPublicSong).map(toSummary);
 
@@ -89,19 +93,27 @@ export async function listPublicSongCollections(
   return repository.listPublishedCollections();
 }
 
+export async function listPublicSongTaxonomies(
+  repository: PublishedSongCollectionRepository = createPublishedSongCollectionRepository(),
+) {
+  return repository.listPublishedTaxonomies();
+}
+
 export async function listPublicSongs(
   query: PublicSongCatalogQuery | string = {},
   repository: SongCatalogRepository = createSongCatalogRepository(),
   collectionRepository: PublishedSongCollectionRepository = createPublishedSongCollectionRepository(),
 ): Promise<PublicSongCatalogPage> {
-  const [results, collections] = await Promise.all([
+  const [results, collections, taxonomies] = await Promise.all([
     listPublicSongResults(query, repository),
     listPublicSongCollections(collectionRepository),
+    listPublicSongTaxonomies(collectionRepository),
   ]);
 
   return {
     ...results,
     collections,
+    ...taxonomies,
   };
 }
 

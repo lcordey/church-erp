@@ -21,6 +21,8 @@ publier automatiquement et supprimer des chants depuis leur ecran d'edition.
 - generer une proposition de source ChordPro a partir du MusicXML attache
 - consulter les metadonnees utiles cote administration
 - consulter les chants officiels importes avec edition partielle
+- associer zero, un ou plusieurs themes et labels a chaque chant
+- administrer les listes de themes et labels disponibles
 
 ## Regles metier
 
@@ -43,6 +45,9 @@ publier automatiquement et supprimer des chants depuis leur ecran d'edition.
 - les accords saisis dans ChordPro doivent utiliser la notation anglaise et commencer par `A`, `B`, `C`, `D`, `E`, `F` ou `G`
 - les alterations anglaises `#` et `b`, les suffixes mineurs et les basses slash comme `Bb`, `C#m` ou `F/A` sont acceptes
 - les notes francaises comme `Do`, `Re`, `Ré`, `Mi`, `Fa`, `Sol`, `La` ou `Si` sont refusees dans les accords
+- les associations de themes et labels sont remplacees atomiquement avec les autres modifications du chant
+- supprimer un theme ou un label retire ses associations sans supprimer les chants
+- les noms de themes sont uniques sans distinction de casse; la meme regle s'applique aux labels
 
 ## Donnees concernees
 
@@ -61,6 +66,8 @@ Champs partages recommandes pour un chant :
 Direction de modele recommandee :
 - `songs` pour les metadonnees partagees
 - `song_sources` pour les sources attachees a un chant
+- `song_themes` et `song_labels` pour les deux referentiels administrables
+- `song_theme_assignments` et `song_label_assignments` pour les relations plusieurs-a-plusieurs
 
 Pour MVP-1 :
 - une source `ChordPro` active est requise pour publier
@@ -73,7 +80,6 @@ Pour MVP-1 :
 
 Champs possibles plus tard, non requis maintenant :
 - `tempo`
-- `theme`
 - `language`
 - `original_title`
 - contributeurs structures avec roles
@@ -85,12 +91,14 @@ Implementation actuelle :
 - service metier pour creer, modifier, publier et retirer de la publication
 - repository Drizzle avec transaction pour creer le chant et sa source
 - endpoints sous `/api/admin/songs`
+- endpoints de gestion des referentiels sous `/api/admin/song-taxonomies`
 - endpoints PDF sous `/api/admin/songs/:id/pdf`
 - endpoints MusicXML sous `/api/admin/songs/:id/musicxml`
 - endpoint de generation ChordPro sous `/api/admin/songs/:id/chordpro/generate`
 - stockage PDF dans le bucket prive Supabase Storage `song-pdfs`
 - helper d'autorisation explicite et permissif pendant le MVP-1
 - conflits de slug retournes avec un statut HTTP `409`
+- validation cote serveur des identifiants de themes et labels selectionnes
 
 ## Structure UI
 
@@ -112,11 +120,14 @@ Implementation actuelle :
 - section `Partition PDF` pour ajouter, remplacer ou retirer le fichier attache
 - section `Partition` pour ajouter, remplacer ou retirer le fichier MusicXML attache
 - action `Generer depuis la partition` dans l'edition quand un MusicXML est disponible
+- selections multiples de themes et labels dans le formulaire de chant
+- menu `Admin` et route `/admin/referentiels` pour ajouter, renommer et supprimer les valeurs disponibles
 
 Routes :
 - `/admin/chants/nouveau`
 - `/admin/chants/:id`
 - `/admin/chants` redirige vers `/`
+- `/admin/referentiels`
 
 Interaction actuelle recommandee :
 - le catalogue `/` sert de point d'entree principal pour ouvrir un chant en lecture

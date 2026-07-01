@@ -11,6 +11,7 @@ import type {
   PublicSongDetail,
   PublicSongNavigation,
 } from "../types/public-song";
+import type { SongTaxonomies } from "../types/song-taxonomy";
 import { AdminSongForm } from "./admin-song-form";
 import { SongDetailView } from "./song-detail-view";
 import { SongNavigationActions } from "./song-navigation-actions";
@@ -23,6 +24,7 @@ type SongPageWorkspaceProps = {
   isAuthenticated: boolean;
   navigation: PublicSongNavigation | null;
   song: PublicSongDetail;
+  availableTaxonomies: SongTaxonomies;
 };
 
 function createSongHref(
@@ -53,6 +55,7 @@ export function SongPageWorkspace({
   isAuthenticated,
   navigation,
   song,
+  availableTaxonomies,
 }: SongPageWorkspaceProps) {
   const router = useRouter();
   const [mode, setMode] = useState<"selection" | "edition">(
@@ -132,6 +135,7 @@ export function SongPageWorkspace({
 
         {mode === "edition" && adminSong ? (
           <AdminSongForm
+            availableTaxonomies={availableTaxonomies}
             onDeleted={() => router.push(backHref)}
             onSaved={(savedSong) => {
               setAdminSong(savedSong);

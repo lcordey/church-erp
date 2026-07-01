@@ -11,17 +11,21 @@ const emptyCatalog: PublicSongCatalogPage = {
   offset: 0,
   hasMore: false,
   collections: defaultVisibleCollections,
+  themes: [],
+  labels: [],
 };
 
 type WorshipPageProps = {
   searchParams: Promise<{
     collections?: string;
     q?: string;
+    themes?: string;
+    labels?: string;
   }>;
 };
 
 export default async function WorshipPage({ searchParams }: WorshipPageProps) {
-  const [{ collections, q }, actor] = await Promise.all([
+  const [{ collections, q, themes, labels }, actor] = await Promise.all([
     searchParams,
     getCurrentActor(),
   ]);
@@ -37,6 +41,8 @@ export default async function WorshipPage({ searchParams }: WorshipPageProps) {
     <SongsWorkspace
       initialCollections={selectedCollections}
       initialSearch={search}
+      initialThemeIds={themes?.split(",").filter(Boolean)}
+      initialLabelIds={labels?.split(",").filter(Boolean)}
       initialCatalog={emptyCatalog}
       isAuthenticated={actor !== null}
       loadCatalogOnMount

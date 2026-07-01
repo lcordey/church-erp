@@ -11,13 +11,7 @@ import {
   songPdfBucket,
   songPdfMimeType,
 } from "./song-pdf-library.mjs";
-
-const localDatabaseUrl = "postgresql://postgres:postgres@127.0.0.1:15432/postgres";
-const localSupabaseUrl = "http://127.0.0.1:15431";
-const localServiceRoleKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
-  "eyJpc3MiOiJzdWJhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0." +
-  "EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+import { parseTargetOption, resolveTargetConfig, stripTargetOption } from "./song-import-target.mjs";
 const musicXmlMimeType = "application/vnd.recordare.musicxml+xml";
 
 function parseArgs(argv) {
@@ -27,11 +21,14 @@ function parseArgs(argv) {
     musicXmlDir: null,
     pdfDir: null,
     skipPdf: false,
+    canonicalStems: false,
   };
 
-  for (let index = 0; index < argv.length; index += 1) {
-    const argument = argv[index];
-    const next = argv[index + 1];
+  const filteredArgv = stripTargetOption(argv);
+
+  for (let index = 0; index < filteredArgv.length; index += 1) {
+    const argument = filteredArgv[index];
+    const next = filteredArgv[index + 1];
 
     if (argument === "--collection" && next) {
       options.collection = next;
@@ -61,6 +58,11 @@ function parseArgs(argv) {
       options.skipPdf = true;
       continue;
     }
+
+    if (argument === "--canonical-stems") {
+      options.canonicalStems = true;
+      continue;
+    }
   }
 
   return options;
@@ -83,28 +85,6 @@ function requireConfigValue(name, value) {
 
   return resolved;
 }
-
-function resolveConfig() {
-  const databaseUrl =
-    process.env.DATABASE_URL ?? process.env.LOCAL_DATABASE_URL ?? localDatabaseUrl;
-  const useLocalDefaults =
-    !process.env.SUPABASE_URL &&
-    !process.env.SUPABASE_SERVICE_ROLE_KEY &&
-    databaseUrl === localDatabaseUrl;
-
-  return {
-    databaseUrl,
-    supabaseUrl:
-      process.env.SUPABASE_URL ??
-      process.env.LOCAL_SUPABASE_URL ??
-      (useLocalDefaults ? localSupabaseUrl : null),
-    serviceRoleKey:
-      process.env.SUPABASE_SERVICE_ROLE_KEY ??
-      process.env.LOCAL_SUPABASE_SERVICE_ROLE_KEY ??
-      (useLocalDefaults ? localServiceRoleKey : null),
-  };
-}
-
 function cleanupText(content) {
   return content.replace(/\r\n/g, "\n").trim();
 }
@@ -350,9 +330,9 @@ function toNewSongRecord({
   musicXmlContent,
 }) {
   const title = extractMusicXmlTitle(musicXmlContent, fileStem);
-  const slug = `${namespace}-${slugify(fileStem)}`;
   const songKey = `${collectionCode}:${fileStem}`;
   const songId = createDeterministicUuid("song", songKey);
+  const slug = `${namespace}-${slugify(fileStem)}-${songId.slice(0, 8)}`;
 
   return {
     id: songId,
@@ -640,11 +620,12 @@ async function main() {
   await loadLocalEnv();
 
   const args = parseArgs(process.argv.slice(2));
+  const target = parseTargetOption(process.argv.slice(2));
   const collectionCode = requireOption("collection", args.collection);
   const namespace = args.namespace ?? collectionCode.toLowerCase();
   const musicXmlDirectory = requireOption("musicxml-dir", args.musicXmlDir);
   const pdfDirectory = args.pdfDir;
-  const config = resolveConfig();
+  const config = resolveTargetConfig(target);
 
   const musicXmlFiles = await listFilesRecursively(
     musicXmlDirectory,
@@ -664,6 +645,20 @@ async function main() {
     : [];
 
   const musicXmlIndex = buildPreferredFileIndex(musicXmlFiles, musicXmlVariantScore);
+  const musicXmlBySongId = new Map(
+    musicXmlFiles.map((musicXmlPath) => {
+      const fileName = path.basename(musicXmlPath);
+      const fileStem = path.basename(fileName, path.extname(fileName));
+      return [
+        createDeterministicUuid("song", `${collectionCode}:${fileStem}`),
+        {
+          fileName,
+          path: musicXmlPath,
+          score: musicXmlVariantScore(fileName),
+        },
+      ];
+    }),
+  );
   const pdfIndex = buildPreferredFileIndex(pdfFiles, pdfVariantScore);
   const sql = postgres(
     requireConfigValue("DATABASE_URL", config.databaseUrl),
@@ -695,9 +690,15 @@ async function main() {
         normalizeStem(song.title),
         normalizeStem(song.slug.replace(`${namespace}-`, "")),
       ];
-      const musicXml = candidates
-        .map((candidate) => musicXmlIndex.get(candidate))
-        .find(Boolean);
+      const directMusicXml = musicXmlBySongId.get(song.id);
+      const musicXml = directMusicXml ??
+        (
+          args.canonicalStems
+            ? undefined
+            : candidates
+              .map((candidate) => musicXmlIndex.get(candidate))
+              .find(Boolean)
+        );
 
       if (!musicXml) {
         unmatchedExistingSongs.push(song.title);

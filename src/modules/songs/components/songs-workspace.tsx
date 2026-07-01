@@ -14,6 +14,8 @@ import type { SetlistDetail, SetlistSummary } from "@/src/modules/setlists/types
 type SongsWorkspaceProps = {
   initialCollections?: string[];
   initialSearch?: string;
+  initialThemeIds?: string[];
+  initialLabelIds?: string[];
   initialCatalog: PublicSongCatalogPage;
   isAuthenticated?: boolean;
   loadCatalogOnMount?: boolean;
@@ -39,6 +41,8 @@ function createSongCatalogHref(song: PublicSongSummary, returnTo: string) {
 export function SongsWorkspace({
   initialCollections,
   initialSearch = "",
+  initialThemeIds = [],
+  initialLabelIds = [],
   initialCatalog,
   isAuthenticated = true,
   loadCatalogOnMount = false,
@@ -161,6 +165,8 @@ export function SongsWorkspace({
               initialCatalog={initialCatalog}
               initialCollections={initialCollections}
               initialSearch={initialSearch}
+              initialThemeIds={initialThemeIds}
+              initialLabelIds={initialLabelIds}
               getSongHref={(song) => createSongCatalogHref(song, currentCatalogHref)}
               loadOnMount={loadCatalogOnMount}
               onAddToSetlist={isAuthenticated ? openSetlistDialog : undefined}

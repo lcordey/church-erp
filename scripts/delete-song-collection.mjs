@@ -1,23 +1,20 @@
 import postgres from "postgres";
 
 import { loadLocalEnv, songPdfBucket } from "./song-pdf-library.mjs";
-
-const localDatabaseUrl = "postgresql://postgres:postgres@127.0.0.1:15432/postgres";
-const localSupabaseUrl = "http://127.0.0.1:15431";
-const localServiceRoleKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
-  "eyJpc3MiOiJzdWJhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0." +
-  "EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+import { parseTargetOption, resolveTargetConfig, stripTargetOption } from "./song-import-target.mjs";
 
 function parseArgs(argv) {
   const options = {
     collection: null,
     skipPdfDelete: false,
+    sourceTypes: [],
   };
 
-  for (let index = 0; index < argv.length; index += 1) {
-    const argument = argv[index];
-    const next = argv[index + 1];
+  const filteredArgv = stripTargetOption(argv);
+
+  for (let index = 0; index < filteredArgv.length; index += 1) {
+    const argument = filteredArgv[index];
+    const next = filteredArgv[index + 1];
 
     if (argument === "--collection" && next) {
       options.collection = next;
@@ -27,6 +24,23 @@ function parseArgs(argv) {
 
     if (argument === "--skip-pdf-delete") {
       options.skipPdfDelete = true;
+      continue;
+    }
+
+    if (argument === "--source-type" && next) {
+      options.sourceTypes.push(next);
+      index += 1;
+      continue;
+    }
+
+    if (argument === "--source-types" && next) {
+      options.sourceTypes.push(
+        ...next
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean),
+      );
+      index += 1;
     }
   }
 
@@ -51,25 +65,20 @@ function requireConfigValue(name, value) {
   return resolved;
 }
 
-function resolveConfig() {
-  const databaseUrl =
-    process.env.DATABASE_URL ?? process.env.LOCAL_DATABASE_URL ?? localDatabaseUrl;
-  const useLocalDefaults =
-    !process.env.SUPABASE_URL &&
-    !process.env.SUPABASE_SERVICE_ROLE_KEY &&
-    databaseUrl === localDatabaseUrl;
+const supportedSourceTypes = new Set(["chordpro", "musicxml", "pdf", "youtube"]);
 
-  return {
-    databaseUrl,
-    supabaseUrl:
-      process.env.SUPABASE_URL ??
-      process.env.LOCAL_SUPABASE_URL ??
-      (useLocalDefaults ? localSupabaseUrl : null),
-    serviceRoleKey:
-      process.env.SUPABASE_SERVICE_ROLE_KEY ??
-      process.env.LOCAL_SUPABASE_SERVICE_ROLE_KEY ??
-      (useLocalDefaults ? localServiceRoleKey : null),
-  };
+function normalizeSourceTypes(sourceTypes) {
+  const normalized = [...new Set(sourceTypes.map((value) => value.trim().toLowerCase()))];
+
+  for (const sourceType of normalized) {
+    if (!supportedSourceTypes.has(sourceType)) {
+      throw new Error(
+        `Unsupported source type "${sourceType}". Use one of: ${[...supportedSourceTypes].join(", ")}.`,
+      );
+    }
+  }
+
+  return normalized;
 }
 
 function storageObjectUrl(storagePath, supabaseUrl) {
@@ -107,8 +116,10 @@ async function main() {
   await loadLocalEnv();
 
   const args = parseArgs(process.argv.slice(2));
+  const target = parseTargetOption(process.argv.slice(2));
   const collection = requireOption("collection", args.collection);
-  const config = resolveConfig();
+  const sourceTypes = normalizeSourceTypes(args.sourceTypes);
+  const config = resolveTargetConfig(target);
   const sql = postgres(
     requireConfigValue("DATABASE_URL", config.databaseUrl),
     { max: 1, prepare: false },
@@ -117,6 +128,7 @@ async function main() {
     !args.skipPdfDelete &&
     Boolean(config.supabaseUrl) &&
     Boolean(config.serviceRoleKey);
+  const isSourceScopedDelete = sourceTypes.length > 0;
 
   try {
     const songs = await sql`
@@ -132,12 +144,14 @@ async function main() {
     }
 
     const songIds = songs.map((song) => song.id);
+    const sourceTypeSql = isSourceScopedDelete ? sql(sourceTypes) : null;
     const pdfSources = await sql`
       select distinct storage_path
       from song_sources
       where song_id in ${sql(songIds)}
         and source_type = 'pdf'
         and storage_path is not null
+        ${isSourceScopedDelete ? sql`and source_type in ${sourceTypeSql}` : sql``}
     `;
 
     let deletedPdfs = 0;
@@ -149,19 +163,32 @@ async function main() {
       }
     }
 
-    await sql.begin(async (transaction) => {
-      await transaction`
-        delete from setlist_items
+    if (isSourceScopedDelete) {
+      const deletedSources = await sql`
+        delete from song_sources
         where song_id in ${sql(songIds)}
+          and source_type in ${sourceTypeSql}
+        returning id
       `;
 
-      await transaction`
-        delete from songs
-        where id in ${sql(songIds)}
-      `;
-    });
+      console.log(
+        `Deleted ${deletedSources.length} sources (${sourceTypes.join(", ")}) from collection ${collection}.`,
+      );
+    } else {
+      await sql.begin(async (transaction) => {
+        await transaction`
+          delete from setlist_items
+          where song_id in ${sql(songIds)}
+        `;
 
-    console.log(`Deleted ${songs.length} songs from collection ${collection}.`);
+        await transaction`
+          delete from songs
+          where id in ${sql(songIds)}
+        `;
+      });
+
+      console.log(`Deleted ${songs.length} songs from collection ${collection}.`);
+    }
 
     if (canDeletePdfs) {
       console.log(`Deleted ${deletedPdfs} PDF storage objects.`);
