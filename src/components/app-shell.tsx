@@ -18,6 +18,7 @@ type NavigationItem = {
   href: string;
   label: string;
   description: string;
+  requiresAuthentication?: boolean;
 };
 
 const navigationItems: NavigationItem[] = [
@@ -30,6 +31,12 @@ const navigationItems: NavigationItem[] = [
     href: "/setlist",
     label: "Setlist",
     description: "Préparation des séquences",
+  },
+  {
+    href: "/admin/referentiels",
+    label: "Admin",
+    description: "Thèmes et labels",
+    requiresAuthentication: true,
   },
   {
     href: "/settings",
@@ -54,6 +61,10 @@ function isActivePath(pathname: string, href: string) {
 
   if (href === "/setlist") {
     return pathname === "/setlist" || pathname.startsWith("/setlist/");
+  }
+
+  if (href === "/admin/referentiels") {
+    return pathname.startsWith("/admin/referentiels");
   }
 
   return pathname === href;
@@ -85,22 +96,24 @@ export function AppShell({ children, isAuthenticated }: AppShellProps) {
           </div>
 
           <nav aria-label="Navigation principale" className="app-sidebar__nav">
-            {navigationItems.map((item) => {
-              const isActive = isActivePath(pathname, item.href);
+            {navigationItems
+              .filter((item) => !item.requiresAuthentication || isAuthenticated)
+              .map((item) => {
+                const isActive = isActivePath(pathname, item.href);
 
-              return (
-                <Link
-                  aria-current={isActive ? "page" : undefined}
-                  className="app-sidebar__link"
-                  href={item.href}
-                  key={item.href}
-                  onClick={() => setIsOpen(false)}
-                >
-                  <span>{item.label}</span>
-                  <small>{item.description}</small>
-                </Link>
-              );
-            })}
+                return (
+                  <Link
+                    aria-current={isActive ? "page" : undefined}
+                    className="app-sidebar__link"
+                    href={item.href}
+                    key={item.href}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <span>{item.label}</span>
+                    <small>{item.description}</small>
+                  </Link>
+                );
+              })}
           </nav>
 
           <div className="app-sidebar__session">

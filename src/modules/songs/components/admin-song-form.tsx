@@ -13,6 +13,7 @@ import { formatSongCollectionLabel } from "../collections/song-collection";
 import { hasLockedOfficialMetadata } from "../song-edit-rules";
 import type { AdminSong } from "../types/admin-song";
 import type { GeneratedChordProResult } from "../types/admin-song";
+import type { SongTaxonomies } from "../types/song-taxonomy";
 import type {
   AdminSongField,
   AdminSongValidationErrors,
@@ -29,6 +30,7 @@ type AdminSongFormProps = {
   onDeleted?: () => void;
   onSaved?: (song: AdminSong) => void;
   showBackAction?: boolean;
+  availableTaxonomies: SongTaxonomies;
 };
 
 type FormState = {
@@ -38,6 +40,8 @@ type FormState = {
   copyright: string;
   defaultKey: string;
   chordProContent: string;
+  themeIds: string[];
+  labelIds: string[];
 };
 
 type ApiError = {
@@ -97,6 +101,8 @@ function initialState(song?: AdminSong): FormState {
     copyright: song?.copyright ?? "LeMont",
     defaultKey: song?.defaultKey ?? "",
     chordProContent: song?.chordProContent ?? createChordProTemplate(),
+    themeIds: song?.themes.map((theme) => theme.id) ?? [],
+    labelIds: song?.labels.map((label) => label.id) ?? [],
   };
 }
 
@@ -109,6 +115,7 @@ export function AdminSongForm({
   onDeleted,
   onSaved,
   showBackAction = true,
+  availableTaxonomies,
 }: AdminSongFormProps) {
   const router = useRouter();
   const { notation } = useMusicNotation();
@@ -124,7 +131,10 @@ export function AdminSongForm({
     ? hasLockedOfficialMetadata(song)
     : false;
 
-  function updateField(field: AdminSongField, value: string) {
+  function updateField(
+    field: Exclude<AdminSongField, "themeIds" | "labelIds">,
+    value: string,
+  ) {
     setForm((current) => {
       const next = { ...current, [field]: value };
 
@@ -134,6 +144,20 @@ export function AdminSongForm({
 
       return next;
     });
+    setErrors((current) => ({ ...current, [field]: undefined }));
+    setMessage("");
+  }
+
+  function toggleTaxonomy(
+    field: "themeIds" | "labelIds",
+    id: string,
+  ) {
+    setForm((current) => ({
+      ...current,
+      [field]: current[field].includes(id)
+        ? current[field].filter((currentId) => currentId !== id)
+        : [...current[field], id],
+    }));
     setErrors((current) => ({ ...current, [field]: undefined }));
     setMessage("");
   }
@@ -548,6 +572,52 @@ export function AdminSongForm({
               </a>
             </div>
           ) : null}
+
+          <fieldset className="field field--wide taxonomy-selection">
+            <legend>Thèmes</legend>
+            {availableTaxonomies.themes.length > 0 ? (
+              <div className="taxonomy-selection__options">
+                {availableTaxonomies.themes.map((theme) => (
+                  <label key={theme.id}>
+                    <input
+                      checked={form.themeIds.includes(theme.id)}
+                      onChange={() => toggleTaxonomy("themeIds", theme.id)}
+                      type="checkbox"
+                    />
+                    <span>{theme.name}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p className="field__hint">
+                Aucun thème disponible. Ajoute-en depuis le menu Admin.
+              </p>
+            )}
+            {errors.themeIds ? <small>{errors.themeIds}</small> : null}
+          </fieldset>
+
+          <fieldset className="field field--wide taxonomy-selection">
+            <legend>Labels</legend>
+            {availableTaxonomies.labels.length > 0 ? (
+              <div className="taxonomy-selection__options">
+                {availableTaxonomies.labels.map((label) => (
+                  <label key={label.id}>
+                    <input
+                      checked={form.labelIds.includes(label.id)}
+                      onChange={() => toggleTaxonomy("labelIds", label.id)}
+                      type="checkbox"
+                    />
+                    <span>{label.name}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p className="field__hint">
+                Aucun label disponible. Ajoute-en depuis le menu Admin.
+              </p>
+            )}
+            {errors.labelIds ? <small>{errors.labelIds}</small> : null}
+          </fieldset>
 
           <div className="field field--wide pdf-field">
             <span>Partition PDF</span>

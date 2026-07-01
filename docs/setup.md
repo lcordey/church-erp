@@ -45,9 +45,9 @@ pnpm dev:phone
 pnpm test:smoke
 pnpm songs:sync-jemaf
 pnpm songs:render-seed
-pnpm songs:import-pdfs
-pnpm songs:import-jem-pdfs
-pnpm songs:import-glorious-musicxml
+pnpm songs:import-base-chants
+pnpm songs:import-official-pdfs
+pnpm songs:clear-base-chants
 pnpm db:start
 pnpm db:status
 pnpm db:reset
@@ -115,16 +115,28 @@ Use `pnpm db:status` after `pnpm db:start` to read the local `Secret`
 authentication key and place it in `.env.local` as
 `SUPABASE_SERVICE_ROLE_KEY`. This key must stay server-side only.
 
-Import or refresh the local JEM PDF score files manually when needed:
+Import or refresh the song library from the normalized sibling folder
+`/home/lcordey/work/base_chants`:
 
 ```bash
-pnpm songs:import-pdfs
+pnpm songs:import-base-chants -- --all --include-official --target local
 ```
 
-By default this reads the files from `/home/lcordey/work/download_for_church_erp`.
-Override that location with `SONG_PDF_DIR=/path/to/pdfs` when needed. The import
-uploads the files to the private `song-pdfs` bucket and recreates active `pdf`
-sources for the matching JEM songs already present in the seed.
+This command:
+- imports mixed collections such as `Exo`, `Glorious`, and `LeMont` from
+  `pdf`, `musicxml`, and `chordpro`
+- attaches PDFs for official seeded collections `JEM` and `JEMK`
+- accepts `--collection <name>` to target a single collection
+- accepts `--source-root /path/to/base_chants` to override the default folder
+- accepts `--target local|remote`
+
+Examples:
+
+```bash
+pnpm songs:import-base-chants -- --collection LeMont --target local
+pnpm songs:import-base-chants -- --collection Glorious --target remote
+pnpm songs:import-official-pdfs -- --collection JEMK --pdf-dir "/home/lcordey/work/base_chants/JEM KIDs/pdf" --target remote
+```
 
 Refresh the local JEMAF snapshot and regenerate `supabase/seed.sql`:
 
@@ -163,8 +175,9 @@ This command creates `.env.local` when needed, starts Supabase, recreates the
 development database, applies every migration, and loads the demo seed.
 
 `pnpm local:setup` is destructive for local business data because it runs
-`pnpm db:reset`. The reset now also imports the local JEM PDFs into Supabase
-Storage after the SQL seed is applied. Use it for first setup or when
+`pnpm db:reset`. The reset now reapplies the SQL seed and then imports the
+normalized `base_chants` collections into local PostgreSQL and local Supabase
+Storage. Use it for first setup or when
 intentionally returning to the seed state. For normal daily work, use
 `pnpm db:start` or `pnpm dev:phone`.
 
@@ -220,96 +233,42 @@ For a JEMAF refresh:
 2. Review the diff in `supabase/generated/jemaf-catalog.json` and `supabase/seed.sql`.
 3. Run `pnpm db:reset` to validate the regenerated seed.
 
-For JEM PDFs:
+For the normalized song database:
 
-1. Place the JEM PDFs in `/home/lcordey/work/download_for_church_erp`, or set `SONG_PDF_DIR`.
-2. Run `pnpm db:reset` or `pnpm songs:import-pdfs`.
+1. Build or refresh `/home/lcordey/work/base_chants`.
+2. Import one collection or the full library with `pnpm songs:import-base-chants`.
+3. Use `--target remote` for the online project after exporting
+   `DATABASE_URL`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY`.
 
-For the local Glorious catalog:
-
-1. Place the canonical ChordPro files in `/home/lcordey/work/download_for_church_erp/Glorious_ChordPro/canonical`.
-2. Place the PDF files in `/home/lcordey/work/download_for_church_erp/Glorious`.
-3. Place the MusicXML files in `/home/lcordey/work/download_for_church_erp/Glorious_MusicXML/musicxml`.
-4. Run `pnpm songs:import-glorious`.
-5. Run `pnpm songs:import-glorious-musicxml`.
-
-These imports are idempotent and target the local database. The PDF import also
-targets local Supabase Storage.
-
-To version the Glorious song metadata and ChordPro sources in the repository
-seed, generate the snapshot and re-render the seed:
+Examples:
 
 ```bash
-pnpm songs:render-glorious
-pnpm songs:render-seed
+pnpm songs:import-base-chants -- --collection Exo --target local
+pnpm songs:import-base-chants -- --all --include-official --target remote
 ```
 
-This updates `supabase/generated/glorious-catalog.json` and folds those songs
-into `supabase/seed.sql`. PDF binaries still remain outside SQL and must be
-uploaded separately through `pnpm songs:import-glorious`.
-
-For a local folder-based collection import such as `Exo`, where songs ship as
-MusicXML and optional PDFs without canonical ChordPro files:
+To clear imported local collections before a reimport:
 
 ```bash
-pnpm songs:import-folder-catalog -- \
-  --collection Exo \
-  --namespace exo \
-  --musicxml-dir /home/lcordey/work/download_for_church_erp/Exo_1_MusicXML/musicxml \
-  --pdf-dir /home/lcordey/work/download_for_church_erp/Exo_1_pdf
+pnpm songs:clear-base-chants -- --all --target local
 ```
 
-This importer creates published songs in the requested collection, stores the
-MusicXML payload in PostgreSQL, generates a minimal placeholder ChordPro source
-so the songs appear in the catalog, and uploads matching PDFs when the target
-Supabase Storage credentials are available.
+This clears the non-official imported collections (`Exo`, `Glorious`,
+`LeMont`). Official seeded collections (`JEM`, `JEMK`) are intentionally kept
+out of the bulk clear flow because their ChordPro data comes from the official
+JEMAF snapshot rather than `base_chants`.
 
-For a local ChordPro-first collection import such as `Exo2`, where songs ship
-with canonical ChordPro files and matching PDFs:
+To clear one collection explicitly:
 
 ```bash
-pnpm songs:import-chordpro-catalog -- \
-  --collection Exo2 \
-  --namespace exo2 \
-  --chordpro-dir /home/lcordey/work/download_for_church_erp/Exo_2_ChordPro/Exo_2_ChordPro \
-  --pdf-dir "/home/lcordey/work/download_for_church_erp/Exo 2"
+pnpm songs:delete-collection -- --collection LeMont --target remote
 ```
 
-This importer creates or updates published songs in the requested collection,
-stores the ChordPro payload in PostgreSQL, and uploads matching PDFs when the
-target Supabase Storage credentials are available. For a remote Supabase
-project, export `DATABASE_URL`, `SUPABASE_URL`, and
-`SUPABASE_SERVICE_ROLE_KEY` explicitly before running the same command.
-
-For a mixed collection where some songs have `ChordPro`, some have `MusicXML`,
-and some have both, use the importers in sequence:
+To clear only specific source types from one collection while keeping the songs:
 
 ```bash
-pnpm songs:import-chordpro-catalog -- \
-  --collection LeMont \
-  --namespace lemont \
-  --chordpro-dir /home/lcordey/work/download_for_church_erp/LeMont_ChordPro/chordpro \
-  --pdf-dir /home/lcordey/work/download_for_church_erp/LeMont
-
-pnpm songs:import-musicxml-catalog -- \
-  --collection LeMont \
-  --namespace lemont \
-  --musicxml-dir /home/lcordey/work/download_for_church_erp/LeMont_MusicXML/musicxml \
-  --pdf-dir /home/lcordey/work/download_for_church_erp/LeMont
+pnpm songs:delete-collection -- --collection LeMont --source-type chordpro --source-type musicxml --target local
 ```
-
-The `MusicXML` step attaches scores to already imported songs when it finds a
-match and creates additional published songs with placeholder `ChordPro` only
-for the `MusicXML` files that do not match an existing song.
-
-If a collection must be replaced once before reimporting, delete it explicitly:
-
-```bash
-pnpm songs:delete-collection -- --collection LeMont
-```
-
-This is a manual maintenance command. The regular importers do not delete
-collections automatically.
 
 Never use `drizzle-kit push` for project schema changes. Committed migrations
 must remain the reproducible source of database changes.

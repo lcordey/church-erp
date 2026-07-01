@@ -2,8 +2,12 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 
 import { getDatabase } from "@/src/infrastructure/database/client";
 import {
+  songLabelAssignments,
+  songLabels,
   songs,
   songSources,
+  songThemeAssignments,
+  songThemes,
 } from "@/src/infrastructure/database/schema";
 
 import type {
@@ -23,6 +27,12 @@ import type {
 export class SongSlugConflictError extends Error {
   constructor() {
     super("A song with this slug already exists.");
+  }
+}
+
+export class InvalidSongTaxonomySelectionError extends Error {
+  constructor() {
+    super("One or more selected themes or labels do not exist.");
   }
 }
 
@@ -192,6 +202,8 @@ function toAdminSongListItem(song: AdminSong): AdminSongListItem {
     pdfSource: song.pdfSource,
     musicXmlSource: song.musicXmlSource,
     isEditable: song.isEditable,
+    themes: song.themes,
+    labels: song.labels,
     createdAt: song.createdAt,
     updatedAt: song.updatedAt,
   };
@@ -256,6 +268,109 @@ export function createAdminSongRepository(): AdminSongRepository {
     );
   }
 
+  async function findSongTaxonomies(songIds: string[]) {
+    const themesBySongId = new Map<string, { id: string; name: string }[]>();
+    const labelsBySongId = new Map<string, { id: string; name: string }[]>();
+
+    if (songIds.length === 0) {
+      return { themesBySongId, labelsBySongId };
+    }
+
+    const [themeRows, labelRows] = await Promise.all([
+      database
+        .select({
+          songId: songThemeAssignments.songId,
+          id: songThemes.id,
+          name: songThemes.name,
+        })
+        .from(songThemeAssignments)
+        .innerJoin(songThemes, eq(songThemeAssignments.themeId, songThemes.id))
+        .where(inArray(songThemeAssignments.songId, songIds))
+        .orderBy(asc(songThemes.name)),
+      database
+        .select({
+          songId: songLabelAssignments.songId,
+          id: songLabels.id,
+          name: songLabels.name,
+        })
+        .from(songLabelAssignments)
+        .innerJoin(songLabels, eq(songLabelAssignments.labelId, songLabels.id))
+        .where(inArray(songLabelAssignments.songId, songIds))
+        .orderBy(asc(songLabels.name)),
+    ]);
+
+    for (const row of themeRows) {
+      themesBySongId.set(row.songId, [
+        ...(themesBySongId.get(row.songId) ?? []),
+        { id: row.id, name: row.name },
+      ]);
+    }
+
+    for (const row of labelRows) {
+      labelsBySongId.set(row.songId, [
+        ...(labelsBySongId.get(row.songId) ?? []),
+        { id: row.id, name: row.name },
+      ]);
+    }
+
+    return { themesBySongId, labelsBySongId };
+  }
+
+  async function assertTaxonomySelectionsExist(
+    transaction: Parameters<Parameters<typeof database.transaction>[0]>[0],
+    input: AdminSongInput,
+  ) {
+    const [selectedThemes, selectedLabels] = await Promise.all([
+      input.themeIds.length > 0
+        ? transaction
+            .select({ id: songThemes.id })
+            .from(songThemes)
+            .where(inArray(songThemes.id, input.themeIds))
+        : [],
+      input.labelIds.length > 0
+        ? transaction
+            .select({ id: songLabels.id })
+            .from(songLabels)
+            .where(inArray(songLabels.id, input.labelIds))
+        : [],
+    ]);
+
+    if (
+      selectedThemes.length !== input.themeIds.length ||
+      selectedLabels.length !== input.labelIds.length
+    ) {
+      throw new InvalidSongTaxonomySelectionError();
+    }
+  }
+
+  async function replaceTaxonomyAssignments(
+    transaction: Parameters<Parameters<typeof database.transaction>[0]>[0],
+    songId: string,
+    input: AdminSongInput,
+  ) {
+    await assertTaxonomySelectionsExist(transaction, input);
+    await Promise.all([
+      transaction
+        .delete(songThemeAssignments)
+        .where(eq(songThemeAssignments.songId, songId)),
+      transaction
+        .delete(songLabelAssignments)
+        .where(eq(songLabelAssignments.songId, songId)),
+    ]);
+
+    if (input.themeIds.length > 0) {
+      await transaction.insert(songThemeAssignments).values(
+        input.themeIds.map((themeId) => ({ songId, themeId })),
+      );
+    }
+
+    if (input.labelIds.length > 0) {
+      await transaction.insert(songLabelAssignments).values(
+        input.labelIds.map((labelId) => ({ songId, labelId })),
+      );
+    }
+  }
+
   async function findById(id: string): Promise<AdminSong | null> {
     const rows = await database
       .select(adminSongSelection)
@@ -270,11 +385,16 @@ export function createAdminSongRepository(): AdminSongRepository {
 
     const pdfSources = await findActivePdfSources([rows[0].id]);
     const musicXmlSources = await findActiveMusicXmlSources([rows[0].id]);
+    const { themesBySongId, labelsBySongId } = await findSongTaxonomies([
+      rows[0].id,
+    ]);
 
     return toAdminSong({
       ...rows[0],
       pdfSource: pdfSources.get(rows[0].id) ?? null,
       musicXmlSource: musicXmlSources.get(rows[0].id) ?? null,
+      themes: themesBySongId.get(rows[0].id) ?? [],
+      labels: labelsBySongId.get(rows[0].id) ?? [],
     });
   }
 
@@ -293,6 +413,9 @@ export function createAdminSongRepository(): AdminSongRepository {
       const musicXmlSources = await findActiveMusicXmlSources(
         rows.map((row) => row.id),
       );
+      const { themesBySongId, labelsBySongId } = await findSongTaxonomies(
+        rows.map((row) => row.id),
+      );
 
       return rows
         .map((row) =>
@@ -300,6 +423,8 @@ export function createAdminSongRepository(): AdminSongRepository {
             ...row,
             pdfSource: pdfSources.get(row.id) ?? null,
             musicXmlSource: musicXmlSources.get(row.id) ?? null,
+            themes: themesBySongId.get(row.id) ?? [],
+            labels: labelsBySongId.get(row.id) ?? [],
           }),
         )
         .map(toAdminSongListItem);
@@ -328,6 +453,11 @@ export function createAdminSongRepository(): AdminSongRepository {
             status: "active",
             textContent: input.chordProContent,
           });
+          await replaceTaxonomyAssignments(
+            transaction,
+            createdSong.id,
+            input,
+          );
 
           return createdSong.id;
         });
@@ -375,6 +505,7 @@ export function createAdminSongRepository(): AdminSongRepository {
               updatedAt: new Date(),
             })
             .where(and(eq(songSources.songId, id), activeChordPro));
+          await replaceTaxonomyAssignments(transaction, id, input);
 
           return true;
         });

@@ -7,12 +7,14 @@ import type {
   PublicSongCatalogResults,
 } from "../types/public-song";
 
-type QueryChangeReason = "collection" | "search";
+type QueryChangeReason = "filter" | "search";
 
 type UseSongCatalogQueryOptions = {
   initialCatalog: PublicSongCatalogPage;
   initialCollections?: string[];
   initialSearch?: string;
+  initialThemeIds?: string[];
+  initialLabelIds?: string[];
   loadOnMount?: boolean;
   syncUrl?: boolean;
 };
@@ -37,6 +39,8 @@ function normalizeCollections(collections: string[]): string[] {
 
 function createQueryKey(options: {
   collections: string[];
+  themeIds: string[];
+  labelIds: string[];
   limit: number;
   offset: number;
   search: string;
@@ -44,6 +48,8 @@ function createQueryKey(options: {
   return JSON.stringify({
     search: options.search.trim(),
     collections: normalizeCollections(options.collections),
+    themeIds: normalizeCollections(options.themeIds),
+    labelIds: normalizeCollections(options.labelIds),
     limit: options.limit,
     offset: options.offset,
   });
@@ -67,6 +73,8 @@ function mergeSongs<
 
 async function fetchCatalog(options: {
   collections: string[];
+  themeIds: string[];
+  labelIds: string[];
   includeCollections?: boolean;
   limit: number;
   offset: number;
@@ -82,6 +90,14 @@ async function fetchCatalog(options: {
 
   if (options.collections.length > 0) {
     url.searchParams.set("collections", options.collections.join(","));
+  }
+
+  if (options.themeIds.length > 0) {
+    url.searchParams.set("themes", options.themeIds.join(","));
+  }
+
+  if (options.labelIds.length > 0) {
+    url.searchParams.set("labels", options.labelIds.join(","));
   }
 
   url.searchParams.set("limit", String(options.limit));
@@ -118,6 +134,8 @@ export function useSongCatalogQuery({
   initialCatalog,
   initialCollections,
   initialSearch = "",
+  initialThemeIds = [],
+  initialLabelIds = [],
   loadOnMount = false,
   syncUrl = true,
 }: UseSongCatalogQueryOptions) {
@@ -132,6 +150,8 @@ export function useSongCatalogQuery({
       : [];
   const initialKey = createQueryKey({
     collections: initialSelectedCollections,
+    themeIds: initialThemeIds,
+    labelIds: initialLabelIds,
     limit: pageSize,
     offset: 0,
     search: initialSearch,
@@ -140,10 +160,14 @@ export function useSongCatalogQuery({
   const [availableCollections, setAvailableCollections] = useState(
     initialCatalog.collections,
   );
+  const [availableThemes, setAvailableThemes] = useState(initialCatalog.themes);
+  const [availableLabels, setAvailableLabels] = useState(initialCatalog.labels);
   const [search, setSearch] = useState(initialSearch);
   const [selectedCollections, setSelectedCollections] = useState<string[]>(
     () => initialSelectedCollections,
   );
+  const [selectedThemeIds, setSelectedThemeIds] = useState(initialThemeIds);
+  const [selectedLabelIds, setSelectedLabelIds] = useState(initialLabelIds);
   const [isFetching, setIsFetching] = useState(loadOnMount);
   const [isInitialLoading, setIsInitialLoading] = useState(loadOnMount);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -159,6 +183,8 @@ export function useSongCatalogQuery({
   const hasLoadedCatalog = useRef(!loadOnMount);
   const hasLoadedCollections = useRef(!loadOnMount);
   const availableCollectionsRef = useRef(initialCatalog.collections);
+  const availableThemesRef = useRef(initialCatalog.themes);
+  const availableLabelsRef = useRef(initialCatalog.labels);
   const replacementRequestId = useRef(0);
   const replacementController = useRef<AbortController | null>(null);
   const activeQueryKey = useRef(initialKey);
@@ -184,8 +210,26 @@ export function useSongCatalogQuery({
       url.searchParams.delete("collections");
     }
 
+    if (selectedThemeIds.length > 0) {
+      url.searchParams.set("themes", selectedThemeIds.join(","));
+    } else {
+      url.searchParams.delete("themes");
+    }
+
+    if (selectedLabelIds.length > 0) {
+      url.searchParams.set("labels", selectedLabelIds.join(","));
+    } else {
+      url.searchParams.delete("labels");
+    }
+
     window.history.replaceState(null, "", `${url.pathname}${url.search}`);
-  }, [search, selectedCollections, syncUrl]);
+  }, [
+    search,
+    selectedCollections,
+    selectedThemeIds,
+    selectedLabelIds,
+    syncUrl,
+  ]);
 
   useEffect(() => {
     const isFirstRun = !hasMounted.current;
@@ -201,6 +245,8 @@ export function useSongCatalogQuery({
     const normalizedSearch = search.trim();
     const key = createQueryKey({
       collections: selectedCollections,
+      themeIds: selectedThemeIds,
+      labelIds: selectedLabelIds,
       limit: pageSize,
       offset: 0,
       search: normalizedSearch,
@@ -223,6 +269,8 @@ export function useSongCatalogQuery({
 
       void fetchCatalog({
         collections: selectedCollections,
+        themeIds: selectedThemeIds,
+        labelIds: selectedLabelIds,
         includeCollections,
         limit: pageSize,
         offset: 0,
@@ -240,17 +288,32 @@ export function useSongCatalogQuery({
           const nextCollections = hasCollections(nextCatalogResponse)
             ? nextCatalogResponse.collections
             : availableCollectionsRef.current;
+          const nextThemes = hasCollections(nextCatalogResponse)
+            ? nextCatalogResponse.themes
+            : availableThemesRef.current;
+          const nextLabels = hasCollections(nextCatalogResponse)
+            ? nextCatalogResponse.labels
+            : availableLabelsRef.current;
           const nextCatalog = toCatalogResults(nextCatalogResponse);
 
           if (hasCollections(nextCatalogResponse)) {
             hasLoadedCollections.current = true;
             availableCollectionsRef.current = nextCollections;
             setAvailableCollections(nextCollections);
+            availableThemesRef.current = nextThemes;
+            availableLabelsRef.current = nextLabels;
+            setAvailableThemes(nextThemes);
+            setAvailableLabels(nextLabels);
           }
 
           hasLoadedCatalog.current = true;
           cache.set(key, nextCatalog);
-          setCatalog({ ...nextCatalog, collections: nextCollections });
+          setCatalog({
+            ...nextCatalog,
+            collections: nextCollections,
+            themes: nextThemes,
+            labels: nextLabels,
+          });
         })
         .catch((error: unknown) => {
           if (error instanceof DOMException && error.name === "AbortError") {
@@ -290,12 +353,21 @@ export function useSongCatalogQuery({
     refreshVersion,
     search,
     selectedCollections,
+    selectedThemeIds,
+    selectedLabelIds,
   ]);
 
-  function applyCachedCatalog(nextSearch: string, nextCollections: string[]) {
+  function applyCachedCatalog(
+    nextSearch: string,
+    nextCollections: string[],
+    nextThemeIds: string[],
+    nextLabelIds: string[],
+  ) {
     const cached = cache.get(
       createQueryKey({
         collections: nextCollections,
+        themeIds: nextThemeIds,
+        labelIds: nextLabelIds,
         limit: pageSize,
         offset: 0,
         search: nextSearch,
@@ -306,24 +378,67 @@ export function useSongCatalogQuery({
       setCatalog({
         ...cached,
         collections: availableCollectionsRef.current,
+        themes: availableThemesRef.current,
+        labels: availableLabelsRef.current,
       });
     }
   }
 
   function updateSearch(value: string) {
     changeReason.current = "search";
-    applyCachedCatalog(value, selectedCollections);
+    applyCachedCatalog(
+      value,
+      selectedCollections,
+      selectedThemeIds,
+      selectedLabelIds,
+    );
     setSearch(value);
   }
 
   function toggleCollection(collection: string) {
-    changeReason.current = "collection";
+    changeReason.current = "filter";
     const nextCollections = selectedCollections.includes(collection)
       ? selectedCollections.filter((item) => item !== collection)
       : [...selectedCollections, collection];
 
-    applyCachedCatalog(search, nextCollections);
+    applyCachedCatalog(
+      search,
+      nextCollections,
+      selectedThemeIds,
+      selectedLabelIds,
+    );
     setSelectedCollections(nextCollections);
+  }
+
+  function toggleTaxonomy(kind: "theme" | "label", id: string) {
+    changeReason.current = "filter";
+
+    if (kind === "theme") {
+      const nextIds = selectedThemeIds.includes(id)
+        ? selectedThemeIds.filter((currentId) => currentId !== id)
+        : [...selectedThemeIds, id];
+
+      applyCachedCatalog(
+        search,
+        selectedCollections,
+        nextIds,
+        selectedLabelIds,
+      );
+      setSelectedThemeIds(nextIds);
+      return;
+    }
+
+    const nextIds = selectedLabelIds.includes(id)
+      ? selectedLabelIds.filter((currentId) => currentId !== id)
+      : [...selectedLabelIds, id];
+
+    applyCachedCatalog(
+      search,
+      selectedCollections,
+      selectedThemeIds,
+      nextIds,
+    );
+    setSelectedLabelIds(nextIds);
   }
 
   async function loadMore() {
@@ -335,12 +450,16 @@ export function useSongCatalogQuery({
     const normalizedSearch = search.trim();
     const baseKey = createQueryKey({
       collections: selectedCollections,
+      themeIds: selectedThemeIds,
+      labelIds: selectedLabelIds,
       limit: pageSize,
       offset: 0,
       search: normalizedSearch,
     });
     const key = createQueryKey({
       collections: selectedCollections,
+      themeIds: selectedThemeIds,
+      labelIds: selectedLabelIds,
       limit: pageSize,
       offset,
       search: normalizedSearch,
@@ -355,6 +474,8 @@ export function useSongCatalogQuery({
         cached ??
         (await fetchCatalog({
           collections: selectedCollections,
+          themeIds: selectedThemeIds,
+          labelIds: selectedLabelIds,
           limit: pageSize,
           offset,
           search: normalizedSearch,
@@ -370,6 +491,8 @@ export function useSongCatalogQuery({
       setCatalog((current) => ({
         ...nextResults,
         collections: availableCollectionsRef.current,
+        themes: availableThemesRef.current,
+        labels: availableLabelsRef.current,
         songs: mergeSongs(current.songs, nextResults.songs),
       }));
     } catch (error) {
@@ -384,12 +507,14 @@ export function useSongCatalogQuery({
   }
 
   function retry() {
-    changeReason.current = "collection";
+    changeReason.current = "filter";
     setRefreshVersion((current) => current + 1);
   }
 
   return {
     availableCollections,
+    availableThemes,
+    availableLabels,
     catalog,
     errorMessage,
     isFetching,
@@ -398,8 +523,11 @@ export function useSongCatalogQuery({
     loadMore,
     search,
     selectedCollections,
+    selectedThemeIds,
+    selectedLabelIds,
     retry,
     toggleCollection,
+    toggleTaxonomy,
     updateSearch,
   };
 }

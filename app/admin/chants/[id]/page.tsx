@@ -4,6 +4,7 @@ import { AppTopBar } from "@/src/components/app-top-bar";
 import { getCurrentActor } from "@/src/infrastructure/auth/require-admin";
 import { AdminSongForm } from "@/src/modules/songs/components/admin-song-form";
 import { getAdminSong } from "@/src/modules/songs/services/admin-song-management";
+import { listAdminSongTaxonomies } from "@/src/modules/songs/services/song-taxonomy-management";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,10 @@ export default async function AdminSongPage({ params }: AdminSongPageProps) {
     redirect(`/login?redirectTo=${encodeURIComponent(`/admin/chants/${id}`)}`);
   }
 
-  const song = await getAdminSong(id);
+  const [song, taxonomies] = await Promise.all([
+    getAdminSong(id),
+    listAdminSongTaxonomies(),
+  ]);
 
   if (!song) {
     notFound();
@@ -33,7 +37,7 @@ export default async function AdminSongPage({ params }: AdminSongPageProps) {
           backLabel="Retour au répertoire"
           mode="admin"
         />
-        <AdminSongForm song={song} />
+        <AdminSongForm availableTaxonomies={taxonomies} song={song} />
       </div>
     </main>
   );

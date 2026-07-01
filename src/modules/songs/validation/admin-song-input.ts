@@ -7,7 +7,9 @@ export type AdminSongField =
   | "author"
   | "copyright"
   | "defaultKey"
-  | "chordProContent";
+  | "chordProContent"
+  | "themeIds"
+  | "labelIds";
 
 export type AdminSongValidationErrors = Partial<
   Record<AdminSongField, string>
@@ -23,6 +25,8 @@ const frenchChordRootPattern =
   /^(do|re|ré|mi|fa|sol|la|si)(?:[^a-zA-ZÀ-ÿ]|$)/i;
 const supportedChordPartPattern = /^[A-G][#b]?[a-zA-Z0-9#b()+-]*$/;
 const supportedChordCharacterPattern = /^[A-Za-z0-9#b()+-]$/;
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type InvalidChord = {
   chord: string;
@@ -90,6 +94,36 @@ function findInvalidChord(content: string): InvalidChord | null {
   return null;
 }
 
+function taxonomyIds(
+  value: unknown,
+  field: "themeIds" | "labelIds",
+  errors: AdminSongValidationErrors,
+): string[] {
+  if (value === undefined) {
+    return [];
+  }
+
+  if (!Array.isArray(value)) {
+    errors[field] = "La sélection est invalide.";
+    return [];
+  }
+
+  const ids = Array.from(
+    new Set(value.filter((item): item is string => typeof item === "string")),
+  );
+
+  if (
+    value.length > 50 ||
+    value.some((id) => typeof id !== "string") ||
+    ids.some((id) => !uuidPattern.test(id))
+  ) {
+    errors[field] = "La sélection est invalide.";
+    return [];
+  }
+
+  return ids;
+}
+
 export function validateAdminSongInput(
   input: unknown,
 ): AdminSongValidationResult {
@@ -110,6 +144,8 @@ export function validateAdminSongInput(
       : "";
   const defaultKey = optionalText(values.defaultKey);
   const errors: AdminSongValidationErrors = {};
+  const themeIds = taxonomyIds(values.themeIds, "themeIds", errors);
+  const labelIds = taxonomyIds(values.labelIds, "labelIds", errors);
 
   if (!title) {
     errors.title = "Le titre est obligatoire.";
@@ -154,6 +190,8 @@ export function validateAdminSongInput(
       copyright: optionalText(values.copyright),
       defaultKey,
       chordProContent,
+      themeIds,
+      labelIds,
     },
   };
 }

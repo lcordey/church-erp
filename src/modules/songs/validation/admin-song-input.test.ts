@@ -21,6 +21,8 @@ describe("validateAdminSongInput", () => {
         copyright: "© Exemple",
         defaultKey: null,
         chordProContent: "[C]Paroles",
+        themeIds: [],
+        labelIds: [],
       },
     });
   });
@@ -113,6 +115,26 @@ describe("validateAdminSongInput", () => {
 
     expect(result).toMatchObject({
       success: true,
+    });
+  });
+
+  it("normalizes unique theme and label selections", () => {
+    const themeId = "11111111-1111-4111-8111-111111111111";
+    const labelId = "22222222-2222-4222-8222-222222222222";
+    const result = validateAdminSongInput({
+      title: "Mon chant",
+      slug: "mon-chant",
+      chordProContent: "[C]Paroles",
+      themeIds: [themeId, themeId],
+      labelIds: [labelId],
+    });
+
+    expect(result).toEqual({
+      success: true,
+      data: expect.objectContaining({
+        themeIds: [themeId],
+        labelIds: [labelId],
+      }),
     });
   });
 });

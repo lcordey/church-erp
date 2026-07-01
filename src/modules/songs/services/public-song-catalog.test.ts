@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type {
   PublishedSongCollectionRepository,
@@ -117,6 +117,9 @@ function createCollectionRepository(
         ),
       ) as string[];
     },
+    async listPublishedTaxonomies() {
+      return { themes: [], labels: [] };
+    },
   };
 }
 
@@ -188,12 +191,37 @@ describe("public song catalog", () => {
     expect(catalog.limit).toBe(50);
   });
 
+  it("combines theme and label filters", async () => {
+    const themeId = "33333333-3333-4333-8333-333333333333";
+    const labelId = "44444444-4444-4444-8444-444444444444";
+    const repository = createRepository([publishedSong]);
+    const listPublished = vi.spyOn(repository, "listPublished");
+
+    await listPublicSongResults(
+      {
+        themeIds: [themeId],
+        labelIds: [labelId],
+      },
+      repository,
+    );
+
+    expect(listPublished).toHaveBeenCalledWith(
+      expect.objectContaining({
+        themeIds: [themeId],
+        labelIds: [labelId],
+      }),
+    );
+  });
+
   it("keeps collection lookup out of paginated result queries", async () => {
     let collectionQueryCount = 0;
     const collectionRepository: PublishedSongCollectionRepository = {
       async listPublishedCollections() {
         collectionQueryCount += 1;
         return ["JEM"];
+      },
+      async listPublishedTaxonomies() {
+        return { themes: [], labels: [] };
       },
     };
 

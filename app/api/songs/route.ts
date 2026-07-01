@@ -23,6 +23,13 @@ function parseCollections(value: string | null): string[] {
     : [];
 }
 
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function parseIds(value: string | null): string[] {
+  return parseCollections(value).filter((id) => uuidPattern.test(id));
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const query = {
@@ -33,6 +40,8 @@ export async function GET(request: Request) {
     ),
     offset: parsePositiveInteger(url.searchParams.get("offset"), 0),
     search: url.searchParams.get("q") ?? "",
+    themeIds: parseIds(url.searchParams.get("themes")),
+    labelIds: parseIds(url.searchParams.get("labels")),
   };
   const includeCollections =
     url.searchParams.get("includeCollections") === "true";

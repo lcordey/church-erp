@@ -24,6 +24,8 @@ The goal is to stabilize the model before writing migrations.
 - Binary assets must live in storage, not in PostgreSQL rows.
 - Official external catalog entries can be stored locally as read-only songs
   with source URLs preserved for provenance.
+- Themes and labels are separate managed vocabularies with many-to-many song
+  relationships.
 
 ## Entity: `songs`
 
@@ -204,6 +206,28 @@ Reasoning:
 
 MVP-1 will mostly use `active`, but this state is cheap to include now.
 
+## Entities: `song_themes` and `song_labels`
+
+Each table represents one administrable vocabulary:
+- a theme describes worship or liturgical content
+- a label represents an internal list such as favorites, a youth group, or a camp
+
+Both tables contain:
+- `id` as UUID primary key
+- `name` as required display text
+- `created_at` and `updated_at`
+
+Names are unique case-insensitively inside their own vocabulary.
+
+## Entities: `song_theme_assignments` and `song_label_assignments`
+
+These join tables model the two independent many-to-many relationships.
+Each row contains a `song_id`, a theme or label ID, and `created_at`.
+
+A song may have zero, one, or many themes and independently zero, one, or many
+labels. Deleting a song, theme, or label cascades only to the corresponding join
+rows.
+
 ## Relationship Direction
 
 The foreign key lives on `song_sources.song_id`, not on `songs`.
@@ -215,6 +239,11 @@ Reason:
 - it makes joins, filtering, and cascading deletes straightforward
 
 This is the correct relational shape for the current need.
+
+The same normalized direction applies to classifications:
+- `song_theme_assignments.song_id` and `.theme_id` form one unique pair
+- `song_label_assignments.song_id` and `.label_id` form one unique pair
+- no array of IDs or names is stored on `songs`
 
 ## SQL Constraints
 
@@ -270,6 +299,8 @@ Recommended indexes:
 - official songs keep locked provenance metadata while remaining editable for adapted content
 - search in MVP-1 covers title and collection number
 - the public catalog can be filtered by collection through fixed checkbox options
+- the public catalog can be filtered by managed themes and labels
+- theme and label selections are validated at the server boundary
 
 ### Song source rules
 
@@ -290,7 +321,6 @@ Recommended indexes:
 
 The following are intentionally postponed:
 - multiple authors through a dedicated table
-- tags or themes
 - revision history
 - generated-source lineage such as ChordPro to PDF
 - translation tables for song content

@@ -52,6 +52,8 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 - snapshot local de recueils JEMAF regenerable puis rejouable hors ligne
 - recherche simple par titre ou numero de recueil
 - filtre du catalogue par recueil via cases a cocher
+- themes et labels administrables, associables en nombre quelconque aux chants
+- filtres du catalogue par theme et label
 - collection locale temporaire `LeMont` pour les chants propres a l'eglise
 - recherche fluide cote client sur la page catalogue
 - notation musicale anglaise ou francaise
@@ -118,6 +120,8 @@ Livre :
 - copyright, numero de recueil, URL officielle et verrouillage partiel des metadonnees de provenance pour les chants officiels JEMAF
 - recherche publique par titre ou numero de recueil
 - filtre public par recueil, incluant les recueils JEMAF importes et `LeMont`
+- filtres publics par theme et label
+- administration des referentiels de themes et labels et associations aux chants
 - creation admin assignee automatiquement a la collection `LeMont`
 - donnees de seed composees d'un snapshot local du catalogue public JEMAF et de chants locaux editables `LeMont`
 - partition PDF optionnelle stockee dans Supabase Storage et servie par route backend

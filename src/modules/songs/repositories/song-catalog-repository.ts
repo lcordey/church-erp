@@ -1,9 +1,23 @@
-import { and, asc, count, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  eq,
+  exists,
+  ilike,
+  inArray,
+  or,
+  sql,
+} from "drizzle-orm";
 
 import { getDatabase } from "@/src/infrastructure/database/client";
 import {
+  songLabelAssignments,
+  songLabels,
   songs,
   songSources,
+  songThemeAssignments,
+  songThemes,
 } from "@/src/infrastructure/database/schema";
 
 import type {
@@ -21,6 +35,8 @@ type SongCatalogListOptions = {
   limit?: number;
   offset?: number;
   search?: string;
+  themeIds?: string[];
+  labelIds?: string[];
 };
 
 export function getSongCatalogIdentifierSearch(
@@ -49,6 +65,10 @@ export interface SongCatalogRepository {
 
 export interface PublishedSongCollectionRepository {
   listPublishedCollections(): Promise<string[]>;
+  listPublishedTaxonomies(): Promise<{
+    themes: { id: string; name: string }[];
+    labels: { id: string; name: string }[];
+  }>;
 }
 
 const listSelection = {
@@ -250,6 +270,8 @@ export function createSongCatalogRepository(): SongCatalogRepository {
       ? getSongCatalogIdentifierSearch(normalizedSearch)
       : null;
     const selectedCollections = options?.collections?.filter(Boolean) ?? [];
+    const selectedThemeIds = options?.themeIds?.filter(Boolean) ?? [];
+    const selectedLabelIds = options?.labelIds?.filter(Boolean) ?? [];
     const searchCondition = normalizedSearch
       ? or(
           accentInsensitiveTitleSearch
@@ -281,8 +303,42 @@ export function createSongCatalogRepository(): SongCatalogRepository {
       selectedCollections.length > 0
         ? inArray(songs.collection, selectedCollections)
         : undefined;
+    const themeCondition =
+      selectedThemeIds.length > 0
+        ? exists(
+            database
+              .select({ value: sql`1` })
+              .from(songThemeAssignments)
+              .where(
+                and(
+                  eq(songThemeAssignments.songId, songs.id),
+                  inArray(songThemeAssignments.themeId, selectedThemeIds),
+                ),
+              ),
+          )
+        : undefined;
+    const labelCondition =
+      selectedLabelIds.length > 0
+        ? exists(
+            database
+              .select({ value: sql`1` })
+              .from(songLabelAssignments)
+              .where(
+                and(
+                  eq(songLabelAssignments.songId, songs.id),
+                  inArray(songLabelAssignments.labelId, selectedLabelIds),
+                ),
+              ),
+          )
+        : undefined;
 
-    return and(publishedSongCondition, searchCondition, collectionCondition);
+    return and(
+      publishedSongCondition,
+      searchCondition,
+      collectionCondition,
+      themeCondition,
+      labelCondition,
+    );
   }
 
   return {
@@ -408,7 +464,6 @@ export function createSongCatalogRepository(): SongCatalogRepository {
 
       const pdfSources = await findActivePdfSources([rows[0].id]);
       const musicXmlSources = await findActiveMusicXmlSources([rows[0].id]);
-
       return toCatalogRecord({
         ...rows[0],
         pdfSource: pdfSources.get(rows[0].id) ?? null,
@@ -466,6 +521,35 @@ export function createPublishedSongCollectionRepository(): PublishedSongCollecti
       return collectionRows
         .map((row) => row.collection)
         .filter((collection): collection is string => Boolean(collection));
+    },
+
+    async listPublishedTaxonomies() {
+      const [themes, labels] = await Promise.all([
+        database
+          .selectDistinct({ id: songThemes.id, name: songThemes.name })
+          .from(songThemes)
+          .innerJoin(
+            songThemeAssignments,
+            eq(songThemeAssignments.themeId, songThemes.id),
+          )
+          .innerJoin(songs, eq(songThemeAssignments.songId, songs.id))
+          .innerJoin(songSources, eq(songSources.songId, songs.id))
+          .where(publishedSongCondition)
+          .orderBy(asc(songThemes.name)),
+        database
+          .selectDistinct({ id: songLabels.id, name: songLabels.name })
+          .from(songLabels)
+          .innerJoin(
+            songLabelAssignments,
+            eq(songLabelAssignments.labelId, songLabels.id),
+          )
+          .innerJoin(songs, eq(songLabelAssignments.songId, songs.id))
+          .innerJoin(songSources, eq(songSources.songId, songs.id))
+          .where(publishedSongCondition)
+          .orderBy(asc(songLabels.name)),
+      ]);
+
+      return { themes, labels };
     },
   };
 }

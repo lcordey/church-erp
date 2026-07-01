@@ -9,6 +9,7 @@ import {
   getPublicSongNavigation,
 } from "@/src/modules/songs/services/public-song-catalog";
 import { getLoginHref } from "@/src/shared/navigation/login-redirect";
+import { listAdminSongTaxonomies } from "@/src/modules/songs/services/song-taxonomy-management";
 
 export const dynamic = "force-dynamic";
 
@@ -52,11 +53,17 @@ export default async function SongPage({ params, searchParams }: SongPageProps) 
     notFound();
   }
 
-  const adminSong = isAuthenticated ? await getAdminSong(song.id) : null;
+  const [adminSong, availableTaxonomies] = isAuthenticated
+    ? await Promise.all([
+        getAdminSong(song.id),
+        listAdminSongTaxonomies(),
+      ])
+    : [null, { themes: [], labels: [] }];
 
   return (
     <SongPageWorkspace
       adminSong={adminSong}
+      availableTaxonomies={availableTaxonomies}
       backHref={backHref}
       canAccessScores={isAuthenticated}
       isAuthenticated={isAuthenticated}
