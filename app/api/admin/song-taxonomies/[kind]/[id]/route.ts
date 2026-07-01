@@ -2,7 +2,6 @@ import { songTaxonomyErrorResponse } from "@/src/modules/songs/http/song-taxonom
 import {
   deleteSongTaxonomyItem,
   parseSongTaxonomyKind,
-  updateSongTaxonomyItem,
 } from "@/src/modules/songs/services/song-taxonomy-management";
 
 type RouteContext = {
@@ -21,26 +20,6 @@ function notFoundResponse() {
     { error: { code: "TAXONOMY_NOT_FOUND", message: "Élément introuvable." } },
     { status: 404 },
   );
-}
-
-export async function PUT(request: Request, { params }: RouteContext) {
-  const { kind: kindValue, id } = await params;
-  const kind = parseSongTaxonomyKind(kindValue);
-
-  if (!kind) {
-    return invalidKindResponse();
-  }
-
-  const input = (await request.json().catch(() => null)) as {
-    name?: unknown;
-  } | null;
-
-  try {
-    const item = await updateSongTaxonomyItem(kind, id, input?.name);
-    return item ? Response.json({ data: item }) : notFoundResponse();
-  } catch (error) {
-    return songTaxonomyErrorResponse(error);
-  }
 }
 
 export async function DELETE(_request: Request, { params }: RouteContext) {

@@ -58,16 +58,6 @@ export async function createSongTaxonomyItem(
   return repository.create(kind, normalizeName(name));
 }
 
-export async function updateSongTaxonomyItem(
-  kind: SongTaxonomyKind,
-  id: string,
-  name: unknown,
-  repository: SongTaxonomyRepository = createSongTaxonomyRepository(),
-): Promise<SongTaxonomyItem | null> {
-  await requireAdminAccess();
-  return repository.update(kind, id, normalizeName(name));
-}
-
 export async function deleteSongTaxonomyItem(
   kind: SongTaxonomyKind,
   id: string,

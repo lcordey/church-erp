@@ -119,8 +119,15 @@ export function SongRenderPreferencesControls({
 
   function handleDragStart(
     source: SongSourceView,
-    event: DragEvent<HTMLButtonElement>,
+    event: DragEvent<HTMLElement>,
   ) {
+    if (
+      event.target instanceof HTMLElement &&
+      event.target.closest("button")
+    ) {
+      return;
+    }
+
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", source);
     setDraggedSource(source);
@@ -148,9 +155,16 @@ export function SongRenderPreferencesControls({
 
   function handlePointerDown(
     source: SongSourceView,
-    event: PointerEvent<HTMLButtonElement>,
+    event: PointerEvent<HTMLElement>,
   ) {
     if (event.pointerType === "mouse") {
+      return;
+    }
+
+    if (
+      event.target instanceof HTMLElement &&
+      event.target.closest("button")
+    ) {
       return;
     }
 
@@ -162,7 +176,7 @@ export function SongRenderPreferencesControls({
 
   function handlePointerMove(
     source: SongSourceView,
-    event: PointerEvent<HTMLButtonElement>,
+    event: PointerEvent<HTMLElement>,
   ) {
     if (event.pointerType === "mouse" || draggedSource !== source) {
       return;
@@ -174,7 +188,7 @@ export function SongRenderPreferencesControls({
 
   function handlePointerUp(
     source: SongSourceView,
-    event: PointerEvent<HTMLButtonElement>,
+    event: PointerEvent<HTMLElement>,
   ) {
     if (event.pointerType === "mouse" || draggedSource !== source) {
       return;
@@ -249,9 +263,16 @@ export function SongRenderPreferencesControls({
                     .filter(Boolean)
                     .join(" ")}
                   data-song-source-priority={source}
+                  draggable
                   key={source}
+                  onDragEnd={clearDragState}
+                  onDragStart={(event) => handleDragStart(source, event)}
                   onDragOver={(event) => handleDragOver(source, event)}
                   onDrop={(event) => handleDrop(source, event)}
+                  onPointerCancel={clearDragState}
+                  onPointerDown={(event) => handlePointerDown(source, event)}
+                  onPointerMove={(event) => handlePointerMove(source, event)}
+                  onPointerUp={(event) => handlePointerUp(source, event)}
                   role="listitem"
                 >
                   <div className="song-render-preferences__priority-main">
@@ -265,20 +286,6 @@ export function SongRenderPreferencesControls({
                   </div>
 
                   <div className="song-render-preferences__priority-actions">
-                    <button
-                      aria-label={`Glisser ${sourceLabels[source]}`}
-                      className="song-render-preferences__priority-button song-render-preferences__drag-handle"
-                      draggable
-                      onDragEnd={clearDragState}
-                      onDragStart={(event) => handleDragStart(source, event)}
-                      onPointerCancel={clearDragState}
-                      onPointerDown={(event) => handlePointerDown(source, event)}
-                      onPointerMove={(event) => handlePointerMove(source, event)}
-                      onPointerUp={(event) => handlePointerUp(source, event)}
-                      type="button"
-                    >
-                      Glisser
-                    </button>
                     <button
                       aria-label={`Monter ${sourceLabels[source]}`}
                       className="song-render-preferences__priority-button"
@@ -304,8 +311,8 @@ export function SongRenderPreferencesControls({
               ))}
             </div>
             <p className="song-render-preferences__priority-help">
-              Astuce: sur mobile, maintenez le bouton &quot;Glisser&quot;, puis
-              déplacez la carte. Les boutons Monter et Descendre restent
+              Astuce: fais glisser la carte directement. Sur mobile, maintiens
+              la carte puis déplace-la. Les boutons Monter et Descendre restent
               disponibles.
             </p>
           </div>

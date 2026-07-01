@@ -14,7 +14,7 @@ import {
 import { hasChordProChords } from "../services/chordpro";
 import { SongPdfViewer } from "./song-pdf-viewer";
 import {
-  resolvePreferredSongSource,
+  resolveSongSourceView,
   type SongSourceView,
 } from "./song-render-preferences";
 import {
@@ -95,29 +95,32 @@ export function SongDetailView({
   canAccessScores = false,
 }: SongDetailViewProps) {
   const containerRef = useRef<HTMLElement>(null);
-  const { preferences } = useSongRenderPreferences();
-  const hasChords = hasChordProChords(song.chordProContent);
-  const availableSources = useMemo(
-    () =>
-      [
-        "lyrics",
-        ...(hasChords ? (["chordpro"] as const) : []),
-        ...(canAccessScores && song.pdfSource ? (["pdf"] as const) : []),
-        ...(canAccessScores && song.musicXmlSource
-          ? (["musicxml"] as const)
-          : []),
-      ] satisfies SongSourceView[],
-    [canAccessScores, hasChords, song.musicXmlSource, song.pdfSource],
-  );
-  const [sourceView, setSourceView] = useState<SongSourceView>(() =>
-    resolvePreferredSongSource(preferences.sourcePriority, availableSources),
+  const {
+    currentSourceView,
+    preferences,
+    setCurrentSourceView,
+  } = useSongRenderPreferences();
+  const hasLyrics = Boolean(song.chordProContent?.trim());
+  const hasChords = hasLyrics && hasChordProChords(song.chordProContent ?? "");
+  const availableSources = useMemo<SongSourceView[]>(
+    () => [
+      ...(hasLyrics ? (["lyrics"] as const) : []),
+      ...(hasChords ? (["chordpro"] as const) : []),
+      ...(canAccessScores && song.pdfSource ? (["pdf"] as const) : []),
+      ...(canAccessScores && song.musicXmlSource
+        ? (["musicxml"] as const)
+        : []),
+    ],
+    [canAccessScores, hasChords, hasLyrics, song.musicXmlSource, song.pdfSource],
   );
   const resolvedSourceView = useMemo(
     () =>
-      availableSources.includes(sourceView)
-        ? sourceView
-        : resolvePreferredSongSource(preferences.sourcePriority, availableSources),
-    [availableSources, preferences.sourcePriority, sourceView],
+      resolveSongSourceView(
+        currentSourceView,
+        preferences.sourcePriority,
+        availableSources,
+      ),
+    [availableSources, currentSourceView, preferences.sourcePriority],
   );
   const collectionLabel = formatSongCollectionLabel(
     song.collection,
@@ -129,6 +132,12 @@ export function SongDetailView({
   const [areDetailsVisible, setAreDetailsVisible] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isFocusExitVisible, setIsFocusExitVisible] = useState(false);
+
+  useEffect(() => {
+    if (currentSourceView !== resolvedSourceView) {
+      setCurrentSourceView(resolvedSourceView);
+    }
+  }, [currentSourceView, resolvedSourceView, setCurrentSourceView]);
 
   useEffect(() => {
     function handleFullscreenChange() {
@@ -238,7 +247,7 @@ export function SongDetailView({
             <select
               id={`song-source-${song.id}`}
               onChange={(event) => {
-                setSourceView(
+                setCurrentSourceView(
                   event.target.value as
                     | "chordpro"
                     | "lyrics"
@@ -399,7 +408,7 @@ export function SongDetailView({
         ) : (
           <TransposableSongSheet
             ref={textViewerRef}
-            content={song.chordProContent}
+            content={song.chordProContent ?? ""}
             copyright={song.copyright}
             defaultKey={song.defaultKey}
             displayMode={

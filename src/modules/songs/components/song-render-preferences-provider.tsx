@@ -12,18 +12,24 @@ import {
   readSongRenderPreferences,
   songRenderPreferenceChangeEvent,
   songRenderPreferenceStorageKey,
+  type SongSourceView,
   type SongRenderPreferences,
 } from "./song-render-preferences";
+import { useState } from "react";
 
 type SongRenderPreferencesContextValue = {
+  currentSourceView: SongSourceView | null;
   preferences: SongRenderPreferences;
+  setCurrentSourceView: (next: SongSourceView) => void;
   resetPreferences: () => void;
   setPreferences: (next: Partial<SongRenderPreferences>) => void;
 };
 
 const SongRenderPreferencesContext =
   createContext<SongRenderPreferencesContextValue>({
+    currentSourceView: null,
     preferences: defaultSongRenderPreferences,
+    setCurrentSourceView: () => undefined,
     resetPreferences: () => undefined,
     setPreferences: () => undefined,
   });
@@ -69,6 +75,9 @@ export function SongRenderPreferencesProvider({
 }: {
   children: ReactNode;
 }) {
+  const [currentSourceView, setCurrentSourceView] = useState<SongSourceView | null>(
+    null,
+  );
   const preferences = useSyncExternalStore(
     subscribe,
     getSongRenderPreferencesSnapshot,
@@ -100,7 +109,13 @@ export function SongRenderPreferencesProvider({
 
   return (
     <SongRenderPreferencesContext.Provider
-      value={{ preferences, resetPreferences, setPreferences }}
+      value={{
+        currentSourceView,
+        preferences,
+        resetPreferences,
+        setCurrentSourceView,
+        setPreferences,
+      }}
     >
       {children}
     </SongRenderPreferencesContext.Provider>

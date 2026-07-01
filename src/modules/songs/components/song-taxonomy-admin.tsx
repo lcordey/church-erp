@@ -21,11 +21,6 @@ type TaxonomyListProps = {
     kind: "themes" | "labels",
     item: SongTaxonomyItem,
   ) => Promise<void>;
-  onRename: (
-    kind: "themes" | "labels",
-    item: SongTaxonomyItem,
-    name: string,
-  ) => Promise<void>;
 };
 
 type ApiPayload = {
@@ -40,11 +35,8 @@ function TaxonomyList({
   description,
   onCreate,
   onDelete,
-  onRename,
 }: TaxonomyListProps) {
   const [newName, setNewName] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
   const [isPending, startTransition] = useTransition();
 
   return (
@@ -96,74 +88,27 @@ function TaxonomyList({
         <ul className="taxonomy-list">
           {items.map((item) => (
             <li key={item.id}>
-              {editingId === item.id ? (
-                <form
-                  className="taxonomy-list__edit"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    const name = editingName.trim();
-
-                    if (!name) {
-                      return;
-                    }
-
-                    startTransition(async () => {
-                      await onRename(kind, item, name);
-                      setEditingId(null);
-                    });
-                  }}
-                >
-                  <input
-                    autoFocus
-                    disabled={isPending}
-                    maxLength={80}
-                    onChange={(event) => setEditingName(event.target.value)}
-                    value={editingName}
-                  />
-                  <button disabled={isPending} type="submit">
-                    Enregistrer
-                  </button>
+              <>
+                <span>{item.name}</span>
+                <div>
                   <button
+                    className="taxonomy-list__delete"
                     disabled={isPending}
-                    onClick={() => setEditingId(null)}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `Supprimer « ${item.name} » ? Ses associations aux chants seront retirées.`,
+                        )
+                      ) {
+                        startTransition(() => onDelete(kind, item));
+                      }
+                    }}
                     type="button"
                   >
-                    Annuler
+                    Supprimer
                   </button>
-                </form>
-              ) : (
-                <>
-                  <span>{item.name}</span>
-                  <div>
-                    <button
-                      disabled={isPending}
-                      onClick={() => {
-                        setEditingId(item.id);
-                        setEditingName(item.name);
-                      }}
-                      type="button"
-                    >
-                      Renommer
-                    </button>
-                    <button
-                      className="taxonomy-list__delete"
-                      disabled={isPending}
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            `Supprimer « ${item.name} » ? Ses associations aux chants seront retirées.`,
-                          )
-                        ) {
-                          startTransition(() => onDelete(kind, item));
-                        }
-                      }}
-                      type="button"
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-                </>
-              )}
+                </div>
+              </>
             </li>
           ))}
         </ul>
@@ -199,39 +144,6 @@ export function SongTaxonomyAdmin({
       [kind]: [...current[kind], payload.data as SongTaxonomyItem].sort(
         (left, right) => left.name.localeCompare(right.name, "fr"),
       ),
-    }));
-  }
-
-  async function renameItem(
-    kind: "themes" | "labels",
-    item: SongTaxonomyItem,
-    name: string,
-  ) {
-    setMessage("");
-    const response = await fetch(
-      `/api/admin/song-taxonomies/${kind}/${item.id}`,
-      {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name }),
-      },
-    );
-    const payload = (await response.json().catch(() => null)) as ApiPayload | null;
-
-    if (!response.ok || !payload?.data) {
-      setMessage(payload?.error?.message ?? "Impossible de renommer cet élément.");
-      return;
-    }
-
-    setTaxonomies((current) => ({
-      ...current,
-      [kind]: current[kind]
-        .map((currentItem) =>
-          currentItem.id === item.id
-            ? (payload.data as SongTaxonomyItem)
-            : currentItem,
-        )
-        .sort((left, right) => left.name.localeCompare(right.name, "fr")),
     }));
   }
 
@@ -273,7 +185,6 @@ export function SongTaxonomyAdmin({
           kind="themes"
           onCreate={createItem}
           onDelete={deleteItem}
-          onRename={renameItem}
           title="Thèmes"
         />
         <TaxonomyList
@@ -282,7 +193,6 @@ export function SongTaxonomyAdmin({
           kind="labels"
           onCreate={createItem}
           onDelete={deleteItem}
-          onRename={renameItem}
           title="Labels"
         />
       </div>

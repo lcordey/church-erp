@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 
 import {
   formatMusicalKey,
@@ -28,8 +28,14 @@ type AdminSongFormProps = {
   headerActions?: ReactNode;
   onCancel?: () => void;
   onDeleted?: () => void;
+  onEditorStateChange?: (state: {
+    isDirty: boolean;
+    isPending: boolean;
+    submit: () => Promise<boolean>;
+  }) => void;
   onSaved?: (song: AdminSong) => void;
   showBackAction?: boolean;
+  showSaveAction?: boolean;
   availableTaxonomies: SongTaxonomies;
 };
 
@@ -106,6 +112,14 @@ function initialState(song?: AdminSong): FormState {
   };
 }
 
+function comparableFormState(form: FormState) {
+  return JSON.stringify({
+    ...form,
+    labelIds: [...form.labelIds].sort(),
+    themeIds: [...form.themeIds].sort(),
+  });
+}
+
 export function AdminSongForm({
   song,
   backHref = "/worship",
@@ -113,8 +127,10 @@ export function AdminSongForm({
   headerActions,
   onCancel,
   onDeleted,
+  onEditorStateChange,
   onSaved,
   showBackAction = true,
+  showSaveAction = true,
   availableTaxonomies,
 }: AdminSongFormProps) {
   const router = useRouter();
@@ -126,10 +142,17 @@ export function AdminSongForm({
   const [isMusicXmlPending, setIsMusicXmlPending] = useState(false);
   const [isChordProGenerationPending, setIsChordProGenerationPending] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [savedSnapshot, setSavedSnapshot] = useState(() =>
+    comparableFormState(initialState(song)),
+  );
   const isEditing = Boolean(song);
   const hasOfficialMetadataLock = song
     ? hasLockedOfficialMetadata(song)
     : false;
+  const isDirty = useMemo(
+    () => comparableFormState(form) !== savedSnapshot,
+    [form, savedSnapshot],
+  );
 
   function updateField(
     field: Exclude<AdminSongField, "themeIds" | "labelIds">,
@@ -162,7 +185,7 @@ export function AdminSongForm({
     setMessage("");
   }
 
-  async function saveSong(): Promise<AdminSong | null> {
+  const saveSong = useCallback(async (): Promise<AdminSong | null> => {
     const endpoint = song
       ? `/api/admin/songs/${song.id}`
       : "/api/admin/songs";
@@ -183,13 +206,13 @@ export function AdminSongForm({
     }
 
     return payload.data;
-  }
+  }, [form, isEditing, song]);
 
-  async function submitSong() {
+  const submitSong = useCallback(async () => {
     const savedSong = await saveSong();
 
     if (!savedSong) {
-      return;
+      return false;
     }
 
     const publishedSong =
@@ -198,23 +221,40 @@ export function AdminSongForm({
         : await setPublication(savedSong.id, true);
 
     if (!publishedSong) {
-      return;
+      return false;
     }
+
+    const nextState = initialState(publishedSong);
+    setForm(nextState);
+    setSavedSnapshot(comparableFormState(nextState));
 
     if (onSaved) {
       onSaved(publishedSong);
       setMessage(isEditing ? "Modifications enregistrées." : "Chant créé.");
-      return;
+      return true;
     }
 
     if (!isEditing) {
       router.push(`/chants/${publishedSong.slug}?mode=edition`);
-      return;
+      return true;
     }
 
     setMessage("Modifications enregistrées.");
     router.refresh();
-  }
+    return true;
+  }, [isEditing, onSaved, router, saveSong]);
+
+  useEffect(() => {
+    if (!onEditorStateChange) {
+      return;
+    }
+
+    onEditorStateChange({
+      isDirty,
+      isPending,
+      submit: submitSong,
+    });
+  }, [isDirty, isPending, onEditorStateChange, submitSong]);
 
   async function setPublication(songId: string, published: boolean) {
     const response = await fetch(`/api/admin/songs/${songId}/publication`, {
@@ -485,7 +525,9 @@ export function AdminSongForm({
           className="admin-form"
           onSubmit={(event) => {
             event.preventDefault();
-            startTransition(submitSong);
+            startTransition(() => {
+              void submitSong();
+            });
           }}
         >
           <label className="field field--wide">
@@ -786,12 +828,22 @@ export function AdminSongForm({
 
           {message ? <p className="form-message">{message}</p> : null}
           <div className="admin-form__actions">
-            <button
-              className="admin-button admin-button--primary"
-              disabled={isPending}
-            >
-              {isPending ? "Enregistrement…" : "Enregistrer"}
-            </button>
+            {showSaveAction ? (
+              <button
+                className={
+                  isDirty
+                    ? "admin-button admin-button--primary admin-button--dirty"
+                    : "admin-button admin-button--primary"
+                }
+                disabled={isPending}
+              >
+                {isPending
+                  ? "Enregistrement…"
+                  : isDirty
+                    ? "Enregistrer •"
+                    : "Enregistrer"}
+              </button>
+            ) : null}
 
             {song ? (
               <button

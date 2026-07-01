@@ -9,14 +9,12 @@ import {
   createSongTaxonomyItem,
   deleteSongTaxonomyItem,
   InvalidSongTaxonomyNameError,
-  updateSongTaxonomyItem,
 } from "./song-taxonomy-management";
 
 function createRepository(): SongTaxonomyRepository {
   return {
     listAll: vi.fn(async () => ({ themes: [], labels: [] })),
     create: vi.fn(async (_kind, name) => ({ id: "theme-id", name })),
-    update: vi.fn(async (_kind, id, name) => ({ id, name })),
     delete: vi.fn(async () => true),
   };
 }
@@ -36,7 +34,7 @@ describe("song taxonomy management", () => {
 
   it("rejects blank names", async () => {
     await expect(
-      updateSongTaxonomyItem("label", "label-id", " ", createRepository()),
+      createSongTaxonomyItem("label", " ", createRepository()),
     ).rejects.toBeInstanceOf(InvalidSongTaxonomyNameError);
   });
 

@@ -1213,6 +1213,17 @@ a {
   padding: 18px 24px 24px;
 }
 
+.app-dialog--compact {
+  width: min(460px, 100%);
+}
+
+.app-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
 .app-dialog__list {
   display: flex;
   max-height: min(52vh, 420px);
@@ -1827,6 +1838,21 @@ a {
   min-height: 78px;
   border-bottom: 1px solid var(--line);
   padding: 14px 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.setlist-editor__item--dragging {
+  opacity: 0.58;
+  cursor: grabbing;
+}
+
+.setlist-editor__item--drop-before {
+  box-shadow: inset 0 3px 0 var(--accent);
+}
+
+.setlist-editor__item--drop-after {
+  box-shadow: inset 0 -3px 0 var(--accent);
 }
 
 .setlist-editor__item > span {
@@ -2253,6 +2279,8 @@ a {
   border: 1px solid rgb(49 91 120 / 12%);
   border-radius: 18px;
   background: rgb(255 253 247 / 84%);
+  cursor: grab;
+  touch-action: none;
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease,
@@ -2262,6 +2290,7 @@ a {
 
 .song-render-preferences__priority-item--dragging {
   opacity: 0.72;
+  cursor: grabbing;
 }
 
 .song-render-preferences__priority-item--drop-before {
@@ -2340,16 +2369,6 @@ a {
 .song-render-preferences__priority-button:disabled {
   opacity: 0.48;
   cursor: not-allowed;
-}
-
-.song-render-preferences__drag-handle {
-  cursor: grab;
-  touch-action: none;
-}
-
-.song-render-preferences__priority-item--dragging .song-render-preferences__drag-handle,
-.song-render-preferences__drag-handle:active {
-  cursor: grabbing;
 }
 
 .song-render-preferences__priority-help {
@@ -2486,6 +2505,12 @@ a {
 .admin-button--primary:hover {
   color: white;
   background: #254a65;
+}
+
+.admin-button--dirty {
+  box-shadow:
+    0 0 0 1px rgb(188 102 32 / 22%),
+    0 10px 24px rgb(188 102 32 / 18%);
 }
 
 .admin-button--quiet {

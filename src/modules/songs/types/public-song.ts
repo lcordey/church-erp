@@ -51,7 +51,7 @@ export type PublicSongCatalogPage = PublicSongCatalogResults & {
 };
 
 export type PublicSongDetail = PublicSongSummary & {
-  chordProContent: string;
+  chordProContent: string | null;
   pdfSource: SongPdfSource | null;
   musicXmlSource: SongMusicXmlSource | null;
 };

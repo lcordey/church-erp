@@ -12,7 +12,7 @@ import type {
   PublicSongNavigation,
 } from "../types/public-song";
 import type { SongTaxonomies } from "../types/song-taxonomy";
-import { AdminSongForm } from "./admin-song-form";
+import { SongEditorShell } from "./song-editor-shell";
 import { SongDetailView } from "./song-detail-view";
 import { SongNavigationActions } from "./song-navigation-actions";
 
@@ -123,19 +123,26 @@ export function SongPageWorkspace({
             : "song-page__shell song-page__shell--immersive"
         }
       >
-        <AppTopBar
-          activeViewMode={mode}
-          actions={headerActions}
-          backHref={backHref}
-          backIconOnly
-          backLabel="Retour au répertoire"
-          mode={mode === "edition" ? "admin" : "public"}
-          onViewModeChange={updateMode}
-        />
+        {mode === "selection" ? (
+          <AppTopBar
+            activeViewMode={mode}
+            actions={headerActions}
+            backHref={backHref}
+            backIconOnly
+            backLabel="Retour au répertoire"
+            mode="public"
+            onViewModeChange={updateMode}
+          />
+        ) : null}
 
         {mode === "edition" && adminSong ? (
-          <AdminSongForm
+          <SongEditorShell
+            activeViewMode={mode}
             availableTaxonomies={availableTaxonomies}
+            backHref={backHref}
+            backIconOnly
+            backLabel="Retour au répertoire"
+            mode="admin"
             onDeleted={() => router.push(backHref)}
             onSaved={(savedSong) => {
               setAdminSong(savedSong);
@@ -146,7 +153,8 @@ export function SongPageWorkspace({
                 scroll: false,
               });
             }}
-            showBackAction={false}
+            onViewModeChange={updateMode}
+            showViewModeToggle
             song={adminSong}
           />
         ) : (

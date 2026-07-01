@@ -1,8 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
-import { AppTopBar } from "@/src/components/app-top-bar";
 import { getCurrentActor } from "@/src/infrastructure/auth/require-admin";
-import { AdminSongForm } from "@/src/modules/songs/components/admin-song-form";
+import { SongEditorShell } from "@/src/modules/songs/components/song-editor-shell";
 import { getAdminSong } from "@/src/modules/songs/services/admin-song-management";
 import { listAdminSongTaxonomies } from "@/src/modules/songs/services/song-taxonomy-management";
 
@@ -32,12 +31,14 @@ export default async function AdminSongPage({ params }: AdminSongPageProps) {
   return (
     <main className="admin-page admin-page--editor">
       <div className="admin-editor-shell">
-        <AppTopBar
+        <SongEditorShell
+          availableTaxonomies={taxonomies}
           backHref="/worship"
           backLabel="Retour au répertoire"
           mode="admin"
+          showViewModeToggle={false}
+          song={song}
         />
-        <AdminSongForm availableTaxonomies={taxonomies} song={song} />
       </div>
     </main>
   );

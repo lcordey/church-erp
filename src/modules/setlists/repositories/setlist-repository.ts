@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, exists, inArray, sql } from "drizzle-orm";
 
 import { getDatabase } from "@/src/infrastructure/database/client";
 import {
@@ -130,10 +130,6 @@ function toSongDetail(
   pdfSource: SongPdfSource | null,
   musicXmlSource: SongMusicXmlSource | null,
 ): PublicSongDetail {
-  if (!row.chordProContent) {
-    throw new Error(`Published song "${row.slug}" has no active ChordPro source.`);
-  }
-
   return {
     id: row.id,
     title: row.title,
@@ -152,6 +148,15 @@ function toSongDetail(
 
 export function createSetlistRepository(): SetlistRepository {
   const database = getDatabase();
+  const publishedSongHasActiveSourceCondition = and(
+    publishedSongCondition,
+    exists(
+      database
+        .select({ value: sql`1` })
+        .from(songSources)
+        .where(and(eq(songSources.songId, songs.id), eq(songSources.status, "active"))),
+    ),
+  );
 
   async function findActivePdfSources(songIds: string[]) {
     if (songIds.length === 0) {
@@ -210,12 +215,14 @@ export function createSetlistRepository(): SetlistRepository {
       .select(setlistItemSelection)
       .from(setlistItems)
       .innerJoin(songs, eq(setlistItems.songId, songs.id))
-      .innerJoin(songSources, eq(songSources.songId, songs.id))
+      .leftJoin(
+        songSources,
+        and(eq(songSources.songId, songs.id), activeChordProCondition),
+      )
       .where(
         and(
           eq(setlistItems.setlistId, row.id),
-          publishedSongCondition,
-          activeChordProCondition,
+          publishedSongHasActiveSourceCondition,
         ),
       )
       .orderBy(asc(setlistItems.position));
@@ -348,11 +355,9 @@ export function createSetlistRepository(): SetlistRepository {
       const rows = await database
         .select({ id: songs.id })
         .from(songs)
-        .innerJoin(songSources, eq(songSources.songId, songs.id))
         .where(
           and(
-            publishedSongCondition,
-            activeChordProCondition,
+            publishedSongHasActiveSourceCondition,
             inArray(songs.id, Array.from(new Set(songIds))),
           ),
         );

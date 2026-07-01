@@ -191,10 +191,6 @@ function toCatalogRecord(
     musicXmlSource?: SongMusicXmlSource | null;
   },
 ): SongCatalogRecord {
-  if (!row.chordProContent) {
-    throw new Error(`Published song "${row.slug}" has no active ChordPro source.`);
-  }
-
   return {
     ...row,
     chordProContent: row.chordProContent,
@@ -211,10 +207,19 @@ function isMissingUnaccentError(error: unknown): boolean {
 
 export function createSongCatalogRepository(): SongCatalogRepository {
   const database = getDatabase();
-  const publishedSongCondition = and(
-    eq(songs.status, "published"),
+  const activeChordProCondition = and(
     eq(songSources.sourceType, "chordpro"),
     eq(songSources.status, "active"),
+  );
+  const publishedSongCondition = eq(songs.status, "published");
+  const publishedSongHasActiveSourceCondition = and(
+    publishedSongCondition,
+    exists(
+      database
+        .select({ value: sql`1` })
+        .from(songSources)
+        .where(and(eq(songSources.songId, songs.id), eq(songSources.status, "active"))),
+    ),
   );
   const activePdfCondition = and(
     eq(songSources.sourceType, "pdf"),
@@ -333,7 +338,7 @@ export function createSongCatalogRepository(): SongCatalogRepository {
         : undefined;
 
     return and(
-      publishedSongCondition,
+      publishedSongHasActiveSourceCondition,
       searchCondition,
       collectionCondition,
       themeCondition,
@@ -355,7 +360,6 @@ export function createSongCatalogRepository(): SongCatalogRepository {
           database
             .select(listSelection)
             .from(songs)
-            .innerJoin(songSources, eq(songSources.songId, songs.id))
             .where(listCondition)
             .orderBy(
               sql`${songs.collection} is null`,
@@ -369,7 +373,6 @@ export function createSongCatalogRepository(): SongCatalogRepository {
           database
             .select({ value: count() })
             .from(songs)
-            .innerJoin(songSources, eq(songSources.songId, songs.id))
             .where(listCondition),
         ]);
 
@@ -432,8 +435,7 @@ export function createSongCatalogRepository(): SongCatalogRepository {
             .as("total"),
         })
         .from(songs)
-        .innerJoin(songSources, eq(songSources.songId, songs.id))
-        .where(publishedSongCondition)
+        .where(publishedSongHasActiveSourceCondition)
         .as("ordered_published_songs");
 
       const rows = await database
@@ -454,8 +456,11 @@ export function createSongCatalogRepository(): SongCatalogRepository {
       const rows = await database
         .select(detailSelection)
         .from(songs)
-        .innerJoin(songSources, eq(songSources.songId, songs.id))
-        .where(and(publishedSongCondition, eq(songs.slug, slug)))
+        .leftJoin(
+          songSources,
+          and(eq(songSources.songId, songs.id), activeChordProCondition),
+        )
+        .where(and(publishedSongHasActiveSourceCondition, eq(songs.slug, slug)))
         .limit(1);
 
       if (!rows[0]) {
@@ -505,8 +510,12 @@ export function createPublishedSongCollectionRepository(): PublishedSongCollecti
   const database = getDatabase();
   const publishedSongCondition = and(
     eq(songs.status, "published"),
-    eq(songSources.sourceType, "chordpro"),
-    eq(songSources.status, "active"),
+    exists(
+      database
+        .select({ value: sql`1` })
+        .from(songSources)
+        .where(and(eq(songSources.songId, songs.id), eq(songSources.status, "active"))),
+    ),
   );
 
   return {
@@ -514,7 +523,6 @@ export function createPublishedSongCollectionRepository(): PublishedSongCollecti
       const collectionRows = await database
         .selectDistinct({ collection: songs.collection })
         .from(songs)
-        .innerJoin(songSources, eq(songSources.songId, songs.id))
         .where(publishedSongCondition)
         .orderBy(asc(songs.collection));
 
@@ -533,7 +541,6 @@ export function createPublishedSongCollectionRepository(): PublishedSongCollecti
             eq(songThemeAssignments.themeId, songThemes.id),
           )
           .innerJoin(songs, eq(songThemeAssignments.songId, songs.id))
-          .innerJoin(songSources, eq(songSources.songId, songs.id))
           .where(publishedSongCondition)
           .orderBy(asc(songThemes.name)),
         database
@@ -544,7 +551,6 @@ export function createPublishedSongCollectionRepository(): PublishedSongCollecti
             eq(songLabelAssignments.labelId, songLabels.id),
           )
           .innerJoin(songs, eq(songLabelAssignments.songId, songs.id))
-          .innerJoin(songSources, eq(songSources.songId, songs.id))
           .where(publishedSongCondition)
           .orderBy(asc(songLabels.name)),
       ]);

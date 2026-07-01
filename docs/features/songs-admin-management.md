@@ -121,7 +121,7 @@ Implementation actuelle :
 - section `Partition` pour ajouter, remplacer ou retirer le fichier MusicXML attache
 - action `Generer depuis la partition` dans l'edition quand un MusicXML est disponible
 - selections multiples de themes et labels dans le formulaire de chant
-- menu `Admin` et route `/admin/referentiels` pour ajouter, renommer et supprimer les valeurs disponibles
+- menu `Admin` et route `/admin/referentiels` pour ajouter et supprimer les valeurs disponibles
 
 Routes :
 - `/admin/chants/nouveau`

@@ -21,11 +21,6 @@ export class SongTaxonomyNameConflictError extends Error {
 export interface SongTaxonomyRepository {
   listAll(): Promise<SongTaxonomies>;
   create(kind: SongTaxonomyKind, name: string): Promise<SongTaxonomyItem>;
-  update(
-    kind: SongTaxonomyKind,
-    id: string,
-    name: string,
-  ): Promise<SongTaxonomyItem | null>;
   delete(kind: SongTaxonomyKind, id: string): Promise<boolean>;
 }
 
@@ -74,34 +69,6 @@ export function createSongTaxonomyRepository(): SongTaxonomyRepository {
           .returning({ id: songLabels.id, name: songLabels.name });
 
         return created;
-      } catch (error) {
-        if (isUniqueViolation(error)) {
-          throw new SongTaxonomyNameConflictError();
-        }
-
-        throw error;
-      }
-    },
-
-    async update(kind, id, name) {
-      try {
-        if (kind === "theme") {
-          const [updated] = await database
-            .update(songThemes)
-            .set({ name, updatedAt: new Date() })
-            .where(eq(songThemes.id, id))
-            .returning({ id: songThemes.id, name: songThemes.name });
-
-          return updated ?? null;
-        }
-
-        const [updated] = await database
-          .update(songLabels)
-          .set({ name, updatedAt: new Date() })
-          .where(eq(songLabels.id, id))
-          .returning({ id: songLabels.id, name: songLabels.name });
-
-        return updated ?? null;
       } catch (error) {
         if (isUniqueViolation(error)) {
           throw new SongTaxonomyNameConflictError();

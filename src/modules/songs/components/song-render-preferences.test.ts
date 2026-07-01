@@ -5,6 +5,7 @@ import {
   readSongRenderPreferences,
   reorderSongSourcePriority,
   resolvePreferredSongSource,
+  resolveSongSourceView,
   shiftSongSourcePriority,
 } from "./song-render-preferences";
 
@@ -62,6 +63,26 @@ describe("song render preferences", () => {
         ["lyrics", "pdf"],
       ),
     ).toBe("pdf");
+  });
+
+  it("keeps the current source when the next song also supports it", () => {
+    expect(
+      resolveSongSourceView(
+        "pdf",
+        ["chordpro", "lyrics", "musicxml", "pdf"],
+        ["lyrics", "pdf"],
+      ),
+    ).toBe("pdf");
+  });
+
+  it("falls back to the configured priority when the current source is unavailable", () => {
+    expect(
+      resolveSongSourceView(
+        "musicxml",
+        ["chordpro", "lyrics", "pdf", "musicxml"],
+        ["lyrics", "pdf"],
+      ),
+    ).toBe("lyrics");
   });
 
   it("reorders a source before another source", () => {

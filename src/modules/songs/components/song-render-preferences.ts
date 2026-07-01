@@ -110,6 +110,18 @@ export function resolvePreferredSongSource(
   );
 }
 
+export function resolveSongSourceView(
+  currentSource: SongSourceView | null,
+  sourcePriority: SongSourceView[],
+  availableSources: SongSourceView[],
+): SongSourceView {
+  if (currentSource && availableSources.includes(currentSource)) {
+    return currentSource;
+  }
+
+  return resolvePreferredSongSource(sourcePriority, availableSources);
+}
+
 export function reorderSongSourcePriority(
   sourcePriority: SongSourceView[],
   source: SongSourceView,
