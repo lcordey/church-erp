@@ -126,8 +126,11 @@ This command:
 - imports mixed collections such as `Exo`, `Glorious`, and `LeMont` from
   `pdf`, `musicxml`, and `chordpro`
 - attaches PDFs for official seeded collections `JEM` and `JEMK`
+- skips official PDFs larger than `500 KB` by default to limit storage usage
 - accepts `--collection <name>` to target a single collection
 - accepts `--source-root /path/to/base_chants` to override the default folder
+- accepts `--max-file-size-kb <n>` for official PDF imports when a different
+  threshold is needed
 - accepts `--target local|remote`
 
 Examples:
@@ -136,6 +139,7 @@ Examples:
 pnpm songs:import-base-chants -- --collection LeMont --target local
 pnpm songs:import-base-chants -- --collection Glorious --target remote
 pnpm songs:import-official-pdfs -- --collection JEMK --pdf-dir "/home/lcordey/work/base_chants/JEM KIDs/pdf" --target remote
+pnpm songs:import-official-pdfs -- --collection JEM --pdf-dir "/home/lcordey/work/base_chants/JEM/pdf" --max-file-size-kb 500 --target remote
 ```
 
 Refresh the local JEMAF snapshot and regenerate `supabase/seed.sql`:

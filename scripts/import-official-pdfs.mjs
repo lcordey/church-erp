@@ -16,6 +16,7 @@ function parseArgs(argv) {
   const options = {
     collection: null,
     pdfDir: null,
+    maxFileSizeKb: 500,
   };
 
   const filteredArgv = stripTargetOption(argv);
@@ -32,6 +33,12 @@ function parseArgs(argv) {
 
     if (argument === "--pdf-dir" && next) {
       options.pdfDir = next;
+      index += 1;
+      continue;
+    }
+
+    if (argument === "--max-file-size-kb" && next) {
+      options.maxFileSizeKb = Number.parseInt(next, 10);
       index += 1;
     }
   }
@@ -50,6 +57,14 @@ function requireOption(name, value) {
 function requireConfigValue(name, value) {
   if (!value || value.startsWith("replace-with-")) {
     throw new Error(`${name} is required.`);
+  }
+
+  return value;
+}
+
+function requirePositiveIntegerOption(name, value) {
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`${name} must be a positive integer.`);
   }
 
   return value;
@@ -266,6 +281,11 @@ async function main() {
   const target = parseTargetOption(argv);
   const collectionCode = requireOption("collection", args.collection);
   const pdfDirectory = requireOption("pdf-dir", args.pdfDir);
+  const maxFileSizeKb = requirePositiveIntegerOption(
+    "max-file-size-kb",
+    args.maxFileSizeKb,
+  );
+  const maxFileSizeBytes = maxFileSizeKb * 1024;
   const config = resolveTargetConfig(target);
   const sql = postgres(
     requireConfigValue("DATABASE_URL", config.databaseUrl),
@@ -281,6 +301,7 @@ async function main() {
     `;
     const fileNames = await listPdfFiles(pdfDirectory);
     const imports = buildPdfImports(songs, collectionCode, fileNames);
+    const skippedForSize = [];
 
     if (imports.length === 0) {
       console.log(`No official PDF imports found for ${collectionCode} in ${pdfDirectory}.`);
@@ -288,13 +309,38 @@ async function main() {
     }
 
     for (const pdf of imports) {
+      const filePath = path.join(pdfDirectory, pdf.fileName);
+      const fileStat = await stat(filePath);
+
+      if (fileStat.size > maxFileSizeBytes) {
+        skippedForSize.push({
+          label: pdf.label,
+          fileName: pdf.fileName,
+          fileSizeKb: Math.ceil(fileStat.size / 1024),
+        });
+        console.log(
+          `${pdf.label} skipped: ${pdf.fileName} (${Math.ceil(fileStat.size / 1024)} KB > ${maxFileSizeKb} KB).`,
+        );
+        continue;
+      }
+
       if (pdf.needsCreation) {
         await upsertMissingOfficialSong(sql, pdf.song);
       }
       await importPdf(sql, pdfDirectory, pdf, config);
     }
 
-    console.log(`Imported ${imports.length} official PDFs into collection ${collectionCode}.`);
+    console.log(
+      `Imported ${imports.length - skippedForSize.length} official PDFs into collection ${collectionCode}.`,
+    );
+
+    if (skippedForSize.length > 0) {
+      console.log(
+        `Skipped ${skippedForSize.length} PDFs above ${maxFileSizeKb} KB: ${skippedForSize
+          .map((pdf) => `${pdf.label} (${pdf.fileSizeKb} KB)`)
+          .join(", ")}`,
+      );
+    }
   } finally {
     await sql.end();
   }
