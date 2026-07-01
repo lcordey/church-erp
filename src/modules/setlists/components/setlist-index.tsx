@@ -50,7 +50,6 @@ function stopEvent(event: {
 }
 
 type SetlistCardProps = {
-  editHref: string;
   index: number;
   openHref: string;
   isAuthenticated: boolean;
@@ -61,7 +60,6 @@ type SetlistCardProps = {
 };
 
 function SetlistCard({
-  editHref,
   index,
   isAuthenticated,
   isPending,
@@ -146,22 +144,11 @@ function SetlistCard({
                   onEdit(setlist);
                 }}
                 onPointerDown={(event) => event.stopPropagation()}
-                  role="menuitem"
-                  type="button"
+                role="menuitem"
+                type="button"
               >
                 Modifier la setlist
               </button>
-              <Link
-                href={editHref}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setIsMenuOpen(false);
-                }}
-                onPointerDown={(event) => event.stopPropagation()}
-                role="menuitem"
-              >
-                Ouvrir l’édition dans un onglet
-              </Link>
               <button
                 disabled={isPending}
                 onClick={(event) => {
@@ -286,7 +273,6 @@ export function SetlistIndex({
             <div className="setlist-cards">
               {setlists.map((setlist, index) => (
                 <SetlistCard
-                  editHref={`/setlist/${setlist.id}`}
                   index={index}
                   isAuthenticated={isAuthenticated}
                   isPending={isPending}
