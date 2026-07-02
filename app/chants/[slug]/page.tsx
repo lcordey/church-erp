@@ -4,10 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentActor } from "@/src/infrastructure/auth/require-admin";
 import { SongPageWorkspace } from "@/src/modules/songs/components/song-page-workspace";
 import { getAdminSong } from "@/src/modules/songs/services/admin-song-management";
-import {
-  getPublicSongBySlug,
-  getPublicSongNavigation,
-} from "@/src/modules/songs/services/public-song-catalog";
+import { getPublicSongBySlug } from "@/src/modules/songs/services/public-song-catalog";
 import { getLoginHref } from "@/src/shared/navigation/login-redirect";
 import { listAdminSongTaxonomies } from "@/src/modules/songs/services/song-taxonomy-management";
 
@@ -44,16 +41,13 @@ export default async function SongPage({ params, searchParams }: SongPageProps) 
     redirect(getLoginHref(`${editionUrl.pathname}${editionUrl.search}`));
   }
 
-  const [song, navigation] = await Promise.all([
-    getPublicSongBySlug(slug),
-    getPublicSongNavigation(slug),
-  ]);
+  const song = await getPublicSongBySlug(slug);
 
   if (!song) {
     notFound();
   }
 
-  const [adminSong, availableTaxonomies] = isAuthenticated
+  const [adminSong, availableTaxonomies] = isAuthenticated && mode === "edition"
     ? await Promise.all([
         getAdminSong(song.id),
         listAdminSongTaxonomies(),
@@ -68,7 +62,6 @@ export default async function SongPage({ params, searchParams }: SongPageProps) 
       canAccessScores={isAuthenticated}
       isAuthenticated={isAuthenticated}
       initialMode={mode === "edition" ? "edition" : "selection"}
-      navigation={navigation}
       song={song}
     />
   );

@@ -25,7 +25,6 @@ import type {
   SongCatalogRecord,
   SongMusicXmlFileSource,
   SongMusicXmlSource,
-  PublicSongNavigation,
   SongPdfFileSource,
   SongPdfSource,
 } from "../types/public-song";
@@ -53,9 +52,6 @@ export interface SongCatalogRepository {
     songs: SongCatalogListRecord[];
     total: number;
   }>;
-  findPublishedNavigationBySlug(
-    slug: string,
-  ): Promise<PublicSongNavigation | null>;
   findPublishedBySlug(slug: string): Promise<SongCatalogRecord | null>;
   findPublishedPdfBySlug(slug: string): Promise<SongPdfFileSource | null>;
   findPublishedMusicXmlBySlug(
@@ -400,58 +396,6 @@ export function createSongCatalogRepository(): SongCatalogRepository {
       };
     },
 
-    async findPublishedNavigationBySlug(slug) {
-      const orderedPublishedSongs = database
-        .select({
-          slug: songs.slug,
-          previousSlug: sql<string | null>`lag(${songs.slug}) over (
-            order by
-              ${songs.collection} is null,
-              ${songs.collection} asc,
-              ${songs.collectionNumber} asc,
-              ${songs.title} asc,
-              ${songs.slug} asc
-          )`.as("previous_slug"),
-          nextSlug: sql<string | null>`lead(${songs.slug}) over (
-            order by
-              ${songs.collection} is null,
-              ${songs.collection} asc,
-              ${songs.collectionNumber} asc,
-              ${songs.title} asc,
-              ${songs.slug} asc
-          )`.as("next_slug"),
-          position: sql<number>`row_number() over (
-            order by
-              ${songs.collection} is null,
-              ${songs.collection} asc,
-              ${songs.collectionNumber} asc,
-              ${songs.title} asc,
-              ${songs.slug} asc
-          )`
-            .mapWith(Number)
-            .as("position"),
-          total: sql<number>`count(*) over ()`
-            .mapWith(Number)
-            .as("total"),
-        })
-        .from(songs)
-        .where(publishedSongHasActiveSourceCondition)
-        .as("ordered_published_songs");
-
-      const rows = await database
-        .select({
-          previousSlug: orderedPublishedSongs.previousSlug,
-          nextSlug: orderedPublishedSongs.nextSlug,
-          position: orderedPublishedSongs.position,
-          total: orderedPublishedSongs.total,
-        })
-        .from(orderedPublishedSongs)
-        .where(eq(orderedPublishedSongs.slug, slug))
-        .limit(1);
-
-      return rows[0] ?? null;
-    },
-
     async findPublishedBySlug(slug) {
       const rows = await database
         .select(detailSelection)
@@ -467,8 +411,11 @@ export function createSongCatalogRepository(): SongCatalogRepository {
         return null;
       }
 
-      const pdfSources = await findActivePdfSources([rows[0].id]);
-      const musicXmlSources = await findActiveMusicXmlSources([rows[0].id]);
+      const [pdfSources, musicXmlSources] = await Promise.all([
+        findActivePdfSources([rows[0].id]),
+        findActiveMusicXmlSources([rows[0].id]),
+      ]);
+
       return toCatalogRecord({
         ...rows[0],
         pdfSource: pdfSources.get(rows[0].id) ?? null,

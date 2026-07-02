@@ -7,7 +7,6 @@ import type {
 import type { SongCatalogRecord } from "../types/public-song";
 import {
   getPublicSongBySlug,
-  getPublicSongNavigation,
   isPublicSong,
   listPublicSongResults,
   listPublicSongs,
@@ -66,21 +65,6 @@ function createRepository(
     },
     async findPublishedBySlug(slug) {
       return songs.find((song) => song.slug === slug) ?? null;
-    },
-    async findPublishedNavigationBySlug(slug) {
-      const publishedSongs = songs.filter((song) => song.status === "published");
-      const index = publishedSongs.findIndex((song) => song.slug === slug);
-
-      if (index === -1) {
-        return null;
-      }
-
-      return {
-        nextSlug: publishedSongs[index + 1]?.slug ?? null,
-        position: index + 1,
-        previousSlug: publishedSongs[index - 1]?.slug ?? null,
-        total: publishedSongs.length,
-      };
     },
     async findPublishedPdfBySlug(slug) {
       const song = songs.find((song) => song.slug === slug);
@@ -259,30 +243,5 @@ describe("public song catalog", () => {
     );
 
     expect(song?.slug).toBe("chant-publie");
-  });
-
-  it("returns navigation around a published song", async () => {
-    const previousSong = {
-      ...publishedSong,
-      id: "33333333-3333-4333-8333-333333333333",
-      slug: "chant-precedent",
-    };
-    const nextSong = {
-      ...publishedSong,
-      id: "44444444-4444-4444-8444-444444444444",
-      slug: "chant-suivant",
-    };
-
-    const navigation = await getPublicSongNavigation(
-      "  CHANT-PUBLIE ",
-      createRepository([previousSong, publishedSong, nextSong]),
-    );
-
-    expect(navigation).toEqual({
-      nextSlug: "chant-suivant",
-      position: 2,
-      previousSlug: "chant-precedent",
-      total: 3,
-    });
   });
 });
