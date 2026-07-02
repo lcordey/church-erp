@@ -23,7 +23,9 @@ type SongPageProps = {
 export default async function SongPage({ params, searchParams }: SongPageProps) {
   const { slug } = await params;
   const { mode, returnTo } = await searchParams;
-  const actor = await getCurrentActor();
+  const actorPromise = getCurrentActor();
+  const songPromise = getPublicSongBySlug(slug);
+  const actor = await actorPromise;
   const isAuthenticated = actor !== null;
   const backHref =
     typeof returnTo === "string" && returnTo.startsWith("/worship")
@@ -41,7 +43,7 @@ export default async function SongPage({ params, searchParams }: SongPageProps) 
     redirect(getLoginHref(`${editionUrl.pathname}${editionUrl.search}`));
   }
 
-  const song = await getPublicSongBySlug(slug);
+  const song = await songPromise;
 
   if (!song) {
     notFound();
