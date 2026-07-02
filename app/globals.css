@@ -786,6 +786,12 @@ a {
   padding: 0 12px;
 }
 
+.catalog-search__filters-toggle[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: white;
+  background: var(--accent);
+}
+
 .catalog-filters {
   display: flex;
   flex-wrap: nowrap;

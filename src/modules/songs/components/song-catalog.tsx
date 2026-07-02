@@ -158,6 +158,7 @@ export function SongCatalog({
             ) : null}
             <button
               aria-expanded={areFiltersVisible}
+              aria-pressed={areFiltersVisible}
               aria-label={
                 areFiltersVisible
                   ? "Masquer les filtres"
