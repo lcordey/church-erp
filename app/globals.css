@@ -795,12 +795,25 @@ a {
   background: var(--accent);
 }
 
+@media (hover: none) {
+  .catalog-search__filters-toggle:hover:not(:disabled) {
+    border-color: var(--line);
+    color: var(--muted);
+    background: transparent;
+  }
+
+  .catalog-search__filters-toggle[aria-pressed="true"]:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: white;
+    background: var(--accent);
+  }
+}
+
 .catalog-filters {
   display: flex;
   flex-wrap: nowrap;
   gap: 12px;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  overflow: visible;
 }
 
 .catalog-filter-dropdown {
