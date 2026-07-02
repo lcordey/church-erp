@@ -18,6 +18,7 @@ import {
 } from "../music/musical-key";
 import {
   analyzeMusicXmlDisplay,
+  type MusicXmlDisplayAnalysis,
   type MusicXmlLayoutMode,
 } from "./music-xml-display";
 import { useMusicNotation } from "./music-notation-provider";
@@ -219,6 +220,10 @@ export const MusicXmlScoreViewer = forwardRef<
   const fullscreenViewportRef = useRef<HTMLDivElement>(null);
   const fullscreenSheetRef = useRef<HTMLDivElement>(null);
   const osmdRef = useRef<OpenSheetMusicDisplayInstance | null>(null);
+  const sourceAnalysisRef = useRef<{
+    analysis: MusicXmlDisplayAnalysis;
+    sourceUrl: string;
+  } | null>(null);
   const renderWidthRef = useRef(0);
   const zoomRef = useRef(DEFAULT_SCORE_ZOOM);
   const [status, setStatus] = useState("Chargement de la partition…");
@@ -271,10 +276,6 @@ export const MusicXmlScoreViewer = forwardRef<
         ? MOBILE_SCORE_RENDER_WIDTH
         : stageWidth;
   const useSourceLayout = hasSourceLayoutHints && layoutMode === "original";
-  const effectiveLyricsSpacing = useSourceLayout
-    ? DEFAULT_LYRICS_SPACING
-    : appliedLyricsSpacing;
-  const effectiveNoteSpacing = useSourceLayout ? 1 : appliedNoteSpacing;
   renderWidthRef.current = renderWidth;
   zoomRef.current = zoom;
 
@@ -626,28 +627,48 @@ export const MusicXmlScoreViewer = forwardRef<
       osmdRef.current = null;
 
       try {
-        const [
-          sourceResponse,
-          { OpenSheetMusicDisplay, TransposeCalculator },
-        ] = await Promise.all([
-          fetch(sourceUrl),
-          import("opensheetmusicdisplay"),
-        ]);
+        const [{ OpenSheetMusicDisplay, TransposeCalculator }, analysis] =
+          await Promise.all([
+            import("opensheetmusicdisplay"),
+            (async () => {
+              if (sourceAnalysisRef.current?.sourceUrl === sourceUrl) {
+                return sourceAnalysisRef.current.analysis;
+              }
 
-        if (!sourceResponse.ok) {
-          throw new Error("MusicXML source could not be loaded.");
-        }
+              const sourceResponse = await fetch(sourceUrl);
 
-        const musicXml = await sourceResponse.text();
-        const analysis = analyzeMusicXmlDisplay(musicXml);
+              if (!sourceResponse.ok) {
+                throw new Error("MusicXML source could not be loaded.");
+              }
+
+              const nextAnalysis = analyzeMusicXmlDisplay(
+                await sourceResponse.text(),
+              );
+
+              sourceAnalysisRef.current = {
+                analysis: nextAnalysis,
+                sourceUrl,
+              };
+
+              return nextAnalysis;
+            })(),
+          ]);
+        const hasLayoutHints =
+          analysis.hasExplicitSystemBreaks || analysis.hasExplicitPageBreaks;
+        const shouldUseSourceLayout =
+          hasLayoutHints && layoutMode === "original";
+        const effectiveLyricsSpacing = shouldUseSourceLayout
+          ? DEFAULT_LYRICS_SPACING
+          : appliedLyricsSpacing;
+        const effectiveNoteSpacing = shouldUseSourceLayout
+          ? 1
+          : appliedNoteSpacing;
 
         if (isCancelled) {
           return;
         }
 
-        setHasSourceLayoutHints(
-          analysis.hasExplicitSystemBreaks || analysis.hasExplicitPageBreaks,
-        );
+        setHasSourceLayoutHints(hasLayoutHints);
         container.style.width = `${Math.round(renderWidth)}px`;
 
         const osmd = new OpenSheetMusicDisplay(container, {
@@ -664,10 +685,10 @@ export const MusicXmlScoreViewer = forwardRef<
           drawTitle: true,
           drawingParameters: "compact",
           measureNumberInterval: 4,
-          newPageFromXML: useSourceLayout,
-          newSystemFromNewPageInXML: useSourceLayout,
-          newSystemFromXML: useSourceLayout,
-          pageFormat: useSourceLayout ? "A4_P" : "Endless",
+          newPageFromXML: shouldUseSourceLayout,
+          newSystemFromNewPageInXML: shouldUseSourceLayout,
+          newSystemFromXML: shouldUseSourceLayout,
+          pageFormat: shouldUseSourceLayout ? "A4_P" : "Endless",
           pageBackgroundColor: "#fffdf7",
         });
 
@@ -684,9 +705,8 @@ export const MusicXmlScoreViewer = forwardRef<
           osmd.Sheet.CopyrightString = copyright;
         }
 
-        osmd.EngravingRules.RenderXMeasuresPerLineAkaSystem = useSourceLayout
-          ? 0
-          : appliedMeasuresPerLine;
+        osmd.EngravingRules.RenderXMeasuresPerLineAkaSystem =
+          shouldUseSourceLayout ? 0 : appliedMeasuresPerLine;
         const sideMarginOsmdUnit = getSideMarginOsmdUnit(
           renderWidth,
           appliedSideMargin,
@@ -716,7 +736,7 @@ export const MusicXmlScoreViewer = forwardRef<
           0.44,
           BASE_COMPACT_VOICE_SPACING_MULTIPLIER * effectiveNoteSpacing,
         );
-        osmd.EngravingRules.LastSystemMaxScalingFactor = useSourceLayout
+        osmd.EngravingRules.LastSystemMaxScalingFactor = shouldUseSourceLayout
           ? 1.08
           : 1.18;
 
@@ -749,15 +769,15 @@ export const MusicXmlScoreViewer = forwardRef<
       }
     };
   }, [
+    appliedLyricsSpacing,
     appliedMeasuresPerLine,
+    appliedNoteSpacing,
     appliedSideMargin,
     copyright,
-    effectiveLyricsSpacing,
-    effectiveNoteSpacing,
+    layoutMode,
     renderWidth,
     sourceUrl,
     title,
-    useSourceLayout,
   ]);
 
   useEffect(() => {

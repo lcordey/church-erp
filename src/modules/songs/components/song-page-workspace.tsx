@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
@@ -9,8 +10,20 @@ import { getLoginHref } from "@/src/shared/navigation/login-redirect";
 import type { AdminSong } from "../types/admin-song";
 import type { PublicSongDetail } from "../types/public-song";
 import type { SongTaxonomies } from "../types/song-taxonomy";
-import { SongEditorShell } from "./song-editor-shell";
 import { SongDetailView } from "./song-detail-view";
+
+const SongEditorShell = dynamic(
+  () =>
+    import("./song-editor-shell").then((module) => module.SongEditorShell),
+  {
+    loading: () => (
+      <div aria-busy="true" className="catalog-loading" role="status">
+        <span aria-hidden="true" className="catalog-loading__spinner" />
+        <strong>Chargement de l’éditeur…</strong>
+      </div>
+    ),
+  },
+);
 
 type SongPageWorkspaceProps = {
   adminSong: AdminSong | null;

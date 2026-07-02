@@ -3,6 +3,8 @@
 import {
   createContext,
   useContext,
+  useEffect,
+  useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
@@ -15,7 +17,6 @@ import {
   type SongSourceView,
   type SongRenderPreferences,
 } from "./song-render-preferences";
-import { useState } from "react";
 
 type SongRenderPreferencesContextValue = {
   currentSourceView: SongSourceView | null;
@@ -83,6 +84,42 @@ export function SongRenderPreferencesProvider({
     getSongRenderPreferencesSnapshot,
     getServerSnapshot,
   );
+
+  useEffect(() => {
+    const preferredSource = currentSourceView ?? preferences.sourcePriority[0];
+
+    if (preferredSource !== "musicxml" && preferredSource !== "pdf") {
+      return;
+    }
+
+    const preloadRenderer = () => {
+      if (preferredSource === "musicxml") {
+        void import("opensheetmusicdisplay");
+      } else {
+        void import("pdfjs-dist");
+      }
+    };
+
+    const idleWindow = window as Window & {
+      cancelIdleCallback?: (handle: number) => void;
+      requestIdleCallback?: (
+        callback: IdleRequestCallback,
+        options?: IdleRequestOptions,
+      ) => number;
+    };
+
+    if (idleWindow.requestIdleCallback && idleWindow.cancelIdleCallback) {
+      const idleCallbackId = idleWindow.requestIdleCallback(preloadRenderer, {
+        timeout: 1000,
+      });
+
+      return () => idleWindow.cancelIdleCallback?.(idleCallbackId);
+    }
+
+    const timeoutId = globalThis.setTimeout(preloadRenderer, 200);
+
+    return () => globalThis.clearTimeout(timeoutId);
+  }, [currentSourceView, preferences.sourcePriority]);
 
   function commit(next: SongRenderPreferences) {
     cachedPreferences = next;

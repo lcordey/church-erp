@@ -1981,6 +1981,17 @@ a {
   padding: 0;
 }
 
+.song-route-loading {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .song-page--immersive .sheet-card {
   min-height: 100%;
   border-radius: 0;

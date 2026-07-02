@@ -9,6 +9,7 @@ import {
   or,
   sql,
 } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { getDatabase } from "@/src/infrastructure/database/client";
 import {
@@ -78,11 +79,6 @@ const listSelection = {
   collection: songs.collection,
   collectionNumber: songs.collectionNumber,
   sourcePageUrl: songs.sourcePageUrl,
-};
-
-const detailSelection = {
-  ...listSelection,
-  chordProContent: songSources.textContent,
 };
 
 const pdfSelection = {
@@ -203,10 +199,9 @@ function isMissingUnaccentError(error: unknown): boolean {
 
 export function createSongCatalogRepository(): SongCatalogRepository {
   const database = getDatabase();
-  const activeChordProCondition = and(
-    eq(songSources.sourceType, "chordpro"),
-    eq(songSources.status, "active"),
-  );
+  const chordProSources = alias(songSources, "published_song_chordpro_sources");
+  const pdfSources = alias(songSources, "published_song_pdf_sources");
+  const musicXmlSources = alias(songSources, "published_song_musicxml_sources");
   const publishedSongCondition = eq(songs.status, "published");
   const publishedSongHasActiveSourceCondition = and(
     publishedSongCondition,
@@ -225,41 +220,6 @@ export function createSongCatalogRepository(): SongCatalogRepository {
     eq(songSources.sourceType, "musicxml"),
     eq(songSources.status, "active"),
   );
-
-  async function findActivePdfSources(songIds: string[]) {
-    if (songIds.length === 0) {
-      return new Map<string, SongPdfSource>();
-    }
-
-    const rows = await database
-      .select(pdfSelection)
-      .from(songSources)
-      .innerJoin(songs, eq(songSources.songId, songs.id))
-      .where(and(activePdfCondition, inArray(songSources.songId, songIds)));
-
-    return new Map(
-      rows.flatMap((row) => {
-        const source = toPublicPdfSource(toPdfSource(row));
-        return source ? [[row.songId, source]] : [];
-      }),
-    );
-  }
-
-  async function findActiveMusicXmlSources(songIds: string[]) {
-    if (songIds.length === 0) {
-      return new Map<string, SongMusicXmlSource>();
-    }
-
-    const rows = await database
-      .select(musicXmlSelection)
-      .from(songSources)
-      .innerJoin(songs, eq(songSources.songId, songs.id))
-      .where(and(activeMusicXmlCondition, inArray(songSources.songId, songIds)));
-
-    return new Map(
-      rows.map((row) => [row.songId, toMusicXmlSource(row)]),
-    );
-  }
 
   function buildListCondition(
     options: SongCatalogListOptions | undefined,
@@ -398,28 +358,85 @@ export function createSongCatalogRepository(): SongCatalogRepository {
 
     async findPublishedBySlug(slug) {
       const rows = await database
-        .select(detailSelection)
+        .select({
+          ...listSelection,
+          chordProContent: chordProSources.textContent,
+          pdfStoragePath: pdfSources.storagePath,
+          pdfFileName: pdfSources.fileName,
+          pdfMimeType: pdfSources.mimeType,
+          pdfFileSizeBytes: pdfSources.fileSizeBytes,
+          musicXmlId: musicXmlSources.id,
+          musicXmlFileName: musicXmlSources.fileName,
+          musicXmlMimeType: musicXmlSources.mimeType,
+          musicXmlFileSizeBytes: musicXmlSources.fileSizeBytes,
+        })
         .from(songs)
         .leftJoin(
-          songSources,
-          and(eq(songSources.songId, songs.id), activeChordProCondition),
+          chordProSources,
+          and(
+            eq(chordProSources.songId, songs.id),
+            eq(chordProSources.sourceType, "chordpro"),
+            eq(chordProSources.status, "active"),
+          ),
+        )
+        .leftJoin(
+          pdfSources,
+          and(
+            eq(pdfSources.songId, songs.id),
+            eq(pdfSources.sourceType, "pdf"),
+            eq(pdfSources.status, "active"),
+          ),
+        )
+        .leftJoin(
+          musicXmlSources,
+          and(
+            eq(musicXmlSources.songId, songs.id),
+            eq(musicXmlSources.sourceType, "musicxml"),
+            eq(musicXmlSources.status, "active"),
+          ),
         )
         .where(and(publishedSongHasActiveSourceCondition, eq(songs.slug, slug)))
         .limit(1);
 
-      if (!rows[0]) {
+      const row = rows[0];
+
+      if (!row) {
         return null;
       }
 
-      const [pdfSources, musicXmlSources] = await Promise.all([
-        findActivePdfSources([rows[0].id]),
-        findActiveMusicXmlSources([rows[0].id]),
-      ]);
-
       return toCatalogRecord({
-        ...rows[0],
-        pdfSource: pdfSources.get(rows[0].id) ?? null,
-        musicXmlSource: musicXmlSources.get(rows[0].id) ?? null,
+        id: row.id,
+        title: row.title,
+        slug: row.slug,
+        status: row.status,
+        author: row.author,
+        copyright: row.copyright,
+        defaultKey: row.defaultKey,
+        collection: row.collection,
+        collectionNumber: row.collectionNumber,
+        sourcePageUrl: row.sourcePageUrl,
+        chordProContent: row.chordProContent,
+        pdfSource: row.pdfStoragePath
+          ? toPublicPdfSource(
+              toPdfSource({
+                songId: row.id,
+                slug: row.slug,
+                storagePath: row.pdfStoragePath,
+                fileName: row.pdfFileName,
+                mimeType: row.pdfMimeType,
+                fileSizeBytes: row.pdfFileSizeBytes,
+              }),
+            )
+          : null,
+        musicXmlSource: row.musicXmlId
+          ? toMusicXmlSource({
+              songId: row.id,
+              slug: row.slug,
+              fileName: row.musicXmlFileName,
+              mimeType: row.musicXmlMimeType,
+              fileSizeBytes: row.musicXmlFileSizeBytes,
+            })
+          : null,
       });
     },
 

@@ -1,18 +1,14 @@
 "use client";
 
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import { formatSongCollectionLabel } from "../collections/song-collection";
 import type { AdminSong } from "../types/admin-song";
 import type { PublicSongDetail } from "../types/public-song";
 import { MusicalKeyText } from "./musical-key-text";
-import {
-  MusicXmlScoreViewer,
-  type MusicXmlScoreViewerHandle,
-} from "./music-xml-score-viewer";
+import type { MusicXmlScoreViewerHandle } from "./music-xml-score-viewer";
 import { hasChordProChords } from "../services/chordpro";
-import { SongPdfViewer } from "./song-pdf-viewer";
 import {
   resolveSongSourceView,
   type SongSourceView,
@@ -22,6 +18,32 @@ import {
   type TransposableSongSheetHandle,
 } from "./transposable-song-sheet";
 import { useSongRenderPreferences } from "./song-render-preferences-provider";
+
+const MusicXmlScoreViewer = lazy(() =>
+  import("./music-xml-score-viewer").then((module) => ({
+    default: module.MusicXmlScoreViewer,
+  })),
+);
+
+const SongPdfViewer = lazy(() =>
+  import("./song-pdf-viewer").then((module) => ({
+    default: module.SongPdfViewer,
+  })),
+);
+
+function DocumentViewerLoadingState() {
+  return (
+    <div
+      aria-busy="true"
+      className="song-document-viewer__status-row"
+      role="status"
+    >
+      <p className="song-document-viewer__status">
+        Chargement du document…
+      </p>
+    </div>
+  );
+}
 
 function SettingsIcon() {
   return (
@@ -386,25 +408,29 @@ export function SongDetailView({
         ) : null}
 
         {canAccessScores && resolvedSourceView === "pdf" && song.pdfSource ? (
-          <SongPdfViewer
-            copyright={song.copyright}
-            sourceUrl={song.pdfSource.downloadUrl}
-            title={song.title}
-          />
+          <Suspense fallback={<DocumentViewerLoadingState />}>
+            <SongPdfViewer
+              copyright={song.copyright}
+              sourceUrl={song.pdfSource.downloadUrl}
+              title={song.title}
+            />
+          </Suspense>
         ) : canAccessScores &&
           resolvedSourceView === "musicxml" &&
           song.musicXmlSource ? (
-          <MusicXmlScoreViewer
-            ref={musicXmlViewerRef}
-            key={song.id}
-            collection={song.collection}
-            collectionNumber={song.collectionNumber}
-            copyright={song.copyright}
-            defaultKey={song.defaultKey}
-            showSettings={areSettingsVisible}
-            sourceUrl={song.musicXmlSource.downloadUrl}
-            title={song.title}
-          />
+          <Suspense fallback={<DocumentViewerLoadingState />}>
+            <MusicXmlScoreViewer
+              ref={musicXmlViewerRef}
+              key={song.id}
+              collection={song.collection}
+              collectionNumber={song.collectionNumber}
+              copyright={song.copyright}
+              defaultKey={song.defaultKey}
+              showSettings={areSettingsVisible}
+              sourceUrl={song.musicXmlSource.downloadUrl}
+              title={song.title}
+            />
+          </Suspense>
         ) : (
           <TransposableSongSheet
             ref={textViewerRef}

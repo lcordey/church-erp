@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 import {
   authSessionCookieName,
@@ -13,11 +14,11 @@ export class AuthenticationRequiredError extends Error {
   }
 }
 
-export async function getCurrentActor(): Promise<AuthenticatedActor | null> {
+export const getCurrentActor = cache(async (): Promise<AuthenticatedActor | null> => {
   const cookieStore = await cookies();
 
   return readAuthSessionToken(cookieStore.get(authSessionCookieName)?.value);
-}
+});
 
 export async function requireAdminAccess(): Promise<AuthenticatedActor> {
   const actor = await getCurrentActor();

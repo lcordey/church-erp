@@ -50,6 +50,7 @@ export function SongCard({
 }: SongCardProps) {
   const hasQuickActions = mode === "selection" && Boolean(onEdit || onAddToSetlist);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [shouldPrefetch, setShouldPrefetch] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const collectionLabel = formatSongCollectionLabel(
     song.collection,
@@ -89,7 +90,14 @@ export function SongCard({
       }`}
     >
       {href ? (
-        <Link className="song-card__open" href={href}>
+        <Link
+          className="song-card__open"
+          href={href}
+          onFocus={() => setShouldPrefetch(true)}
+          onPointerDown={() => setShouldPrefetch(true)}
+          onPointerEnter={() => setShouldPrefetch(true)}
+          prefetch={shouldPrefetch ? true : null}
+        >
           <span className="song-card__content">
             <span className="song-card__title">{song.title}</span>
             <span className="song-card__metadata">
