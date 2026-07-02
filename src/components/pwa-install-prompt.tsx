@@ -19,6 +19,8 @@ type NavigatorWithStandalone = Navigator & {
 
 const DISMISS_KEY = "churcherp:pwa-install-dismissed";
 
+type InstallPlatform = "ios" | "android" | "other-mobile" | "desktop";
+
 function isMobileDevice(): boolean {
   const navigatorWithHints = window.navigator as NavigatorWithStandalone;
 
@@ -36,10 +38,32 @@ function isMobileDevice(): boolean {
   return (isMobileUserAgent || isIpadDesktopMode) && hasTouchPrimaryInput;
 }
 
+function getInstallPlatform(): InstallPlatform {
+  if (!isMobileDevice()) {
+    return "desktop";
+  }
+
+  const userAgent = window.navigator.userAgent;
+  const isIpadDesktopMode =
+    /Macintosh/i.test(userAgent) && window.navigator.maxTouchPoints > 1;
+
+  if (/iPhone|iPad|iPod/i.test(userAgent) || isIpadDesktopMode) {
+    return "ios";
+  }
+
+  if (/Android/i.test(userAgent)) {
+    return "android";
+  }
+
+  return "other-mobile";
+}
+
 export function PwaInstallPrompt() {
   const [isVisible, setIsVisible] = useState(false);
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
+  const installPlatform =
+    typeof window === "undefined" ? "desktop" : getInstallPlatform();
 
   useEffect(() => {
     const registerServiceWorker = async () => {
@@ -60,9 +84,9 @@ export function PwaInstallPrompt() {
       window.matchMedia("(display-mode: standalone)").matches ||
       // Safari on iOS still exposes this flag.
       (window.navigator as NavigatorWithStandalone).standalone === true;
-    const canShowMobileInstallPrompt = isMobileDevice();
+    const platform = getInstallPlatform();
 
-    if (isStandalone || !canShowMobileInstallPrompt) {
+    if (isStandalone || platform === "desktop") {
       return;
     }
 
@@ -70,9 +94,12 @@ export function PwaInstallPrompt() {
       return;
     }
 
-    const revealTimer = window.setTimeout(() => {
-      setIsVisible(true);
-    }, 0);
+    const revealTimer =
+      platform === "ios"
+        ? window.setTimeout(() => {
+            setIsVisible(true);
+          }, 0)
+        : null;
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
@@ -89,7 +116,9 @@ export function PwaInstallPrompt() {
     window.addEventListener("appinstalled", handleAppInstalled);
 
     return () => {
-      window.clearTimeout(revealTimer);
+      if (revealTimer !== null) {
+        window.clearTimeout(revealTimer);
+      }
       window.removeEventListener(
         "beforeinstallprompt",
         handleBeforeInstallPrompt,
@@ -98,10 +127,8 @@ export function PwaInstallPrompt() {
     };
   }, []);
 
-  if (!isVisible || deferredPrompt === null) {
-    if (!isVisible) {
-      return null;
-    }
+  if (!isVisible) {
+    return null;
   }
 
   const handleInstall = async () => {
@@ -130,6 +157,12 @@ export function PwaInstallPrompt() {
   };
 
   const isNativePromptAvailable = deferredPrompt !== null;
+  const showManualIosInstructions =
+    installPlatform === "ios" && !isNativePromptAvailable;
+
+  if (!isNativePromptAvailable && !showManualIosInstructions) {
+    return null;
+  }
 
   return (
     <section className="pwa-install-prompt" aria-label="Installer l'application">
@@ -137,7 +170,7 @@ export function PwaInstallPrompt() {
         <p className="pwa-install-prompt__eyebrow">Application mobile</p>
         <h2>
           {isNativePromptAvailable
-            ? "Installer ChurchERP sur ce téléphone"
+            ? "Télécharger ChurchERP sur ce téléphone"
             : "Ajouter ChurchERP à l'écran d'accueil"}
         </h2>
         <p>
@@ -154,7 +187,7 @@ export function PwaInstallPrompt() {
             onClick={handleInstall}
             type="button"
           >
-            Installer
+            Télécharger
           </button>
         ) : null}
         <button
@@ -162,7 +195,7 @@ export function PwaInstallPrompt() {
           onClick={handleDismiss}
           type="button"
         >
-          {isNativePromptAvailable ? "Plus tard" : "Compris"}
+          {isNativePromptAvailable ? "Plus tard" : "Fermer"}
         </button>
       </div>
     </section>
