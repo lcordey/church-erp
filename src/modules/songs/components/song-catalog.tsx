@@ -117,19 +117,6 @@ export function SongCatalog({
   const pageSize = catalog.limit;
   const loadedCount = catalog.songs.length;
   const isCatalogLoading = isInitialLoading || isFetching;
-  const selectedCollectionsLabel =
-    selectedCollections.length > 0
-      ? `${selectedCollections.length} sélectionné${selectedCollections.length > 1 ? "s" : ""}`
-      : "Tous les recueils";
-  const selectedThemesLabel =
-    selectedThemeIds.length > 0
-      ? `${selectedThemeIds.length} sélectionné${selectedThemeIds.length > 1 ? "s" : ""}`
-      : "Tous les thèmes";
-  const selectedLabelsLabel =
-    selectedLabelIds.length > 0
-      ? `${selectedLabelIds.length} sélectionné${selectedLabelIds.length > 1 ? "s" : ""}`
-      : "Tous les labels";
-
   return (
     <>
       {showHeading ? (
@@ -212,7 +199,6 @@ export function SongCatalog({
                 }}
               >
                 <span>Recueils</span>
-                <small>{selectedCollectionsLabel}</small>
               </summary>
               <fieldset className="catalog-collections">
                 <legend className="sr-only">Recueils</legend>
@@ -244,7 +230,6 @@ export function SongCatalog({
                 }}
               >
                 <span>Thèmes</span>
-                <small>{selectedThemesLabel}</small>
               </summary>
               <fieldset className="catalog-collections">
                 <legend className="sr-only">Thèmes</legend>
@@ -281,7 +266,6 @@ export function SongCatalog({
                 }}
               >
                 <span>Labels</span>
-                <small>{selectedLabelsLabel}</small>
               </summary>
               <fieldset className="catalog-collections">
                 <legend className="sr-only">Labels</legend>
