@@ -51,6 +51,16 @@ function CatalogLoadingState() {
   );
 }
 
+function FilterToggleIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M4 7h16" />
+      <path d="M7 12h10" />
+      <path d="M10 17h4" />
+    </svg>
+  );
+}
+
 export function SongCatalog({
   initialCollections,
   initialCatalog,
@@ -103,6 +113,7 @@ export function SongCatalog({
   const [openFilter, setOpenFilter] = useState<
     "collections" | "themes" | "labels" | null
   >(null);
+  const [areFiltersVisible, setAreFiltersVisible] = useState(true);
   const pageSize = catalog.limit;
   const loadedCount = catalog.songs.length;
   const isCatalogLoading = isInitialLoading || isFetching;
@@ -152,122 +163,152 @@ export function SongCatalog({
             placeholder={searchPlaceholder}
             value={search}
           />
-          {search ? (
-            <button type="button" onClick={() => updateSearch("")}>
-              Effacer
+          <div className="catalog-search__actions">
+            {search ? (
+              <button type="button" onClick={() => updateSearch("")}>
+                Effacer
+              </button>
+            ) : null}
+            <button
+              aria-expanded={areFiltersVisible}
+              aria-label={
+                areFiltersVisible
+                  ? "Masquer les filtres"
+                  : "Afficher les filtres"
+              }
+              className="icon-button catalog-search__filters-toggle"
+              onClick={() => {
+                setAreFiltersVisible((current) => {
+                  const nextValue = !current;
+
+                  if (!nextValue) {
+                    setOpenFilter(null);
+                  }
+
+                  return nextValue;
+                });
+              }}
+              type="button"
+            >
+              <FilterToggleIcon />
+              <span className="sr-only">
+                {areFiltersVisible ? "Masquer les filtres" : "Afficher les filtres"}
+              </span>
             </button>
-          ) : null}
+          </div>
         </div>
-        <div className="catalog-filters">
-          <details
-            className="catalog-filter-dropdown"
-            open={openFilter === "collections"}
-          >
-            <summary
-              onClick={(event) => {
-                event.preventDefault();
-                setOpenFilter((current) =>
-                  current === "collections" ? null : "collections",
-                );
-              }}
+        {areFiltersVisible ? (
+          <div className="catalog-filters">
+            <details
+              className="catalog-filter-dropdown"
+              open={openFilter === "collections"}
             >
-              <span>Recueils</span>
-              <small>{selectedCollectionsLabel}</small>
-            </summary>
-            <fieldset className="catalog-collections">
-              <legend className="sr-only">Recueils</legend>
-              <div className="catalog-collections__options">
-                {availableCollections.map((collection) => (
-                  <label key={collection}>
-                    <input
-                      checked={selectedCollections.includes(collection)}
-                      onChange={() => toggleCollection(collection)}
-                      type="checkbox"
-                    />
-                    <span>{getCollectionLabel(collection)}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          </details>
+              <summary
+                onClick={(event) => {
+                  event.preventDefault();
+                  setOpenFilter((current) =>
+                    current === "collections" ? null : "collections",
+                  );
+                }}
+              >
+                <span>Recueils</span>
+                <small>{selectedCollectionsLabel}</small>
+              </summary>
+              <fieldset className="catalog-collections">
+                <legend className="sr-only">Recueils</legend>
+                <div className="catalog-collections__options">
+                  {availableCollections.map((collection) => (
+                    <label key={collection}>
+                      <input
+                        checked={selectedCollections.includes(collection)}
+                        onChange={() => toggleCollection(collection)}
+                        type="checkbox"
+                      />
+                      <span>{getCollectionLabel(collection)}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            </details>
 
-          <details
-            className="catalog-filter-dropdown"
-            open={openFilter === "themes"}
-          >
-            <summary
-              onClick={(event) => {
-                event.preventDefault();
-                setOpenFilter((current) =>
-                  current === "themes" ? null : "themes",
-                );
-              }}
+            <details
+              className="catalog-filter-dropdown"
+              open={openFilter === "themes"}
             >
-              <span>Thèmes</span>
-              <small>{selectedThemesLabel}</small>
-            </summary>
-            <fieldset className="catalog-collections">
-              <legend className="sr-only">Thèmes</legend>
-              <div className="catalog-collections__options">
-                {availableThemes.map((theme) => (
-                  <label key={theme.id}>
-                    <input
-                      checked={selectedThemeIds.includes(theme.id)}
-                      onChange={() => toggleTaxonomy("theme", theme.id)}
-                      type="checkbox"
-                    />
-                    <span>{theme.name}</span>
-                  </label>
-                ))}
-                {availableThemes.length === 0 ? (
-                  <p className="catalog-filter-dropdown__hint">
-                    Aucun thème associé aux chants publiés.
-                  </p>
-                ) : null}
-              </div>
-            </fieldset>
-          </details>
+              <summary
+                onClick={(event) => {
+                  event.preventDefault();
+                  setOpenFilter((current) =>
+                    current === "themes" ? null : "themes",
+                  );
+                }}
+              >
+                <span>Thèmes</span>
+                <small>{selectedThemesLabel}</small>
+              </summary>
+              <fieldset className="catalog-collections">
+                <legend className="sr-only">Thèmes</legend>
+                <div className="catalog-collections__options">
+                  {availableThemes.map((theme) => (
+                    <label key={theme.id}>
+                      <input
+                        checked={selectedThemeIds.includes(theme.id)}
+                        onChange={() => toggleTaxonomy("theme", theme.id)}
+                        type="checkbox"
+                      />
+                      <span>{theme.name}</span>
+                    </label>
+                  ))}
+                  {availableThemes.length === 0 ? (
+                    <p className="catalog-filter-dropdown__hint">
+                      Aucun thème associé aux chants publiés.
+                    </p>
+                  ) : null}
+                </div>
+              </fieldset>
+            </details>
 
-          <details
-            className="catalog-filter-dropdown"
-            open={openFilter === "labels"}
-          >
-            <summary
-              onClick={(event) => {
-                event.preventDefault();
-                setOpenFilter((current) =>
-                  current === "labels" ? null : "labels",
-                );
-              }}
+            <details
+              className="catalog-filter-dropdown"
+              open={openFilter === "labels"}
             >
-              <span>Labels</span>
-              <small>{selectedLabelsLabel}</small>
-            </summary>
-            <fieldset className="catalog-collections">
-              <legend className="sr-only">Labels</legend>
-              <div className="catalog-collections__options">
-                {availableLabels.map((label) => (
-                  <label key={label.id}>
-                    <input
-                      checked={selectedLabelIds.includes(label.id)}
-                      onChange={() => toggleTaxonomy("label", label.id)}
-                      type="checkbox"
-                    />
-                    <span>{label.name}</span>
-                  </label>
-                ))}
-                {availableLabels.length === 0 ? (
-                  <p className="catalog-filter-dropdown__hint">
-                    Aucun label associé aux chants publiés.
-                  </p>
-                ) : null}
-              </div>
-            </fieldset>
-          </details>
-        </div>
+              <summary
+                onClick={(event) => {
+                  event.preventDefault();
+                  setOpenFilter((current) =>
+                    current === "labels" ? null : "labels",
+                  );
+                }}
+              >
+                <span>Labels</span>
+                <small>{selectedLabelsLabel}</small>
+              </summary>
+              <fieldset className="catalog-collections">
+                <legend className="sr-only">Labels</legend>
+                <div className="catalog-collections__options">
+                  {availableLabels.map((label) => (
+                    <label key={label.id}>
+                      <input
+                        checked={selectedLabelIds.includes(label.id)}
+                        onChange={() => toggleTaxonomy("label", label.id)}
+                        type="checkbox"
+                      />
+                      <span>{label.name}</span>
+                    </label>
+                  ))}
+                  {availableLabels.length === 0 ? (
+                    <p className="catalog-filter-dropdown__hint">
+                      Aucun label associé aux chants publiés.
+                    </p>
+                  ) : null}
+                </div>
+              </fieldset>
+            </details>
+          </div>
+        ) : null}
       </form>
 
-      {openFilter ? (
+      {openFilter && areFiltersVisible ? (
         <button
           aria-label="Fermer le filtre"
           className="catalog-filter-backdrop"
