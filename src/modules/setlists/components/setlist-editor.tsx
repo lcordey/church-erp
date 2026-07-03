@@ -1,22 +1,19 @@
 "use client";
 
 import { type DragEvent, type PointerEvent } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
 import { useUnsavedChangesGuard } from "@/src/shared/hooks/use-unsaved-changes-guard";
-
-import { SongCatalog } from "@/src/modules/songs/components/song-catalog";
 import type {
-  PublicSongCatalogPage,
   PublicSongSummary,
 } from "@/src/modules/songs/types/public-song";
 
 import type { SetlistDetail } from "../types/setlist";
 
 type SetlistEditorProps = {
-  initialCatalog: PublicSongCatalogPage;
   initialSetlist: SetlistDetail;
 };
 
@@ -44,7 +41,6 @@ function songLabel(song: PublicSongSummary) {
 }
 
 export function SetlistEditor({
-  initialCatalog,
   initialSetlist,
 }: SetlistEditorProps) {
   const router = useRouter();
@@ -52,10 +48,9 @@ export function SetlistEditor({
   const [songIds, setSongIds] = useState(
     initialSetlist.items.map((item) => item.song.id),
   );
-  const [knownSongs, setKnownSongs] = useState<PublicSongSummary[]>(() => [
-    ...initialSetlist.items.map((item) => item.song),
-    ...initialCatalog.songs,
-  ]);
+  const [knownSongs, setKnownSongs] = useState<PublicSongSummary[]>(
+    () => initialSetlist.items.map((item) => item.song),
+  );
   const [message, setMessage] = useState("");
   const [isPending, startTransition] = useTransition();
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -453,18 +448,11 @@ export function SetlistEditor({
           aria-labelledby="setlist-song-catalog-title"
           className="catalog-section setlist-editor__catalog-section"
         >
-          <SongCatalog
-            initialCatalog={initialCatalog}
-            heading="Ajouter un chant"
-            headingId="setlist-song-catalog-title"
-            emptyMessage="Aucun chant ne correspond à cette recherche."
+          <SetlistSongCatalog
             onOpenSong={(song) => {
               rememberSong(song);
               setSongIds((current) => [...current, song.id]);
             }}
-            searchInputId="setlist-song-search"
-            searchPlaceholder="Titre ou numéro de recueil"
-            syncUrl={false}
           />
         </section>
       </div>
@@ -472,3 +460,25 @@ export function SetlistEditor({
     </main>
   );
 }
+const SetlistSongCatalog = dynamic(
+  () =>
+    import("./setlist-song-catalog").then(
+      (module) => module.SetlistSongCatalog,
+    ),
+  {
+    loading: () => (
+      <div
+        aria-busy="true"
+        aria-live="polite"
+        className="catalog-loading"
+        role="status"
+      >
+        <span aria-hidden="true" className="catalog-loading__spinner" />
+        <div>
+          <strong>Chargement du répertoire…</strong>
+          <p>Les chants vont apparaître dans un instant.</p>
+        </div>
+      </div>
+    ),
+  },
+);

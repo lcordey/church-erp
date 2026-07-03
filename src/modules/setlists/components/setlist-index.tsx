@@ -68,8 +68,16 @@ function SetlistCard({
   onEdit,
   setlist,
 }: SetlistCardProps) {
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [shouldPrefetch, setShouldPrefetch] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  function prefetchSetlistRoutes() {
+    setShouldPrefetch(true);
+    void router.prefetch(openHref);
+    void router.prefetch(`/setlist/${setlist.id}`);
+  }
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -102,7 +110,14 @@ function SetlistCard({
       className={`song-card setlist-card${isMenuOpen ? " song-card--menu-open" : ""}`}
       style={{ "--card-index": index } as React.CSSProperties}
     >
-      <Link className="song-card__open" href={openHref}>
+      <Link
+        className="song-card__open"
+        href={openHref}
+        onFocus={prefetchSetlistRoutes}
+        onPointerDown={prefetchSetlistRoutes}
+        onPointerEnter={prefetchSetlistRoutes}
+        prefetch={shouldPrefetch ? true : null}
+      >
         <span className="song-card__content">
           <span className="song-card__title">{setlist.title}</span>
           <span className="song-card__metadata">
@@ -125,6 +140,8 @@ function SetlistCard({
               stopEvent(event);
               setIsMenuOpen((current) => !current);
             }}
+            onFocus={prefetchSetlistRoutes}
+            onPointerEnter={prefetchSetlistRoutes}
             onPointerDown={stopEvent}
             type="button"
           >

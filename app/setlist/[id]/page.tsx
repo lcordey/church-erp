@@ -1,7 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
 import { getCurrentActor } from "@/src/infrastructure/auth/require-admin";
-import { listPublicSongs } from "@/src/modules/songs/services/public-song-catalog";
 import { SetlistEditor } from "@/src/modules/setlists/components/setlist-editor";
 import { getSetlist } from "@/src/modules/setlists/services/setlist-management";
 import { getLoginHref } from "@/src/shared/navigation/login-redirect";
@@ -20,14 +19,11 @@ export default async function SetlistEditPage({ params }: SetlistEditPageProps) 
     redirect(getLoginHref(`/setlist/${id}`));
   }
 
-  const [setlist, catalog] = await Promise.all([
-    getSetlist(id),
-    listPublicSongs(),
-  ]);
+  const setlist = await getSetlist(id);
 
   if (!setlist) {
     notFound();
   }
 
-  return <SetlistEditor initialCatalog={catalog} initialSetlist={setlist} />;
+  return <SetlistEditor initialSetlist={setlist} />;
 }

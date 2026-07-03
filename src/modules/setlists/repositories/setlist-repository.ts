@@ -1,4 +1,5 @@
-import { and, asc, eq, exists, inArray, sql } from "drizzle-orm";
+import { and, asc, count, eq, exists, inArray, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { getDatabase } from "@/src/infrastructure/database/client";
 import {
@@ -7,11 +8,7 @@ import {
   songs,
   songSources,
 } from "@/src/infrastructure/database/schema";
-import type {
-  PublicSongDetail,
-  SongMusicXmlSource,
-  SongPdfSource,
-} from "@/src/modules/songs/types/public-song";
+import type { PublicSongDetail, SongMusicXmlSource, SongPdfSource } from "@/src/modules/songs/types/public-song";
 
 import type { SetlistDetail, SetlistInput, SetlistSummary } from "../types/setlist";
 
@@ -24,18 +21,6 @@ export interface SetlistRepository {
   listPublishedSongIds(songIds: string[]): Promise<Set<string>>;
 }
 
-const activeChordProCondition = and(
-  eq(songSources.sourceType, "chordpro"),
-  eq(songSources.status, "active"),
-);
-const activePdfCondition = and(
-  eq(songSources.sourceType, "pdf"),
-  eq(songSources.status, "active"),
-);
-const activeMusicXmlCondition = and(
-  eq(songSources.sourceType, "musicxml"),
-  eq(songSources.status, "active"),
-);
 const publishedSongCondition = eq(songs.status, "published");
 
 const songDetailSelection = {
@@ -48,7 +33,6 @@ const songDetailSelection = {
   collection: songs.collection,
   collectionNumber: songs.collectionNumber,
   sourcePageUrl: songs.sourcePageUrl,
-  chordProContent: songSources.textContent,
 };
 
 const setlistItemSelection = {
@@ -74,6 +58,13 @@ type SetlistItemRow = {
   collectionNumber: number | null;
   sourcePageUrl: string | null;
   chordProContent: string | null;
+  pdfFileName: string | null;
+  pdfMimeType: string | null;
+  pdfFileSizeBytes: number | null;
+  pdfStoragePath: string | null;
+  musicXmlFileName: string | null;
+  musicXmlMimeType: string | null;
+  musicXmlFileSizeBytes: number | null;
 };
 
 type PdfRow = {
@@ -148,6 +139,9 @@ function toSongDetail(
 
 export function createSetlistRepository(): SetlistRepository {
   const database = getDatabase();
+  const chordProSources = alias(songSources, "setlist_song_chordpro_sources");
+  const pdfSources = alias(songSources, "setlist_song_pdf_sources");
+  const musicXmlSources = alias(songSources, "setlist_song_musicxml_sources");
   const publishedSongHasActiveSourceCondition = and(
     publishedSongCondition,
     exists(
@@ -158,66 +152,36 @@ export function createSetlistRepository(): SetlistRepository {
     ),
   );
 
-  async function findActivePdfSources(songIds: string[]) {
-    if (songIds.length === 0) {
-      return new Map<string, SongPdfSource>();
-    }
-
-    const rows = await database
-      .select({
-        songId: songSources.songId,
-        slug: songs.slug,
-        fileName: songSources.fileName,
-        mimeType: songSources.mimeType,
-        fileSizeBytes: songSources.fileSizeBytes,
-        storagePath: songSources.storagePath,
-      })
-      .from(songSources)
-      .innerJoin(songs, eq(songSources.songId, songs.id))
-      .where(
-        and(activePdfCondition, inArray(songSources.songId, songIds)),
-      );
-
-    return new Map(
-      rows.flatMap((row) => {
-        const source = toPdfSource(row);
-        return source ? [[row.songId, source]] : [];
-      }),
-    );
-  }
-
-  async function findActiveMusicXmlSources(songIds: string[]) {
-    if (songIds.length === 0) {
-      return new Map<string, SongMusicXmlSource>();
-    }
-
-    const rows = await database
-      .select({
-        songId: songSources.songId,
-        slug: songs.slug,
-        fileName: songSources.fileName,
-        mimeType: songSources.mimeType,
-        fileSizeBytes: songSources.fileSizeBytes,
-      })
-      .from(songSources)
-      .innerJoin(songs, eq(songSources.songId, songs.id))
-      .where(
-        and(activeMusicXmlCondition, inArray(songSources.songId, songIds)),
-      );
-
-    return new Map(
-      rows.map((row) => [row.songId, toMusicXmlSource(row)]),
-    );
-  }
-
   async function loadDetail(row: SetlistRow): Promise<SetlistDetail> {
     const itemRows = await database
-      .select(setlistItemSelection)
+      .select({
+        ...setlistItemSelection,
+        chordProContent: chordProSources.textContent,
+        pdfFileName: pdfSources.fileName,
+        pdfMimeType: pdfSources.mimeType,
+        pdfFileSizeBytes: pdfSources.fileSizeBytes,
+        pdfStoragePath: pdfSources.storagePath,
+        musicXmlFileName: musicXmlSources.fileName,
+        musicXmlMimeType: musicXmlSources.mimeType,
+        musicXmlFileSizeBytes: musicXmlSources.fileSizeBytes,
+      })
       .from(setlistItems)
       .innerJoin(songs, eq(setlistItems.songId, songs.id))
       .leftJoin(
-        songSources,
-        and(eq(songSources.songId, songs.id), activeChordProCondition),
+        chordProSources,
+        and(eq(chordProSources.songId, songs.id), eq(chordProSources.sourceType, "chordpro"), eq(chordProSources.status, "active")),
+      )
+      .leftJoin(
+        pdfSources,
+        and(eq(pdfSources.songId, songs.id), eq(pdfSources.sourceType, "pdf"), eq(pdfSources.status, "active")),
+      )
+      .leftJoin(
+        musicXmlSources,
+        and(
+          eq(musicXmlSources.songId, songs.id),
+          eq(musicXmlSources.sourceType, "musicxml"),
+          eq(musicXmlSources.status, "active"),
+        ),
       )
       .where(
         and(
@@ -226,10 +190,6 @@ export function createSetlistRepository(): SetlistRepository {
         ),
       )
       .orderBy(asc(setlistItems.position));
-    const pdfSources = await findActivePdfSources(itemRows.map((item) => item.id));
-    const musicXmlSources = await findActiveMusicXmlSources(
-      itemRows.map((item) => item.id),
-    );
 
     return {
       ...toSummary(row, itemRows.length),
@@ -238,8 +198,23 @@ export function createSetlistRepository(): SetlistRepository {
         position: item.position,
         song: toSongDetail(
           item,
-          pdfSources.get(item.id) ?? null,
-          musicXmlSources.get(item.id) ?? null,
+          toPdfSource({
+            songId: item.id,
+            slug: item.slug,
+            fileName: item.pdfFileName,
+            mimeType: item.pdfMimeType,
+            fileSizeBytes: item.pdfFileSizeBytes,
+            storagePath: item.pdfStoragePath,
+          }),
+          item.musicXmlFileName || item.musicXmlMimeType || item.musicXmlFileSizeBytes
+            ? toMusicXmlSource({
+                songId: item.id,
+                slug: item.slug,
+                fileName: item.musicXmlFileName,
+                mimeType: item.musicXmlMimeType,
+                fileSizeBytes: item.musicXmlFileSizeBytes,
+              })
+            : null,
         ),
       })),
     };
@@ -258,24 +233,19 @@ export function createSetlistRepository(): SetlistRepository {
   return {
     async listAll() {
       const rows = await database
-        .select()
-        .from(setlists)
-        .orderBy(asc(setlists.title));
-      const counts = await database
         .select({
-          setlistId: setlistItems.setlistId,
-          itemId: setlistItems.id,
+          id: setlists.id,
+          title: setlists.title,
+          createdAt: setlists.createdAt,
+          updatedAt: setlists.updatedAt,
+          songCount: count(setlistItems.id),
         })
-        .from(setlistItems);
-      const countBySetlist = counts.reduce((accumulator, item) => {
-        accumulator.set(
-          item.setlistId,
-          (accumulator.get(item.setlistId) ?? 0) + 1,
-        );
-        return accumulator;
-      }, new Map<string, number>());
+        .from(setlists)
+        .leftJoin(setlistItems, eq(setlistItems.setlistId, setlists.id))
+        .groupBy(setlists.id)
+        .orderBy(asc(setlists.title));
 
-      return rows.map((row) => toSummary(row, countBySetlist.get(row.id) ?? 0));
+      return rows.map((row) => toSummary(row, row.songCount));
     },
 
     findById,
