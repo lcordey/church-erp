@@ -3478,15 +3478,15 @@ a {
   }
 
   .catalog-filter-dropdown > fieldset {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: auto;
-    bottom: auto;
-    left: 50%;
-    width: min(420px, calc(100vw - 28px));
+    position: fixed;
+    top: auto;
+    right: 14px;
+    bottom: 14px;
+    left: 14px;
+    width: auto;
     max-height: min(60vh, 420px);
     overflow-y: auto;
-    transform: translateX(-50%);
+    transform: none;
   }
 
   .site-footer {
