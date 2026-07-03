@@ -3578,18 +3578,21 @@ a {
   }
 
   .taxonomy-create {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .taxonomy-list > li {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: center;
+    flex-direction: row;
     padding: 14px 0;
   }
 
-  .taxonomy-list__edit {
-    align-items: stretch;
-    flex-direction: column;
+  .taxonomy-list > li > span {
+    min-width: 0;
+  }
+
+  .taxonomy-list > li > div {
+    flex: 0 0 auto;
   }
 
   .admin-song-row {
