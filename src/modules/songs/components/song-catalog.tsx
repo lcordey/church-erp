@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { getSongCollectionLabel } from "../collections/song-collection";
 import type { PublicSongCatalogPage, PublicSongSummary } from "../types/public-song";
@@ -61,6 +61,12 @@ function FilterToggleIcon() {
   );
 }
 
+type CatalogFilterKey = "collections" | "themes" | "labels";
+
+function isMobileFilterLayout() {
+  return window.matchMedia("(max-width: 720px), (pointer: coarse)").matches;
+}
+
 export function SongCatalog({
   initialCollections,
   initialCatalog,
@@ -110,13 +116,78 @@ export function SongCatalog({
     loadOnMount,
     syncUrl,
   });
-  const [openFilter, setOpenFilter] = useState<
-    "collections" | "themes" | "labels" | null
-  >(null);
+  const [openFilter, setOpenFilter] = useState<CatalogFilterKey | null>(null);
   const [areFiltersVisible, setAreFiltersVisible] = useState(true);
+  const [mobileFilterPanelTop, setMobileFilterPanelTop] = useState<number | null>(
+    null,
+  );
+  const filterSummaryRefs = useRef<
+    Record<CatalogFilterKey, HTMLElement | null>
+  >({
+    collections: null,
+    themes: null,
+    labels: null,
+  });
   const pageSize = catalog.limit;
   const loadedCount = catalog.songs.length;
   const isCatalogLoading = isInitialLoading || isFetching;
+
+  function updateMobileFilterPanelPosition(filter: CatalogFilterKey) {
+    if (typeof window === "undefined" || !isMobileFilterLayout()) {
+      setMobileFilterPanelTop(null);
+      return;
+    }
+
+    const summaryElement = filterSummaryRefs.current[filter];
+
+    if (!summaryElement) {
+      setMobileFilterPanelTop(null);
+      return;
+    }
+
+    const viewportBottomMargin = 14;
+    const minimumPanelHeight = 180;
+    const nextTop = Math.min(
+      summaryElement.getBoundingClientRect().bottom + 8,
+      window.innerHeight - viewportBottomMargin - minimumPanelHeight,
+    );
+
+    setMobileFilterPanelTop(Math.max(14, Math.round(nextTop)));
+  }
+
+  useEffect(() => {
+    if (!openFilter || !areFiltersVisible) {
+      return;
+    }
+
+    const handleViewportChange = () => updateMobileFilterPanelPosition(openFilter);
+
+    window.addEventListener("resize", handleViewportChange);
+    window.addEventListener("scroll", handleViewportChange, { passive: true });
+
+    return () => {
+      window.removeEventListener("resize", handleViewportChange);
+      window.removeEventListener("scroll", handleViewportChange);
+    };
+  }, [areFiltersVisible, openFilter]);
+
+  function getMobileFilterPanelStyle(filter: CatalogFilterKey): CSSProperties | undefined {
+    if (
+      openFilter !== filter ||
+      mobileFilterPanelTop === null ||
+      typeof window === "undefined" ||
+      !isMobileFilterLayout()
+    ) {
+      return undefined;
+    }
+
+    return {
+      top: `${mobileFilterPanelTop}px`,
+      bottom: "auto",
+      maxHeight: `calc(100vh - ${mobileFilterPanelTop + 14}px)`,
+    };
+  }
+
   return (
     <>
       {showHeading ? (
@@ -194,14 +265,28 @@ export function SongCatalog({
               <summary
                 onClick={(event) => {
                   event.preventDefault();
-                  setOpenFilter((current) =>
-                    current === "collections" ? null : "collections",
-                  );
+                  filterSummaryRefs.current.collections = event.currentTarget;
+                  setOpenFilter((current) => {
+                    const nextFilter =
+                      current === "collections" ? null : "collections";
+
+                    if (nextFilter) {
+                      updateMobileFilterPanelPosition(nextFilter);
+                    }
+
+                    return nextFilter;
+                  });
+                }}
+                ref={(element) => {
+                  filterSummaryRefs.current.collections = element;
                 }}
               >
                 <span>Recueils</span>
               </summary>
-              <fieldset className="catalog-collections">
+              <fieldset
+                className="catalog-collections"
+                style={getMobileFilterPanelStyle("collections")}
+              >
                 <legend className="sr-only">Recueils</legend>
                 <div className="catalog-collections__options">
                   {availableCollections.map((collection) => (
@@ -225,14 +310,27 @@ export function SongCatalog({
               <summary
                 onClick={(event) => {
                   event.preventDefault();
-                  setOpenFilter((current) =>
-                    current === "themes" ? null : "themes",
-                  );
+                  filterSummaryRefs.current.themes = event.currentTarget;
+                  setOpenFilter((current) => {
+                    const nextFilter = current === "themes" ? null : "themes";
+
+                    if (nextFilter) {
+                      updateMobileFilterPanelPosition(nextFilter);
+                    }
+
+                    return nextFilter;
+                  });
+                }}
+                ref={(element) => {
+                  filterSummaryRefs.current.themes = element;
                 }}
               >
                 <span>Thèmes</span>
               </summary>
-              <fieldset className="catalog-collections">
+              <fieldset
+                className="catalog-collections"
+                style={getMobileFilterPanelStyle("themes")}
+              >
                 <legend className="sr-only">Thèmes</legend>
                 <div className="catalog-collections__options">
                   {availableThemes.map((theme) => (
@@ -261,14 +359,27 @@ export function SongCatalog({
               <summary
                 onClick={(event) => {
                   event.preventDefault();
-                  setOpenFilter((current) =>
-                    current === "labels" ? null : "labels",
-                  );
+                  filterSummaryRefs.current.labels = event.currentTarget;
+                  setOpenFilter((current) => {
+                    const nextFilter = current === "labels" ? null : "labels";
+
+                    if (nextFilter) {
+                      updateMobileFilterPanelPosition(nextFilter);
+                    }
+
+                    return nextFilter;
+                  });
+                }}
+                ref={(element) => {
+                  filterSummaryRefs.current.labels = element;
                 }}
               >
                 <span>Labels</span>
               </summary>
-              <fieldset className="catalog-collections">
+              <fieldset
+                className="catalog-collections"
+                style={getMobileFilterPanelStyle("labels")}
+              >
                 <legend className="sr-only">Labels</legend>
                 <div className="catalog-collections__options">
                   {availableLabels.map((label) => (
