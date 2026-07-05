@@ -18,7 +18,10 @@ import { useSongRenderPreferences } from "./song-render-preferences-provider";
 
 const chordColorLabels: Record<(typeof chordColorOptions)[number], string> = {
   accent: "Bleu",
+  claret: "Bordeaux",
   ink: "Noir",
+  plum: "Prune",
+  sage: "Sauge",
   warm: "Ocre",
 };
 
@@ -228,7 +231,9 @@ export function SongRenderPreferencesControls({
         </div>
       ) : null}
 
-      <div className="song-render-preferences__section">
+      <div
+        className={`song-render-preferences__section${showSourcePriority ? "" : " song-render-preferences__section--compact"}`}
+      >
         {showSourcePriority ? (
           <div className="song-render-preferences__group">
             <div className="song-render-preferences__group-copy">
@@ -324,10 +329,7 @@ export function SongRenderPreferencesControls({
             aria-label="Couleur des accords"
             onChange={(event) =>
               setPreferences({
-                chordColor: event.target.value as
-                  | "warm"
-                  | "accent"
-                  | "ink",
+                chordColor: event.target.value as (typeof chordColorOptions)[number],
               })
             }
             value={preferences.chordColor}

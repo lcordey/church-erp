@@ -9,6 +9,9 @@
   --accent: #315b78;
   --accent-soft: #dce7e9;
   --warm: #c96d3b;
+  --sage: #5d735c;
+  --claret: #8b4b4f;
+  --plum: #6b5874;
   --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino,
     serif;
   --sans: "Avenir Next", Avenir, "Segoe UI", sans-serif;
@@ -2291,6 +2294,11 @@ a {
   padding-top: 8px;
 }
 
+.song-render-preferences__section--compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+}
+
 .song-render-preferences__group {
   display: grid;
   gap: 0;
@@ -2437,6 +2445,23 @@ a {
 
 .song-render-preferences__section .sheet-controls__field + .sheet-controls__field {
   border-top: 1px solid rgb(49 91 120 / 8%);
+}
+
+.song-render-preferences__section--compact .sheet-controls__field {
+  grid-template-columns: auto minmax(120px, 1fr) auto;
+  min-width: 0;
+}
+
+.song-render-preferences__section--compact .sheet-controls__field + .sheet-controls__field {
+  border-top: 0;
+}
+
+.song-render-preferences__section--compact .sheet-controls__field:nth-child(n + 3) {
+  border-top: 1px solid rgb(49 91 120 / 8%);
+}
+
+.song-render-preferences__section--compact .sheet-controls__field:nth-child(2n) {
+  border-left: 1px solid rgb(49 91 120 / 8%);
 }
 
 .not-found {
@@ -3551,6 +3576,18 @@ a {
 
   .song-render-preferences__priority-actions {
     justify-content: flex-start;
+  }
+
+  .song-render-preferences__section--compact {
+    grid-template-columns: 1fr;
+  }
+
+  .song-render-preferences__section--compact .sheet-controls__field:nth-child(2n) {
+    border-left: 0;
+  }
+
+  .song-render-preferences__section--compact .sheet-controls__field:nth-child(n + 2) {
+    border-top: 1px solid rgb(49 91 120 / 8%);
   }
 
   .admin-shell {

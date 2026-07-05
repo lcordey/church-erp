@@ -40,7 +40,7 @@ describe("song render preferences", () => {
     expect(
       readSongRenderPreferences(
         JSON.stringify({
-          chordColor: "ink",
+          chordColor: "sage",
           chordFontScale: 0.94,
           lyricsFontScale: 1.12,
           lineHeight: 1.26,
@@ -48,7 +48,7 @@ describe("song render preferences", () => {
         }),
       ),
     ).toEqual({
-      chordColor: "ink",
+      chordColor: "sage",
       chordFontScale: 0.94,
       lyricsFontScale: 1.12,
       lineHeight: 1.26,

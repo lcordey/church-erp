@@ -4,7 +4,14 @@ export const songRenderPreferenceStorageKey =
 export const songRenderPreferenceChangeEvent =
   "church-erp-song-render-preferences-change";
 
-export const chordColorOptions = ["warm", "accent", "ink"] as const;
+export const chordColorOptions = [
+  "warm",
+  "accent",
+  "ink",
+  "sage",
+  "claret",
+  "plum",
+] as const;
 export const songSourceViewOptions = [
   "lyrics",
   "chordpro",

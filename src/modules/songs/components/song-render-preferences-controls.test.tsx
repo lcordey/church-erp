@@ -17,5 +17,7 @@ describe("song render preferences controls", () => {
 
     expect(markup).not.toContain("Source d’ouverture");
     expect(markup).toContain("Couleur des accords");
+    expect(markup).toContain("Bordeaux");
+    expect(markup).toContain("Sauge");
   });
 });

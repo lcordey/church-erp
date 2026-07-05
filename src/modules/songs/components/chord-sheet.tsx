@@ -5,9 +5,10 @@ import type { CSSProperties } from "react";
 import { formatChord, transposeChord } from "../music/musical-key";
 import { parseChordPro } from "../services/chordpro";
 import { useMusicNotation } from "./music-notation-provider";
+import type { ChordColorPreference } from "./song-render-preferences";
 
 type ChordSheetProps = {
-  chordColor?: "warm" | "accent" | "ink";
+  chordColor?: ChordColorPreference;
   chordFontScale?: number;
   content: string;
   lineHeight?: number;
