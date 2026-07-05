@@ -20,7 +20,10 @@ import { ChordSheet } from "./chord-sheet";
 import { LyricsSheet } from "./lyrics-sheet";
 import { useMusicNotation } from "./music-notation-provider";
 import { buildSongDocumentFileStem } from "./song-document-file-name";
-import { SongRenderPreferencesControls } from "./song-render-preferences-controls";
+import {
+  chordColorOptions,
+  defaultSongRenderPreferences,
+} from "./song-render-preferences";
 import { useSongRenderPreferences } from "./song-render-preferences-provider";
 
 type TransposableSongSheetProps = {
@@ -66,7 +69,7 @@ export const TransposableSongSheet = forwardRef<
   ref,
 ) {
   const { notation } = useMusicNotation();
-  const { preferences } = useSongRenderPreferences();
+  const { preferences, setPreferences } = useSongRenderPreferences();
   const canonicalDefaultKey =
     defaultKey && isMusicalKey(defaultKey) ? defaultKey : null;
   const [selectedKey, setSelectedKey] = useState(canonicalDefaultKey ?? "");
@@ -80,6 +83,14 @@ export const TransposableSongSheet = forwardRef<
       ? transposeChord(defaultKey, manualOffset)
       : null;
   const isResetDisabled = transposeBy === 0 && manualOffset === 0;
+  const chordColorLabels = {
+    accent: "Bleu",
+    claret: "Bordeaux",
+    ink: "Noir",
+    plum: "Prune",
+    sage: "Sauge",
+    warm: "Ocre",
+  } as const;
 
   const getPrintableLines = useCallback((): PrintableLine[] => {
     return parseChordPro(content).map((line) => {
@@ -266,64 +277,164 @@ export const TransposableSongSheet = forwardRef<
     <div className="song-text-document">
       {displayMode === "chords" && showSettings ? (
         <div className="song-render-settings">
-          <div className="transpose-toolbar">
-            <div>
-              <span>Transposition temporaire</span>
-              <small>La tonalité enregistrée reste inchangée.</small>
-            </div>
-            <div className="transpose-toolbar__controls">
-              <button
-                aria-label="Descendre d’un demi-ton"
-                onClick={() => shift(-1)}
-                type="button"
-              >
-                −
-              </button>
-              {canonicalDefaultKey ? (
-                <select
-                  aria-label="Tonalité affichée"
-                  value={selectedKey}
-                  onChange={(event) => setSelectedKey(event.target.value)}
-                >
-                  {getKeysForMode(canonicalDefaultKey).map((key) => (
-                    <option key={key} value={key}>
-                      {formatMusicalKey(key, notation)}
-                    </option>
-                  ))}
-                </select>
-              ) : (
+          <div className="song-render-settings__grid">
+            <div className="song-render-settings__item song-render-settings__item--tone">
+              <div className="song-render-settings__heading">
+                <span>Tonalité</span>
                 <strong>
                   {displayedKey
                     ? formatMusicalKey(displayedKey, notation)
                     : `${manualOffset >= 0 ? "+" : ""}${manualOffset}`}
                 </strong>
-              )}
-              <button
-                className="transpose-toolbar__reset"
-                aria-label="Réinitialiser la transposition"
-                disabled={isResetDisabled}
-                onClick={() => {
-                  setSelectedKey(canonicalDefaultKey ?? "");
-                  setManualOffset(0);
-                }}
-                type="button"
-              >
-                <svg aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M19 8a7 7 0 1 0 1.4 7.2" />
-                  <path d="M19 4v5h-5" />
-                </svg>
-              </button>
-              <button
-                aria-label="Monter d’un demi-ton"
-                onClick={() => shift(1)}
-                type="button"
-              >
-                +
-              </button>
+              </div>
+              <div className="song-render-settings__tone-controls">
+                <button
+                  aria-label="Descendre d’un demi-ton"
+                  onClick={() => shift(-1)}
+                  type="button"
+                >
+                  −
+                </button>
+                {canonicalDefaultKey ? (
+                  <select
+                    aria-label="Tonalité affichée"
+                    value={selectedKey}
+                    onChange={(event) => setSelectedKey(event.target.value)}
+                  >
+                    {getKeysForMode(canonicalDefaultKey).map((key) => (
+                      <option key={key} value={key}>
+                        {formatMusicalKey(key, notation)}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <strong className="song-render-settings__tone-value">
+                    {displayedKey
+                      ? formatMusicalKey(displayedKey, notation)
+                      : `${manualOffset >= 0 ? "+" : ""}${manualOffset}`}
+                  </strong>
+                )}
+                <button
+                  className="song-render-settings__reset"
+                  aria-label="Réinitialiser la transposition"
+                  disabled={isResetDisabled}
+                  onClick={() => {
+                    setSelectedKey(canonicalDefaultKey ?? "");
+                    setManualOffset(0);
+                  }}
+                  type="button"
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M19 8a7 7 0 1 0 1.4 7.2" />
+                    <path d="M19 4v5h-5" />
+                  </svg>
+                </button>
+                <button
+                  aria-label="Monter d’un demi-ton"
+                  onClick={() => shift(1)}
+                  type="button"
+                >
+                  +
+                </button>
+              </div>
             </div>
-          </div>
 
-          <SongRenderPreferencesControls showSourcePriority={false} />
+            <label className="song-render-settings__item song-render-settings__item--color">
+              <div className="song-render-settings__heading">
+                <span>Couleur des accords</span>
+                <strong>{chordColorLabels[preferences.chordColor]}</strong>
+              </div>
+              <select
+                aria-label="Couleur des accords"
+                onChange={(event) =>
+                  setPreferences({
+                    chordColor: event.target.value as (typeof chordColorOptions)[number],
+                  })
+                }
+                value={preferences.chordColor}
+              >
+                {chordColorOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {chordColorLabels[option]}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="song-render-settings__item song-render-settings__item--metric">
+              <div className="song-render-settings__heading">
+                <span>Taille des accords</span>
+                <strong>
+                  {Math.round(
+                    (preferences.chordFontScale /
+                      defaultSongRenderPreferences.chordFontScale) *
+                      100,
+                  )}
+                  %
+                </strong>
+              </div>
+              <input
+                aria-label="Taille des accords"
+                max="1.24"
+                min="0.68"
+                onChange={(event) =>
+                  setPreferences({
+                    chordFontScale: Number.parseFloat(event.target.value),
+                  })
+                }
+                step="0.02"
+                type="range"
+                value={preferences.chordFontScale}
+              />
+            </label>
+
+            <label className="song-render-settings__item song-render-settings__item--metric">
+              <div className="song-render-settings__heading">
+                <span>Taille du texte</span>
+                <strong>
+                  {Math.round(
+                    (preferences.lyricsFontScale /
+                      defaultSongRenderPreferences.lyricsFontScale) *
+                      100,
+                  )}
+                  %
+                </strong>
+              </div>
+              <input
+                aria-label="Taille du texte"
+                max="1.28"
+                min="0.9"
+                onChange={(event) =>
+                  setPreferences({
+                    lyricsFontScale: Number.parseFloat(event.target.value),
+                  })
+                }
+                step="0.02"
+                type="range"
+                value={preferences.lyricsFontScale}
+              />
+            </label>
+
+            <label className="song-render-settings__item song-render-settings__item--metric">
+              <div className="song-render-settings__heading">
+                <span>Interligne</span>
+                <strong>{preferences.lineHeight.toFixed(2)}</strong>
+              </div>
+              <input
+                aria-label="Interligne des chants"
+                max="1.5"
+                min="0.96"
+                onChange={(event) =>
+                  setPreferences({
+                    lineHeight: Number.parseFloat(event.target.value),
+                  })
+                }
+                step="0.02"
+                type="range"
+                value={preferences.lineHeight}
+              />
+            </label>
+          </div>
         </div>
       ) : null}
 
