@@ -17,6 +17,55 @@
   --sans: "Avenir Next", Avenir, "Segoe UI", sans-serif;
 }
 
+html[data-app-theme="sand"] {
+  color-scheme: light;
+}
+
+html[data-app-theme="night"] {
+  color-scheme: dark;
+  --ink: #e4e7ef;
+  --muted: #9ba4b6;
+  --paper: #161a23;
+  --paper-strong: #1d2330;
+  --line: #2d3546;
+  --accent: #7ea3c7;
+  --accent-soft: #243140;
+  --warm: #d69163;
+  --sage: #88a184;
+  --claret: #c7878d;
+  --plum: #a393b6;
+}
+
+html[data-app-theme="forest"] {
+  color-scheme: light;
+  --ink: #1f2c24;
+  --muted: #5c6d62;
+  --paper: #f3f5ef;
+  --paper-strong: #fcfdf9;
+  --line: #d6ddd0;
+  --accent: #486953;
+  --accent-soft: #dfe9df;
+  --warm: #b47952;
+  --sage: #56735a;
+  --claret: #8e5b5f;
+  --plum: #71657c;
+}
+
+html[data-app-theme="dawn"] {
+  color-scheme: light;
+  --ink: #3a2a2f;
+  --muted: #7e6870;
+  --paper: #fbf2ee;
+  --paper-strong: #fffaf7;
+  --line: #e6d5d0;
+  --accent: #a05d6d;
+  --accent-soft: #f1dfe2;
+  --warm: #cf7f57;
+  --sage: #7b8b79;
+  --claret: #9a5b63;
+  --plum: #8d738f;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -627,6 +676,58 @@ a {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.theme-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: min(420px, 100%);
+}
+
+.theme-toggle__option {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0 14px;
+  color: var(--ink);
+  background: var(--paper-strong);
+  font: 800 0.76rem/1 var(--sans);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.theme-toggle__option[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgb(49 91 120 / 10%);
+}
+
+.theme-toggle__swatch {
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgb(24 36 58 / 14%);
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 20%);
+}
+
+.theme-toggle__option--sand .theme-toggle__swatch {
+  background: linear-gradient(135deg, #f7f4ec, #315b78);
+}
+
+.theme-toggle__option--night .theme-toggle__swatch {
+  background: linear-gradient(135deg, #161a23, #7ea3c7);
+}
+
+.theme-toggle__option--forest .theme-toggle__swatch {
+  background: linear-gradient(135deg, #f3f5ef, #486953);
+}
+
+.theme-toggle__option--dawn .theme-toggle__swatch {
+  background: linear-gradient(135deg, #fbf2ee, #a05d6d);
 }
 
 .site-header__status {
@@ -1313,7 +1414,7 @@ a {
 .song-detail-view:fullscreen {
   width: 100%;
   height: 100%;
-  background: #eee9df;
+  background: var(--paper);
 }
 
 .song-header__top-row {
@@ -1335,7 +1436,7 @@ a {
   flex-direction: column;
   border: 0;
   border-radius: 0;
-  background: #eee9df;
+  background: var(--paper);
 }
 
 .song-detail-view:fullscreen .song-document-viewer {
@@ -1494,7 +1595,7 @@ a {
 
 .song-document-viewer__stage--text {
   overflow: auto;
-  background: #eee9df;
+  background: var(--paper);
 }
 
 .song-document-viewer--musicxml .song-document-viewer__stage {
@@ -1558,7 +1659,7 @@ a {
   overflow: auto;
   border-radius: 8px 8px 0 0;
   padding-top: 34px;
-  background: #fffdf7;
+  background: var(--paper-strong);
   box-shadow: 0 18px 50px rgb(24 36 58 / 16%);
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
@@ -2118,12 +2219,12 @@ a {
   padding: clamp(30px, 5vw, 68px);
   border: 0;
   border-radius: 4px;
-  background: #fffdf7;
+  background: var(--paper-strong);
   box-shadow: 0 30px 90px rgb(34 45 57 / 10%);
 }
 
 .sheet-card--lyrics {
-  background: #fffdf7;
+  background: var(--paper-strong);
 }
 
 .sheet-card__edge {
@@ -2193,6 +2294,10 @@ a {
   display: flex;
   flex-wrap: wrap;
   min-height: var(--chord-sheet-line-min-height);
+}
+
+.chord-sheet__chunk {
+  display: inline-flex;
 }
 
 .chord-sheet__segment {
@@ -2277,6 +2382,17 @@ a {
 .song-render-settings {
   border-bottom: 1px solid rgb(49 91 120 / 8%);
   background: rgb(247 244 236 / 72%);
+}
+
+@media (min-width: 900px) {
+  .song-render-settings {
+    width: min(820px, calc(100% - 48px));
+    margin: 0 auto 18px;
+    border: 1px solid rgb(49 91 120 / 10%);
+    border-radius: 4px;
+    box-shadow: 0 18px 40px rgb(24 36 58 / 8%);
+    overflow: hidden;
+  }
 }
 
 .song-render-settings__grid {

@@ -1,3 +1,4 @@
+import { AppThemeToggle } from "@/src/components/app-theme-toggle";
 import { MusicNotationToggle } from "@/src/modules/songs/components/music-notation-toggle";
 import { SongRenderPreferencesControls } from "@/src/modules/songs/components/song-render-preferences-controls";
 
@@ -34,15 +35,15 @@ export default function SettingsPage() {
           <SongRenderPreferencesControls showDescription />
         </div>
 
-        <div className="settings-section settings-section--placeholder">
+        <div className="settings-section">
           <div>
-            <h2>Application</h2>
+            <h2>Thème</h2>
             <p>
-              D’autres sous-sections globales seront ajoutées ici quand les
-              préférences de navigation et d’interface seront stabilisées.
+              Choisissez l’ambiance générale de l’application. Le thème est
+              conservé localement sur l’appareil.
             </p>
           </div>
-          <span className="settings-badge">Bientôt</span>
+          <AppThemeToggle />
         </div>
       </section>
     </main>

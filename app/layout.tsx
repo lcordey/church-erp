@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 
+import { AppThemeProvider } from "@/src/components/app-theme-provider";
 import { AppShell } from "@/src/components/app-shell";
 import { getCurrentActor } from "@/src/infrastructure/auth/require-admin";
 import { MusicNotationProvider } from "@/src/modules/songs/components/music-notation-provider";
@@ -43,11 +44,13 @@ export default async function RootLayout({
   return (
     <html lang="fr">
       <body>
-        <MusicNotationProvider>
-          <SongRenderPreferencesProvider>
-            <AppShell isAuthenticated={actor !== null}>{children}</AppShell>
-          </SongRenderPreferencesProvider>
-        </MusicNotationProvider>
+        <AppThemeProvider>
+          <MusicNotationProvider>
+            <SongRenderPreferencesProvider>
+              <AppShell isAuthenticated={actor !== null}>{children}</AppShell>
+            </SongRenderPreferencesProvider>
+          </MusicNotationProvider>
+        </AppThemeProvider>
       </body>
     </html>
   );

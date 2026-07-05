@@ -3,6 +3,8 @@ export type ChordProSegment = {
   lyrics: string;
 };
 
+export type ChordProSegmentGroup = ChordProSegment[];
+
 export type ChordProLine =
   | { type: "blank" }
   | { type: "section"; label: string }
@@ -116,4 +118,38 @@ export function parseChordPro(content: string): ChordProLine[] {
 
 export function hasChordProChords(content: string): boolean {
   return chordTokenPattern.test(content);
+}
+
+export function groupChordProSegmentsForWrap(
+  segments: ChordProSegment[],
+): ChordProSegmentGroup[] {
+  const groups: ChordProSegmentGroup[] = [];
+  let currentGroup: ChordProSegmentGroup = [];
+
+  for (const segment of segments) {
+    const tokens = segment.lyrics.match(/\s+|\S+/g);
+
+    if (!tokens || tokens.length === 0) {
+      currentGroup.push(segment);
+      continue;
+    }
+
+    let chordForNextToken = segment.chord;
+
+    for (const token of tokens) {
+      currentGroup.push({ chord: chordForNextToken, lyrics: token });
+      chordForNextToken = null;
+
+      if (/^\s+$/.test(token)) {
+        groups.push(currentGroup);
+        currentGroup = [];
+      }
+    }
+  }
+
+  if (currentGroup.length > 0) {
+    groups.push(currentGroup);
+  }
+
+  return groups;
 }

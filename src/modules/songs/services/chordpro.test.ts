@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { hasChordProChords, parseChordPro } from "./chordpro";
+import {
+  groupChordProSegmentsForWrap,
+  hasChordProChords,
+  parseChordPro,
+} from "./chordpro";
 
 describe("parseChordPro", () => {
   it("ignores document metadata and separates chords from lyrics", () => {
@@ -53,5 +57,24 @@ describe("parseChordPro", () => {
   it("detects when a ChordPro source contains chords", () => {
     expect(hasChordProChords("[C]Ligne")).toBe(true);
     expect(hasChordProChords("Ligne sans accord")).toBe(false);
+  });
+
+  it("keeps a chorded word in one wrap group", () => {
+    const lines = parseChordPro("[G]mer[G/B]veille [C]encore");
+
+    expect(lines[0]).toMatchObject({ type: "lyrics" });
+
+    const groups = groupChordProSegmentsForWrap(
+      lines[0].type === "lyrics" ? lines[0].segments : [],
+    );
+
+    expect(groups).toEqual([
+      [
+        { chord: "G", lyrics: "mer" },
+        { chord: "G/B", lyrics: "veille" },
+        { chord: null, lyrics: " " },
+      ],
+      [{ chord: "C", lyrics: "encore" }],
+    ]);
   });
 });

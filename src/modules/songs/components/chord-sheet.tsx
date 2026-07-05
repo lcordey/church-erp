@@ -3,7 +3,7 @@
 import type { CSSProperties } from "react";
 
 import { formatChord, transposeChord } from "../music/musical-key";
-import { parseChordPro } from "../services/chordpro";
+import { groupChordProSegmentsForWrap, parseChordPro } from "../services/chordpro";
 import { useMusicNotation } from "./music-notation-provider";
 import type { ChordColorPreference } from "./song-render-preferences";
 
@@ -60,19 +60,25 @@ export function ChordSheet({
           );
         }
 
+        const segmentGroups = groupChordProSegmentsForWrap(line.segments);
+
         return (
           <div className="chord-sheet__line" key={lineIndex}>
-            {line.segments.map((segment, segmentIndex) => (
-              <span className="chord-sheet__segment" key={segmentIndex}>
-                <span className="chord-sheet__chord" aria-hidden={!segment.chord}>
-                  {segment.chord
-                    ? formatChord(
-                        transposeChord(segment.chord, transposeBy),
-                        notation,
-                      )
-                    : "\u00a0"}
-                </span>
-                <span className="chord-sheet__lyrics">{segment.lyrics}</span>
+            {segmentGroups.map((group, groupIndex) => (
+              <span className="chord-sheet__chunk" key={groupIndex}>
+                {group.map((segment, segmentIndex) => (
+                  <span className="chord-sheet__segment" key={segmentIndex}>
+                    <span className="chord-sheet__chord" aria-hidden={!segment.chord}>
+                      {segment.chord
+                        ? formatChord(
+                            transposeChord(segment.chord, transposeBy),
+                            notation,
+                          )
+                        : "\u00a0"}
+                    </span>
+                    <span className="chord-sheet__lyrics">{segment.lyrics}</span>
+                  </span>
+                ))}
               </span>
             ))}
           </div>
