@@ -52,7 +52,7 @@ export function SongCard({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [shouldPrefetch, setShouldPrefetch] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const catalogTitle = formatSongCatalogTitle(song);
+  const catalogMetadata = formatSongCatalogTitle(song);
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -96,10 +96,8 @@ export function SongCard({
           prefetch={shouldPrefetch ? true : null}
         >
           <span className="song-card__content">
-            <span className="song-card__title">{catalogTitle}</span>
-            {song.author ? (
-              <span className="song-card__metadata">{song.author}</span>
-            ) : null}
+            <span className="song-card__title">{song.title}</span>
+            <span className="song-card__metadata">{catalogMetadata}</span>
           </span>
           {mode === "edition" ? (
             <span className="song-card__action-space" aria-hidden="true" />
@@ -114,10 +112,8 @@ export function SongCard({
           type="button"
         >
           <span className="song-card__content">
-            <span className="song-card__title">{catalogTitle}</span>
-            {song.author ? (
-              <span className="song-card__metadata">{song.author}</span>
-            ) : null}
+            <span className="song-card__title">{song.title}</span>
+            <span className="song-card__metadata">{catalogMetadata}</span>
           </span>
           {mode === "edition" ? (
             <span className="song-card__action-space" aria-hidden="true" />

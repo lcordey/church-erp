@@ -9,7 +9,7 @@ function getCollectionLabel(song: PublicSongSummary) {
 }
 
 export function formatSongCatalogTitle(song: PublicSongSummary) {
-  return `${getCollectionLabel(song)} · ${song.title}`;
+  return `${getCollectionLabel(song)} - ${song.title}`;
 }
 
 export function formatSongCollectionAndAuthor(song: PublicSongSummary) {

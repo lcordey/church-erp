@@ -21,7 +21,7 @@ const song: PublicSongSummary = {
 describe("song list labels", () => {
   it("combines collection and title for catalog entries", () => {
     expect(formatSongCatalogTitle(song)).toBe(
-      "J'aime l'Eternel 042 · Grâce infinie",
+      "J'aime l'Eternel 042 - Grâce infinie",
     );
   });
 
