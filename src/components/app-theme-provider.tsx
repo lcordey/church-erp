@@ -20,6 +20,13 @@ export const appThemeOptions = [
 
 export type AppTheme = (typeof appThemeOptions)[number];
 
+const appThemeColors: Record<AppTheme, string> = {
+  sand: "#315b78",
+  night: "#0f141c",
+  forest: "#486953",
+  dawn: "#a05d6d",
+};
+
 type AppThemeContextValue = {
   theme: AppTheme;
   setTheme: (theme: AppTheme) => void;
@@ -68,6 +75,12 @@ function applyTheme(theme: AppTheme) {
   document.documentElement.dataset.appTheme = theme;
   document.documentElement.style.colorScheme =
     theme === "night" ? "dark" : "light";
+
+  const themeColor = document.querySelector<HTMLMetaElement>(
+    'meta[name="theme-color"]',
+  );
+
+  themeColor?.setAttribute("content", appThemeColors[theme]);
 }
 
 export function AppThemeProvider({ children }: { children: ReactNode }) {

@@ -8,6 +8,18 @@ import { SongRenderPreferencesProvider } from "@/src/modules/songs/components/so
 
 import "./globals.css";
 
+const themeBootstrapScript = `
+  (() => {
+    try {
+      const theme = localStorage.getItem("church-erp-app-theme");
+      if (["sand", "night", "forest", "dawn"].includes(theme)) {
+        document.documentElement.dataset.appTheme = theme;
+        document.documentElement.style.colorScheme = theme === "night" ? "dark" : "light";
+      }
+    } catch {}
+  })();
+`;
+
 export const metadata: Metadata = {
   applicationName: "ChurchERP",
   title: {
@@ -42,7 +54,10 @@ export default async function RootLayout({
   const actor = await getCurrentActor();
 
   return (
-    <html lang="fr">
+    <html lang="fr" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+      </head>
       <body>
         <AppThemeProvider>
           <MusicNotationProvider>
