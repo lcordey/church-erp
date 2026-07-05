@@ -2,15 +2,16 @@
 
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
 import { getLoginHref } from "@/src/shared/navigation/login-redirect";
 
 import type { AdminSong } from "../types/admin-song";
-import type { PublicSongDetail } from "../types/public-song";
+import type { PublicSongDetail, PublicSongSummary } from "../types/public-song";
 import type { SongTaxonomies } from "../types/song-taxonomy";
 import { SongDetailView } from "./song-detail-view";
+import { SongNavigationActions } from "./song-navigation-actions";
 
 const SongEditorShell = dynamic(
   () =>
@@ -70,6 +71,7 @@ export function SongPageWorkspace({
   );
   const [adminSong, setAdminSong] = useState(initialAdminSong);
   const readableSong = adminSong ?? song;
+  const [collectionSongs, setCollectionSongs] = useState<PublicSongSummary[]>([]);
   const updateMode = useCallback(
     (nextMode: "selection" | "edition") => {
       if (nextMode === "edition") {
@@ -96,6 +98,96 @@ export function SongPageWorkspace({
     },
     [backHref, isAuthenticated, readableSong.slug, router],
   );
+
+  useEffect(() => {
+    if (mode !== "selection" || !readableSong.collection) {
+      setCollectionSongs([]);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function loadCollectionSongs() {
+      const allSongs: PublicSongSummary[] = [];
+      let offset = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const url = new URL("/api/songs", window.location.origin);
+        url.searchParams.set("collections", readableSong.collection ?? "");
+        url.searchParams.set("limit", "50");
+        url.searchParams.set("offset", String(offset));
+
+        const response = await fetch(url, { signal: controller.signal });
+        const payload = (await response.json().catch(() => null)) as
+          | {
+              data?: {
+                songs: PublicSongSummary[];
+                hasMore: boolean;
+              };
+            }
+          | null;
+
+        if (!response.ok || !payload?.data) {
+          throw new Error("Impossible de charger les chants du recueil.");
+        }
+
+        allSongs.push(...payload.data.songs);
+        hasMore = payload.data.hasMore;
+        offset += payload.data.songs.length;
+
+        if (payload.data.songs.length === 0) {
+          break;
+        }
+      }
+
+      setCollectionSongs(allSongs);
+    }
+
+    void loadCollectionSongs().catch(() => {
+      if (!controller.signal.aborted) {
+        setCollectionSongs([]);
+      }
+    });
+
+    return () => controller.abort();
+  }, [mode, readableSong.collection]);
+
+  const navigationActions = useMemo(() => {
+    if (mode !== "selection" || collectionSongs.length < 2) {
+      return undefined;
+    }
+
+    const currentIndex = collectionSongs.findIndex(
+      (collectionSong) => collectionSong.id === readableSong.id,
+    );
+
+    if (currentIndex === -1) {
+      return undefined;
+    }
+
+    const previousSong = collectionSongs[currentIndex - 1] ?? null;
+    const nextSong = collectionSongs[currentIndex + 1] ?? null;
+
+    return (
+      <SongNavigationActions
+        nextDisabled={!nextSong}
+        onNext={() => {
+          if (nextSong) {
+            router.push(createSongHref(nextSong.slug, { backHref }));
+          }
+        }}
+        onPrevious={() => {
+          if (previousSong) {
+            router.push(createSongHref(previousSong.slug, { backHref }));
+          }
+        }}
+        position={currentIndex + 1}
+        previousDisabled={!previousSong}
+        total={collectionSongs.length}
+      />
+    );
+  }, [backHref, collectionSongs, mode, readableSong.id, router]);
 
   return (
     <main
@@ -147,6 +239,7 @@ export function SongPageWorkspace({
           />
         ) : (
           <SongDetailView
+            actions={navigationActions}
             canAccessScores={canAccessScores}
             key={readableSong.id}
             song={readableSong}
