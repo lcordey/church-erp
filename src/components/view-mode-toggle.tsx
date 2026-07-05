@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 type ViewModeToggleProps = {
   mode: "public" | "admin";
@@ -35,61 +35,44 @@ export function ViewModeToggle({
 }: ViewModeToggleProps) {
   const router = useRouter();
   const currentMode = activeMode ?? (mode === "admin" ? "edition" : "selection");
-  const [pendingMode, setPendingMode] = useState<"selection" | "edition" | null>(
-    null,
-  );
 
   useEffect(() => {
     router.prefetch("/worship");
     router.prefetch("/worship?mode=edition");
   }, [router]);
 
-  useEffect(() => {
-    if (pendingMode === currentMode) {
-      setPendingMode(null);
-    }
-  }, [currentMode, pendingMode]);
-
   if (onModeChange) {
     return (
-      <nav
-        aria-busy={pendingMode !== null}
-        className={`view-mode-toggle${pendingMode ? " view-mode-toggle--pending" : ""}`}
-        aria-label="Mode d’affichage"
-      >
+      <nav className="view-mode-toggle" aria-label="Mode d’affichage">
         <button
           aria-pressed={currentMode === "selection"}
-          disabled={pendingMode !== null}
           onClick={() => {
             if (currentMode === "selection") {
               return;
             }
 
-            setPendingMode("selection");
             onModeChange("selection");
           }}
           title="Mode lecture"
           type="button"
         >
           <EyeIcon />
-          <span>{pendingMode === "selection" ? "Chargement…" : "Lecture"}</span>
+          <span>Lecture</span>
         </button>
         <button
           aria-pressed={currentMode === "edition"}
-          disabled={pendingMode !== null}
           onClick={() => {
             if (currentMode === "edition") {
               return;
             }
 
-            setPendingMode("edition");
             onModeChange("edition");
           }}
           title="Mode édition"
           type="button"
         >
           <EditIcon />
-          <span>{pendingMode === "edition" ? "Chargement…" : "Édition"}</span>
+          <span>Édition</span>
         </button>
       </nav>
     );

@@ -478,27 +478,6 @@ a {
   background: var(--accent);
 }
 
-.view-mode-toggle--pending {
-  opacity: 0.9;
-}
-
-.view-mode-toggle--pending button[disabled] {
-  cursor: wait;
-}
-
-.view-mode-toggle--pending button[disabled] span::after {
-  content: "";
-  display: inline-block;
-  width: 0.72rem;
-  height: 0.72rem;
-  margin-left: 0.45rem;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 999px;
-  vertical-align: -0.08rem;
-  animation: catalog-spinner 700ms linear infinite;
-}
-
 .view-mode-toggle svg {
   width: 16px;
   height: 16px;
