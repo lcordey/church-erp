@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-import { formatSongCollectionLabel } from "../collections/song-collection";
 import type { PublicSongSummary } from "../types/public-song";
+import { formatSongCatalogTitle } from "./song-list-labels";
 
 type SongCardProps = {
   href?: string;
@@ -52,10 +52,7 @@ export function SongCard({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [shouldPrefetch, setShouldPrefetch] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const collectionLabel = formatSongCollectionLabel(
-    song.collection,
-    song.collectionNumber,
-  );
+  const catalogTitle = formatSongCatalogTitle(song);
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -99,10 +96,10 @@ export function SongCard({
           prefetch={shouldPrefetch ? true : null}
         >
           <span className="song-card__content">
-            <span className="song-card__title">{song.title}</span>
-            <span className="song-card__metadata">
-              {collectionLabel ?? "Chant local"}
-            </span>
+            <span className="song-card__title">{catalogTitle}</span>
+            {song.author ? (
+              <span className="song-card__metadata">{song.author}</span>
+            ) : null}
           </span>
           {mode === "edition" ? (
             <span className="song-card__action-space" aria-hidden="true" />
@@ -117,10 +114,10 @@ export function SongCard({
           type="button"
         >
           <span className="song-card__content">
-            <span className="song-card__title">{song.title}</span>
-            <span className="song-card__metadata">
-              {collectionLabel ?? "Chant local"}
-            </span>
+            <span className="song-card__title">{catalogTitle}</span>
+            {song.author ? (
+              <span className="song-card__metadata">{song.author}</span>
+            ) : null}
           </span>
           {mode === "edition" ? (
             <span className="song-card__action-space" aria-hidden="true" />

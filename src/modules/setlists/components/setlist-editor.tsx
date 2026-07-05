@@ -3,10 +3,12 @@
 import { type DragEvent, type PointerEvent } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
+import { PageTransitionStatus } from "@/src/components/page-transition-status";
 import { ReorderItemActions } from "@/src/components/reorder-item-actions";
+import { formatSongCollectionAndAuthor } from "@/src/modules/songs/components/song-list-labels";
 import type { PublicSongSummary } from "@/src/modules/songs/types/public-song";
 import { useUnsavedChangesGuard } from "@/src/shared/hooks/use-unsaved-changes-guard";
 
@@ -31,14 +33,6 @@ type DropIndicator = {
   targetIndex: number;
 };
 
-function songLabel(song: PublicSongSummary) {
-  const collection = song.collection
-    ? `${song.collection}${song.collectionNumber ? ` ${String(song.collectionNumber).padStart(3, "0")}` : ""}`
-    : "Chant";
-
-  return `${collection} · ${song.title}`;
-}
-
 export function SetlistEditor({
   initialSetlist,
 }: SetlistEditorProps) {
@@ -51,7 +45,7 @@ export function SetlistEditor({
     () => initialSetlist.items.map((item) => item.song),
   );
   const [message, setMessage] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dropIndicator, setDropIndicator] = useState<DropIndicator | null>(null);
   const [savedSnapshot, setSavedSnapshot] = useState(() =>
@@ -242,35 +236,40 @@ export function SetlistEditor({
 
   const saveSetlist = useCallback(async () => {
     setMessage("");
+    setIsSaving(true);
 
-    const response = await fetch(`/api/setlists/${initialSetlist.id}`, {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ title, songIds }),
-    });
-    const payload = (await response.json()) as ApiError & {
-      data?: SetlistDetail;
-    };
+    try {
+      const response = await fetch(`/api/setlists/${initialSetlist.id}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title, songIds }),
+      });
+      const payload = (await response.json()) as ApiError & {
+        data?: SetlistDetail;
+      };
 
-    if (!response.ok || !payload.data) {
-      setMessage(
-        payload.error?.fields?.title ??
-          payload.error?.fields?.songIds ??
-          payload.error?.message ??
-          "Impossible d’enregistrer la setlist.",
+      if (!response.ok || !payload.data) {
+        setMessage(
+          payload.error?.fields?.title ??
+            payload.error?.fields?.songIds ??
+            payload.error?.message ??
+            "Impossible d’enregistrer la setlist.",
+        );
+        return false;
+      }
+
+      setSavedSnapshot(
+        JSON.stringify({
+          songIds,
+          title,
+        }),
       );
-      return false;
+      setMessage("Setlist enregistrée.");
+      router.refresh();
+      return true;
+    } finally {
+      setIsSaving(false);
     }
-
-    setSavedSnapshot(
-      JSON.stringify({
-        songIds,
-        title,
-      }),
-    );
-    setMessage("Setlist enregistrée.");
-    router.refresh();
-    return true;
   }, [initialSetlist.id, router, songIds, title]);
   const { confirmNavigation, dialog } = useUnsavedChangesGuard({
     isDirty,
@@ -297,15 +296,13 @@ export function SetlistEditor({
               ? "admin-button admin-button--primary admin-button--dirty"
               : "admin-button"
           }
-          disabled={isPending}
+          disabled={isSaving}
           onClick={() => {
-            startTransition(() => {
-              void saveSetlist();
-            });
+            void saveSetlist();
           }}
           type="button"
         >
-          {isPending
+          {isSaving
             ? "Enregistrement…"
             : isDirty
               ? "Enregistrer •"
@@ -317,10 +314,9 @@ export function SetlistEditor({
       confirmNavigation,
       initialSetlist.id,
       isDirty,
-      isPending,
+      isSaving,
       router,
       saveSetlist,
-      startTransition,
     ],
   );
 
@@ -396,10 +392,12 @@ export function SetlistEditor({
                       onPointerMove={(event) => handlePointerMove(index, event)}
                       onPointerUp={(event) => handlePointerUp(index, event)}
                     >
-                      <span>{index + 1}</span>
-                      <div>
-                        <strong>{song.title}</strong>
-                        <small>{songLabel(song)}</small>
+                      <div className="setlist-editor__item-copy">
+                        <strong className="setlist-editor__item-title">
+                          <span>{index + 1}.</span>
+                          {song.title}
+                        </strong>
+                        <small>{formatSongCollectionAndAuthor(song)}</small>
                       </div>
                       <ReorderItemActions
                         downLabel="Descendre le chant"
@@ -444,6 +442,11 @@ export function SetlistEditor({
         </section>
       </div>
       {dialog}
+      <PageTransitionStatus
+        detail="L’ordre et les informations sont en cours d’enregistrement."
+        isVisible={isSaving}
+        label="Enregistrement de la setlist…"
+      />
     </main>
   );
 }

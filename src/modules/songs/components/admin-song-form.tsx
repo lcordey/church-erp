@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 
+import { PageTransitionStatus } from "@/src/components/page-transition-status";
+
 import {
   formatMusicalKey,
   musicalKeys,
@@ -141,7 +143,8 @@ export function AdminSongForm({
   const [isPdfPending, setIsPdfPending] = useState(false);
   const [isMusicXmlPending, setIsMusicXmlPending] = useState(false);
   const [isChordProGenerationPending, setIsChordProGenerationPending] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isActionPending, startTransition] = useTransition();
   const [savedSnapshot, setSavedSnapshot] = useState(() =>
     comparableFormState(initialState(song)),
   );
@@ -209,39 +212,49 @@ export function AdminSongForm({
   }, [form, isEditing, song]);
 
   const submitSong = useCallback(async () => {
-    const savedSong = await saveSong();
+    let keepSavingState = false;
+    setIsSaving(true);
 
-    if (!savedSong) {
-      return false;
-    }
+    try {
+      const savedSong = await saveSong();
 
-    const publishedSong =
-      savedSong.status === "published"
-        ? savedSong
-        : await setPublication(savedSong.id, true);
+      if (!savedSong) {
+        return false;
+      }
 
-    if (!publishedSong) {
-      return false;
-    }
+      const publishedSong =
+        savedSong.status === "published"
+          ? savedSong
+          : await setPublication(savedSong.id, true);
 
-    const nextState = initialState(publishedSong);
-    setForm(nextState);
-    setSavedSnapshot(comparableFormState(nextState));
+      if (!publishedSong) {
+        return false;
+      }
 
-    if (onSaved) {
-      onSaved(publishedSong);
-      setMessage(isEditing ? "Modifications enregistrées." : "Chant créé.");
+      const nextState = initialState(publishedSong);
+      setForm(nextState);
+      setSavedSnapshot(comparableFormState(nextState));
+
+      if (onSaved) {
+        onSaved(publishedSong);
+        setMessage(isEditing ? "Modifications enregistrées." : "Chant créé.");
+        return true;
+      }
+
+      if (!isEditing) {
+        keepSavingState = true;
+        router.push(`/chants/${publishedSong.slug}?mode=edition`);
+        return true;
+      }
+
+      setMessage("Modifications enregistrées.");
+      router.refresh();
       return true;
+    } finally {
+      if (!keepSavingState) {
+        setIsSaving(false);
+      }
     }
-
-    if (!isEditing) {
-      router.push(`/chants/${publishedSong.slug}?mode=edition`);
-      return true;
-    }
-
-    setMessage("Modifications enregistrées.");
-    router.refresh();
-    return true;
   }, [isEditing, onSaved, router, saveSong]);
 
   useEffect(() => {
@@ -251,10 +264,10 @@ export function AdminSongForm({
 
     onEditorStateChange({
       isDirty,
-      isPending,
+      isPending: isSaving,
       submit: submitSong,
     });
-  }, [isDirty, isPending, onEditorStateChange, submitSong]);
+  }, [isDirty, isSaving, onEditorStateChange, submitSong]);
 
   async function setPublication(songId: string, published: boolean) {
     const response = await fetch(`/api/admin/songs/${songId}/publication`, {
@@ -525,9 +538,7 @@ export function AdminSongForm({
           className="admin-form"
           onSubmit={(event) => {
             event.preventDefault();
-            startTransition(() => {
-              void submitSong();
-            });
+            void submitSong();
           }}
         >
           <label className="field field--wide">
@@ -835,17 +846,17 @@ export function AdminSongForm({
                     ? "admin-button admin-button--primary admin-button--dirty"
                     : "admin-button admin-button--primary"
                 }
-                disabled={isPending}
+                disabled={isSaving}
               >
                 <span className="button-label">
-                  {isPending ? (
+                  {isSaving ? (
                     <span
                       aria-hidden="true"
                       className="button-spinner button-spinner--on-accent"
                     />
                   ) : null}
                   <span>
-                    {isPending
+                    {isSaving
                       ? "Enregistrement…"
                       : isDirty
                         ? "Enregistrer •"
@@ -858,7 +869,7 @@ export function AdminSongForm({
             {song ? (
               <button
                 className="admin-button admin-button--danger"
-                disabled={isPending}
+                disabled={isActionPending || isSaving}
                 onClick={() => startTransition(deleteSong)}
                 type="button"
               >
@@ -900,6 +911,11 @@ export function AdminSongForm({
           <ChordSheet content={form.chordProContent} title={form.title} />
         </div>
       </aside>
+      <PageTransitionStatus
+        detail="Les modifications sont en cours d’enregistrement."
+        isVisible={isSaving}
+        label="Enregistrement du chant…"
+      />
     </div>
   );
 }

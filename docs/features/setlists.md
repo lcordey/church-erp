@@ -46,6 +46,8 @@ de les modifier, puis de les jouer en mode lecture.
 - `/setlist` liste, cree et supprime les setlists
 - `/setlist/:id` edite le titre et les chants
 - `/setlist/:id/play` lance le mode lecture
+- l'enregistrement affiche immediatement un etat plein ecran jusqu'a la fin de la requete
+- dans l'editeur, chaque chant affiche `position - titre` puis `recueil - auteur`
 - le mode lecture reutilise le rendu de chant public
 - l'ajout de chants reutilise le catalogue public pagine, avec la meme recherche serveur et les memes filtres
 - le mode lecture immersif conserve le header de la setlist et ses actions precedent/suivant

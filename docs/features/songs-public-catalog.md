@@ -132,6 +132,7 @@ Implementation actuelle :
 - preference persistante de priorite des sources de lecture, configurable depuis la page `Reglages`
 - le catalogue conserve la recherche et les filtres tant que l'utilisateur reste sur la page catalogue
 - les cartes de chants du repertoire ouvrent directement le detail sans indicateur visuel d'ouverture dedie
+- la ligne principale d'une carte de chant affiche `recueil - titre`
 
 ## Tests
 

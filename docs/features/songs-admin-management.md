@@ -108,6 +108,7 @@ Implementation actuelle :
 - la page detail d'un chant permet de passer entre lecture et edition sans revenir au catalogue
 - le header de la page chant garde le retour au repertoire et la bascule selection/edition visibles
 - action unique d'enregistrement avec publication automatique
+- l'enregistrement affiche immediatement un etat plein ecran avant la transition de navigation
 - suppression d'un chant avec confirmation depuis l'ecran d'edition
 - feedback de validation en cas de saisie invalide
 - previsualisation ChordPro en direct

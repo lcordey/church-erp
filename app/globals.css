@@ -1230,6 +1230,36 @@ a {
   animation: catalog-spinner 700ms linear infinite;
 }
 
+.page-transition-status {
+  position: fixed;
+  z-index: 90;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 28px;
+  color: var(--muted);
+  background: var(--paper);
+}
+
+.page-transition-status strong {
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  font-weight: 500;
+}
+
+.page-transition-status p {
+  margin: 5px 0 0;
+  line-height: 1.55;
+}
+
+.page-transition-status__spinner {
+  width: 32px;
+  height: 32px;
+}
+
 .button-spinner {
   width: 1em;
   height: 1em;
@@ -2189,24 +2219,31 @@ a {
 
 .setlist-editor__item {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 16px;
   min-height: 78px;
   padding: 14px 16px;
 }
 
-.setlist-editor__item > span {
-  color: var(--warm);
-  font-family: var(--display);
-  font-style: italic;
-}
-
-.setlist-editor__item div:nth-child(2) {
+.setlist-editor__item-copy {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 5px;
+}
+
+.setlist-editor__item-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.setlist-editor__item-title span {
+  color: var(--warm);
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 500;
 }
 
 .setlist-editor__item small {
