@@ -478,6 +478,27 @@ a {
   background: var(--accent);
 }
 
+.view-mode-toggle--pending {
+  opacity: 0.9;
+}
+
+.view-mode-toggle--pending button[disabled] {
+  cursor: wait;
+}
+
+.view-mode-toggle--pending button[disabled] span::after {
+  content: "";
+  display: inline-block;
+  width: 0.72rem;
+  height: 0.72rem;
+  margin-left: 0.45rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  vertical-align: -0.08rem;
+  animation: catalog-spinner 700ms linear infinite;
+}
+
 .view-mode-toggle svg {
   width: 16px;
   height: 16px;
@@ -1633,6 +1654,10 @@ a {
   opacity: 0.45;
 }
 
+.song-score-viewer__field--transpose {
+  align-self: stretch;
+}
+
 .song-score-viewer__select {
   min-height: 40px;
   border: 1px solid rgb(49 91 120 / 18%);
@@ -1647,6 +1672,60 @@ a {
   display: grid;
   gap: 6px;
   min-width: 0;
+}
+
+.song-score-viewer__transpose-controls {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.song-score-viewer__transpose-controls button,
+.song-score-viewer__transpose-value {
+  min-height: 40px;
+  border: 1px solid rgb(49 91 120 / 18%);
+  border-radius: 12px;
+  background: rgb(255 253 247 / 94%);
+  color: var(--ink);
+}
+
+.song-score-viewer__transpose-controls button {
+  min-width: 40px;
+  padding: 0 10px;
+  font: 700 1rem/1 var(--sans);
+  cursor: pointer;
+}
+
+.song-score-viewer__transpose-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.song-score-viewer__transpose-value {
+  display: grid;
+  place-items: center;
+  padding: 0 12px;
+  font: 700 0.9rem/1 var(--sans);
+}
+
+.song-score-viewer__transpose-reset {
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.song-score-viewer__transpose-reset svg {
+  width: 18px;
+  height: 18px;
+}
+
+.song-score-viewer__transpose-reset path {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
 }
 
 .song-score-viewer__zoom-controls > span {
@@ -3377,18 +3456,6 @@ a {
   stroke-width: 2.4;
 }
 
-.transpose-toolbar--score {
-  margin: 0;
-  border-width: 0 0 1px;
-  border-color: var(--line);
-  color: var(--ink);
-  background: rgb(255 253 247 / 54%);
-}
-
-.transpose-toolbar--score small {
-  color: var(--muted);
-}
-
 @keyframes card-enter {
   from {
     opacity: 0;
@@ -3554,6 +3621,15 @@ a {
     align-items: stretch;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+  }
+
+  .song-score-viewer__transpose-controls {
+    gap: 6px;
+  }
+
+  .song-score-viewer__transpose-controls button,
+  .song-score-viewer__transpose-value {
+    min-height: 38px;
   }
 
   .app-shell__header-inner {

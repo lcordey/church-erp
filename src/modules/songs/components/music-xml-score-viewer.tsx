@@ -860,65 +860,6 @@ export const MusicXmlScoreViewer = forwardRef<
 
   return (
     <>
-      {showSettings ? (
-        <div className="transpose-toolbar transpose-toolbar--score">
-          <div>
-            <span>Transposition temporaire</span>
-            <small>La partition affichée est transposée par OSMD.</small>
-          </div>
-          <div className="transpose-toolbar__controls">
-            <button
-              aria-label="Descendre d’un demi-ton"
-              onClick={() => shift(-1)}
-              type="button"
-            >
-              −
-            </button>
-            {canonicalDefaultKey ? (
-              <select
-                aria-label="Tonalité affichée"
-                value={selectedKey}
-                onChange={(event) => setSelectedKey(event.target.value)}
-              >
-                {getKeysForMode(canonicalDefaultKey).map((key) => (
-                  <option key={key} value={key}>
-                    {formatMusicalKey(key, notation)}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <strong>
-                {displayedKey
-                  ? formatMusicalKey(displayedKey, notation)
-                  : `${manualOffset >= 0 ? "+" : ""}${manualOffset}`}
-              </strong>
-            )}
-            <button
-              className="transpose-toolbar__reset"
-              aria-label="Réinitialiser la transposition"
-              disabled={isResetDisabled}
-              onClick={() => {
-                setSelectedKey(canonicalDefaultKey ?? "");
-                setManualOffset(0);
-              }}
-              type="button"
-            >
-              <svg aria-hidden="true" viewBox="0 0 24 24">
-                <path d="M19 8a7 7 0 1 0 1.4 7.2" />
-                <path d="M19 4v5h-5" />
-              </svg>
-            </button>
-            <button
-              aria-label="Monter d’un demi-ton"
-              onClick={() => shift(1)}
-              type="button"
-            >
-              +
-            </button>
-          </div>
-        </div>
-      ) : null}
-
       <div ref={stageRef} className="song-document-viewer__stage">
         {showSettings ? (
             <div className="song-score-viewer__display-controls">
@@ -936,11 +877,67 @@ export const MusicXmlScoreViewer = forwardRef<
                         setLayoutMode(event.target.value as MusicXmlLayoutMode)
                       }
                     >
-                      <option value="original">Respecter la partition source</option>
+                      <option value="original">Respecter la source</option>
                       <option value="custom">Réglages personnalisés</option>
                     </select>
                   </label>
                 ) : null}
+                <label className="song-score-viewer__field song-score-viewer__field--transpose">
+                  <span className="song-score-viewer__field-heading">
+                    <span>Transposition</span>
+                  </span>
+                  <div className="song-score-viewer__transpose-controls">
+                    <button
+                      aria-label="Descendre d’un demi-ton"
+                      onClick={() => shift(-1)}
+                      type="button"
+                    >
+                      −
+                    </button>
+                    {canonicalDefaultKey ? (
+                      <select
+                        aria-label="Tonalité affichée"
+                        className="song-score-viewer__select"
+                        value={selectedKey}
+                        onChange={(event) => setSelectedKey(event.target.value)}
+                      >
+                        {getKeysForMode(canonicalDefaultKey).map((key) => (
+                          <option key={key} value={key}>
+                            {formatMusicalKey(key, notation)}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <strong className="song-score-viewer__transpose-value">
+                        {displayedKey
+                          ? formatMusicalKey(displayedKey, notation)
+                          : `${manualOffset >= 0 ? "+" : ""}${manualOffset}`}
+                      </strong>
+                    )}
+                    <button
+                      className="song-score-viewer__transpose-reset"
+                      aria-label="Réinitialiser la transposition"
+                      disabled={isResetDisabled}
+                      onClick={() => {
+                        setSelectedKey(canonicalDefaultKey ?? "");
+                        setManualOffset(0);
+                      }}
+                      type="button"
+                    >
+                      <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M19 8a7 7 0 1 0 1.4 7.2" />
+                        <path d="M19 4v5h-5" />
+                      </svg>
+                    </button>
+                    <button
+                      aria-label="Monter d’un demi-ton"
+                      onClick={() => shift(1)}
+                      type="button"
+                    >
+                      +
+                    </button>
+                  </div>
+                </label>
                 <label className="song-score-viewer__field">
                   <span className="song-score-viewer__field-heading">
                     <span>Marges latérales</span>

@@ -47,7 +47,7 @@ export function SongNavigationActions({
       </button>
       <button
         aria-label="Chant suivant"
-        className="icon-button icon-button--primary"
+        className="icon-button"
         disabled={nextDisabled}
         onClick={onNext}
         type="button"
