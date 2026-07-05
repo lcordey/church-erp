@@ -1,4 +1,5 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { getDatabase } from "@/src/infrastructure/database/client";
 import {
@@ -37,6 +38,7 @@ export class InvalidSongTaxonomySelectionError extends Error {
 }
 
 const defaultLocalCollection = "LeMont";
+const activeChordProSources = alias(songSources, "active_admin_chordpro_sources");
 
 export interface AdminSongRepository {
   listAll(): Promise<AdminSongListItem[]>;
@@ -70,9 +72,9 @@ const adminSongSelection = {
   collection: songs.collection,
   collectionNumber: songs.collectionNumber,
   sourcePageUrl: songs.sourcePageUrl,
-  sourceChordProUrl: songSources.externalUrl,
+  sourceChordProUrl: activeChordProSources.externalUrl,
   isEditable: songs.isEditable,
-  chordProContent: songSources.textContent,
+  chordProContent: activeChordProSources.textContent,
   createdAt: songs.createdAt,
   updatedAt: songs.updatedAt,
 };
@@ -179,11 +181,10 @@ function toAdminSong(
     musicXmlSource?: SongMusicXmlSource | null;
   },
 ): AdminSong {
-  if (!row.chordProContent) {
-    throw new Error(`Song "${row.id}" has no active ChordPro source.`);
-  }
-
-  return { ...row, chordProContent: row.chordProContent };
+  return {
+    ...row,
+    chordProContent: row.chordProContent ?? "",
+  };
 }
 
 function toAdminSongListItem(song: AdminSong): AdminSongListItem {
@@ -220,6 +221,11 @@ function isUniqueViolation(error: unknown): boolean {
 
 export function createAdminSongRepository(): AdminSongRepository {
   const database = getDatabase();
+  const activeChordProJoin = and(
+    eq(activeChordProSources.songId, songs.id),
+    eq(activeChordProSources.sourceType, "chordpro"),
+    eq(activeChordProSources.status, "active"),
+  );
   const activeChordPro = and(
     eq(songSources.sourceType, "chordpro"),
     eq(songSources.status, "active"),
@@ -375,8 +381,8 @@ export function createAdminSongRepository(): AdminSongRepository {
     const rows = await database
       .select(adminSongSelection)
       .from(songs)
-      .innerJoin(songSources, eq(songSources.songId, songs.id))
-      .where(and(eq(songs.id, id), activeChordPro))
+      .leftJoin(activeChordProSources, activeChordProJoin)
+      .where(eq(songs.id, id))
       .limit(1);
 
     if (!rows[0]) {
@@ -403,8 +409,7 @@ export function createAdminSongRepository(): AdminSongRepository {
       const rows = await database
         .select(adminSongSelection)
         .from(songs)
-        .innerJoin(songSources, eq(songSources.songId, songs.id))
-        .where(activeChordPro)
+        .leftJoin(activeChordProSources, activeChordProJoin)
         .orderBy(asc(songs.title));
 
       const pdfSources = await findActivePdfSources(
@@ -498,13 +503,29 @@ export function createAdminSongRepository(): AdminSongRepository {
             return false;
           }
 
-          await transaction
-            .update(songSources)
-            .set({
+          const [existingChordProSource] = await transaction
+            .select({ id: songSources.id })
+            .from(songSources)
+            .where(and(eq(songSources.songId, id), activeChordPro))
+            .limit(1);
+
+          if (existingChordProSource) {
+            await transaction
+              .update(songSources)
+              .set({
+                textContent: input.chordProContent,
+                updatedAt: new Date(),
+              })
+              .where(eq(songSources.id, existingChordProSource.id));
+          } else {
+            await transaction.insert(songSources).values({
+              songId: id,
+              sourceType: "chordpro",
+              status: "active",
               textContent: input.chordProContent,
-              updatedAt: new Date(),
-            })
-            .where(and(eq(songSources.songId, id), activeChordPro));
+            });
+          }
+
           await replaceTaxonomyAssignments(transaction, id, input);
 
           return true;
