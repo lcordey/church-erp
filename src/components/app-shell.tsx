@@ -107,7 +107,7 @@ export function AppShell({ children, isAuthenticated }: AppShellProps) {
                     className="app-sidebar__link"
                     href={item.href}
                     key={item.href}
-                    onClick={() => setIsOpen(false)}
+                    onNavigate={() => setIsOpen(false)}
                   >
                     <span>{item.label}</span>
                     <small>{item.description}</small>
@@ -124,7 +124,7 @@ export function AppShell({ children, isAuthenticated }: AppShellProps) {
             ) : (
               <Link
                 href={getLoginHref(pathname)}
-                onClick={() => setIsOpen(false)}
+                onNavigate={() => setIsOpen(false)}
               >
                 Se connecter
               </Link>

@@ -21,6 +21,9 @@ type UseSongCatalogQueryOptions = {
 
 type CatalogCache = Map<string, PublicSongCatalogResults>;
 
+// Keep inactive filters referentially stable so they do not retrigger effects.
+const noEffectiveFilterValues: string[] = [];
+
 function toCatalogResults(
   catalog: PublicSongCatalogPage | PublicSongCatalogResults,
 ): PublicSongCatalogResults {
@@ -46,7 +49,7 @@ export function normalizeSelectedFilterValues(
     (availableValues.length > 0 &&
       selectedValues.length === availableValues.length)
   ) {
-    return [];
+    return noEffectiveFilterValues;
   }
 
   return selectedValues;
