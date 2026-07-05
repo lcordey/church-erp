@@ -877,8 +877,8 @@ export const MusicXmlScoreViewer = forwardRef<
                         setLayoutMode(event.target.value as MusicXmlLayoutMode)
                       }
                     >
-                      <option value="original">Respecter la source</option>
-                      <option value="custom">Réglages personnalisés</option>
+                      <option value="original">Source</option>
+                      <option value="custom">Personnalisée</option>
                     </select>
                   </label>
                 ) : null}
@@ -1011,7 +1011,6 @@ export const MusicXmlScoreViewer = forwardRef<
                     value={lyricsSpacing}
                   />
                 </label>
-                {renderZoomControls()}
               </div>
             </div>
           ) : null}

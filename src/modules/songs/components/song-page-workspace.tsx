@@ -71,11 +71,13 @@ export function SongPageWorkspace({
     initialMode === "edition" && initialAdminSong ? "edition" : "selection",
   );
   const [adminSong, setAdminSong] = useState(initialAdminSong);
+  const [isEditionLoading, setIsEditionLoading] = useState(false);
   const readableSong = adminSong ?? song;
   const [collectionSongs, setCollectionSongs] = useState<PublicSongSummary[]>([]);
 
   useEffect(() => {
     setAdminSong(initialAdminSong);
+    setIsEditionLoading(false);
     setMode(
       initialMode === "edition" && initialAdminSong ? "edition" : "selection",
     );
@@ -83,6 +85,8 @@ export function SongPageWorkspace({
   const updateMode = useCallback(
     (nextMode: "selection" | "edition") => {
       if (nextMode === "edition") {
+        setIsEditionLoading(true);
+
         if (!isAuthenticated) {
           router.push(getLoginHref(createSongHref(readableSong.slug, {
             backHref,
@@ -99,6 +103,7 @@ export function SongPageWorkspace({
       }
 
       setMode(nextMode);
+      setIsEditionLoading(false);
       router.replace(createSongHref(readableSong.slug, {
         backHref,
         mode: nextMode,
@@ -247,11 +252,21 @@ export function SongPageWorkspace({
             song={adminSong}
           />
         ) : (
-          <SongDetailView
-            canAccessScores={canAccessScores}
-            key={readableSong.id}
-            song={readableSong}
-          />
+          isEditionLoading ? (
+            <div aria-busy="true" className="catalog-loading" role="status">
+              <span aria-hidden="true" className="catalog-loading__spinner" />
+              <div>
+                <strong>Chargement de l’éditeur…</strong>
+                <p>Téléchargement des données du chant.</p>
+              </div>
+            </div>
+          ) : (
+            <SongDetailView
+              canAccessScores={canAccessScores}
+              key={readableSong.id}
+              song={readableSong}
+            />
+          )
         )}
       </div>
     </main>
