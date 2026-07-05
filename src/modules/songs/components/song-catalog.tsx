@@ -63,6 +63,17 @@ function FilterToggleIcon() {
 
 type CatalogFilterKey = "collections" | "themes" | "labels";
 
+export function isCatalogFilterActive(
+  selectedValues: string[],
+  availableValues: string[],
+) {
+  return (
+    selectedValues.length > 0 &&
+    availableValues.length > 0 &&
+    selectedValues.length < availableValues.length
+  );
+}
+
 function isMobileFilterLayout() {
   return window.matchMedia("(max-width: 720px), (pointer: coarse)").matches;
 }
@@ -131,6 +142,18 @@ export function SongCatalog({
   const pageSize = catalog.limit;
   const loadedCount = catalog.songs.length;
   const isCatalogLoading = isInitialLoading || isFetching;
+  const hasActiveCollectionFilter = isCatalogFilterActive(
+    selectedCollections,
+    availableCollections,
+  );
+  const hasActiveThemeFilter = isCatalogFilterActive(
+    selectedThemeIds,
+    availableThemes.map((theme) => theme.id),
+  );
+  const hasActiveLabelFilter = isCatalogFilterActive(
+    selectedLabelIds,
+    availableLabels.map((label) => label.id),
+  );
 
   function updateMobileFilterPanelPosition(filter: CatalogFilterKey) {
     if (typeof window === "undefined" || !isMobileFilterLayout()) {
@@ -280,6 +303,11 @@ export function SongCatalog({
                 ref={(element) => {
                   filterSummaryRefs.current.collections = element;
                 }}
+                className={
+                  hasActiveCollectionFilter
+                    ? "catalog-filter-dropdown__summary catalog-filter-dropdown__summary--active"
+                    : "catalog-filter-dropdown__summary"
+                }
               >
                 <span>Recueils</span>
               </summary>
@@ -324,6 +352,11 @@ export function SongCatalog({
                 ref={(element) => {
                   filterSummaryRefs.current.themes = element;
                 }}
+                className={
+                  hasActiveThemeFilter
+                    ? "catalog-filter-dropdown__summary catalog-filter-dropdown__summary--active"
+                    : "catalog-filter-dropdown__summary"
+                }
               >
                 <span>Thèmes</span>
               </summary>
@@ -373,6 +406,11 @@ export function SongCatalog({
                 ref={(element) => {
                   filterSummaryRefs.current.labels = element;
                 }}
+                className={
+                  hasActiveLabelFilter
+                    ? "catalog-filter-dropdown__summary catalog-filter-dropdown__summary--active"
+                    : "catalog-filter-dropdown__summary"
+                }
               >
                 <span>Labels</span>
               </summary>

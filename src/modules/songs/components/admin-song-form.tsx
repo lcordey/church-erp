@@ -837,11 +837,21 @@ export function AdminSongForm({
                 }
                 disabled={isPending}
               >
-                {isPending
-                  ? "Enregistrement…"
-                  : isDirty
-                    ? "Enregistrer •"
-                    : "Enregistrer"}
+                <span className="button-label">
+                  {isPending ? (
+                    <span
+                      aria-hidden="true"
+                      className="button-spinner button-spinner--on-accent"
+                    />
+                  ) : null}
+                  <span>
+                    {isPending
+                      ? "Enregistrement…"
+                      : isDirty
+                        ? "Enregistrer •"
+                        : "Enregistrer"}
+                  </span>
+                </span>
               </button>
             ) : null}
 

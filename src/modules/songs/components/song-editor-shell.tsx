@@ -68,11 +68,21 @@ export function SongEditorShell({
         }}
         type="button"
       >
-        {editorState.isPending
-          ? "Enregistrement…"
-          : editorState.isDirty
-            ? "Enregistrer •"
-            : "Enregistrer"}
+        <span className="button-label">
+          {editorState.isPending ? (
+            <span
+              aria-hidden="true"
+              className="button-spinner button-spinner--on-accent"
+            />
+          ) : null}
+          <span>
+            {editorState.isPending
+              ? "Enregistrement…"
+              : editorState.isDirty
+                ? "Enregistrer •"
+                : "Enregistrer"}
+          </span>
+        </span>
       </button>
     ),
     [editorState, saveButtonClassName],

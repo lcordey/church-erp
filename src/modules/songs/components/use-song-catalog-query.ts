@@ -37,6 +37,21 @@ function normalizeCollections(collections: string[]): string[] {
   return [...collections].sort((left, right) => left.localeCompare(right));
 }
 
+export function normalizeSelectedFilterValues(
+  selectedValues: string[],
+  availableValues: string[],
+): string[] {
+  if (
+    selectedValues.length === 0 ||
+    (availableValues.length > 0 &&
+      selectedValues.length === availableValues.length)
+  ) {
+    return [];
+  }
+
+  return selectedValues;
+}
+
 function createQueryKey(options: {
   collections: string[];
   themeIds: string[];
@@ -189,6 +204,18 @@ export function useSongCatalogQuery({
   const replacementController = useRef<AbortController | null>(null);
   const activeQueryKey = useRef(initialKey);
   const changeReason = useRef<QueryChangeReason>("search");
+  const effectiveSelectedCollections = normalizeSelectedFilterValues(
+    selectedCollections,
+    availableCollections,
+  );
+  const effectiveSelectedThemeIds = normalizeSelectedFilterValues(
+    selectedThemeIds,
+    availableThemes.map((theme) => theme.id),
+  );
+  const effectiveSelectedLabelIds = normalizeSelectedFilterValues(
+    selectedLabelIds,
+    availableLabels.map((label) => label.id),
+  );
 
   useEffect(() => {
     if (!syncUrl) {
@@ -204,20 +231,20 @@ export function useSongCatalogQuery({
       url.searchParams.delete("q");
     }
 
-    if (selectedCollections.length > 0) {
-      url.searchParams.set("collections", selectedCollections.join(","));
+    if (effectiveSelectedCollections.length > 0) {
+      url.searchParams.set("collections", effectiveSelectedCollections.join(","));
     } else {
       url.searchParams.delete("collections");
     }
 
-    if (selectedThemeIds.length > 0) {
-      url.searchParams.set("themes", selectedThemeIds.join(","));
+    if (effectiveSelectedThemeIds.length > 0) {
+      url.searchParams.set("themes", effectiveSelectedThemeIds.join(","));
     } else {
       url.searchParams.delete("themes");
     }
 
-    if (selectedLabelIds.length > 0) {
-      url.searchParams.set("labels", selectedLabelIds.join(","));
+    if (effectiveSelectedLabelIds.length > 0) {
+      url.searchParams.set("labels", effectiveSelectedLabelIds.join(","));
     } else {
       url.searchParams.delete("labels");
     }
@@ -225,9 +252,9 @@ export function useSongCatalogQuery({
     window.history.replaceState(null, "", `${url.pathname}${url.search}`);
   }, [
     search,
-    selectedCollections,
-    selectedThemeIds,
-    selectedLabelIds,
+    effectiveSelectedCollections,
+    effectiveSelectedThemeIds,
+    effectiveSelectedLabelIds,
     syncUrl,
   ]);
 
@@ -244,9 +271,9 @@ export function useSongCatalogQuery({
 
     const normalizedSearch = search.trim();
     const key = createQueryKey({
-      collections: selectedCollections,
-      themeIds: selectedThemeIds,
-      labelIds: selectedLabelIds,
+      collections: effectiveSelectedCollections,
+      themeIds: effectiveSelectedThemeIds,
+      labelIds: effectiveSelectedLabelIds,
       limit: pageSize,
       offset: 0,
       search: normalizedSearch,
@@ -268,9 +295,9 @@ export function useSongCatalogQuery({
       const includeCollections = !hasLoadedCollections.current;
 
       void fetchCatalog({
-        collections: selectedCollections,
-        themeIds: selectedThemeIds,
-        labelIds: selectedLabelIds,
+        collections: effectiveSelectedCollections,
+        themeIds: effectiveSelectedThemeIds,
+        labelIds: effectiveSelectedLabelIds,
         includeCollections,
         limit: pageSize,
         offset: 0,
@@ -352,9 +379,9 @@ export function useSongCatalogQuery({
     pageSize,
     refreshVersion,
     search,
-    selectedCollections,
-    selectedThemeIds,
-    selectedLabelIds,
+    effectiveSelectedCollections,
+    effectiveSelectedThemeIds,
+    effectiveSelectedLabelIds,
   ]);
 
   function applyCachedCatalog(
@@ -365,9 +392,18 @@ export function useSongCatalogQuery({
   ) {
     const cached = cache.get(
       createQueryKey({
-        collections: nextCollections,
-        themeIds: nextThemeIds,
-        labelIds: nextLabelIds,
+        collections: normalizeSelectedFilterValues(
+          nextCollections,
+          availableCollectionsRef.current,
+        ),
+        themeIds: normalizeSelectedFilterValues(
+          nextThemeIds,
+          availableThemesRef.current.map((theme) => theme.id),
+        ),
+        labelIds: normalizeSelectedFilterValues(
+          nextLabelIds,
+          availableLabelsRef.current.map((label) => label.id),
+        ),
         limit: pageSize,
         offset: 0,
         search: nextSearch,
@@ -449,17 +485,17 @@ export function useSongCatalogQuery({
     const offset = catalog.songs.length;
     const normalizedSearch = search.trim();
     const baseKey = createQueryKey({
-      collections: selectedCollections,
-      themeIds: selectedThemeIds,
-      labelIds: selectedLabelIds,
+      collections: effectiveSelectedCollections,
+      themeIds: effectiveSelectedThemeIds,
+      labelIds: effectiveSelectedLabelIds,
       limit: pageSize,
       offset: 0,
       search: normalizedSearch,
     });
     const key = createQueryKey({
-      collections: selectedCollections,
-      themeIds: selectedThemeIds,
-      labelIds: selectedLabelIds,
+      collections: effectiveSelectedCollections,
+      themeIds: effectiveSelectedThemeIds,
+      labelIds: effectiveSelectedLabelIds,
       limit: pageSize,
       offset,
       search: normalizedSearch,
@@ -473,9 +509,9 @@ export function useSongCatalogQuery({
       const nextCatalog =
         cached ??
         (await fetchCatalog({
-          collections: selectedCollections,
-          themeIds: selectedThemeIds,
-          labelIds: selectedLabelIds,
+          collections: effectiveSelectedCollections,
+          themeIds: effectiveSelectedThemeIds,
+          labelIds: effectiveSelectedLabelIds,
           limit: pageSize,
           offset,
           search: normalizedSearch,
