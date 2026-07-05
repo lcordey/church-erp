@@ -1,62 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{
-    outcome: "accepted" | "dismissed";
-    platform: string;
-  }>;
-};
-
-type NavigatorWithStandalone = Navigator & {
-  standalone?: boolean;
-  userAgentData?: {
-    mobile?: boolean;
-  };
-};
-
-const DISMISS_KEY = "churcherp:pwa-install-dismissed";
-
-type InstallPlatform = "ios" | "android" | "other-mobile" | "desktop";
-
-function isMobileDevice(): boolean {
-  const navigatorWithHints = window.navigator as NavigatorWithStandalone;
-
-  if (typeof navigatorWithHints.userAgentData?.mobile === "boolean") {
-    return navigatorWithHints.userAgentData.mobile;
-  }
-
-  const userAgent = window.navigator.userAgent;
-  const isMobileUserAgent =
-    /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(userAgent);
-  const isIpadDesktopMode =
-    /Macintosh/i.test(userAgent) && window.navigator.maxTouchPoints > 1;
-  const hasTouchPrimaryInput = window.matchMedia("(pointer: coarse)").matches;
-
-  return (isMobileUserAgent || isIpadDesktopMode) && hasTouchPrimaryInput;
-}
-
-function getInstallPlatform(): InstallPlatform {
-  if (!isMobileDevice()) {
-    return "desktop";
-  }
-
-  const userAgent = window.navigator.userAgent;
-  const isIpadDesktopMode =
-    /Macintosh/i.test(userAgent) && window.navigator.maxTouchPoints > 1;
-
-  if (/iPhone|iPad|iPod/i.test(userAgent) || isIpadDesktopMode) {
-    return "ios";
-  }
-
-  if (/Android/i.test(userAgent)) {
-    return "android";
-  }
-
-  return "other-mobile";
-}
+import {
+  clearPwaInstallDismissal,
+  dismissPwaInstallPrompt,
+  getInstallPlatform,
+  isPwaInstallDismissed,
+  isRunningStandalone,
+  markPwaInstalled,
+  rememberDeferredInstallPrompt,
+  type BeforeInstallPromptEvent,
+} from "./pwa-install";
 
 export function PwaInstallPrompt() {
   const [isVisible, setIsVisible] = useState(false);
@@ -80,17 +34,13 @@ export function PwaInstallPrompt() {
 
     void registerServiceWorker();
 
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      // Safari on iOS still exposes this flag.
-      (window.navigator as NavigatorWithStandalone).standalone === true;
     const platform = getInstallPlatform();
 
-    if (isStandalone || platform === "desktop") {
+    if (isRunningStandalone() || platform === "desktop") {
       return;
     }
 
-    if (window.localStorage.getItem(DISMISS_KEY) === "true") {
+    if (isPwaInstallDismissed()) {
       return;
     }
 
@@ -103,11 +53,14 @@ export function PwaInstallPrompt() {
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
-      setDeferredPrompt(event as BeforeInstallPromptEvent);
+      const promptEvent = event as BeforeInstallPromptEvent;
+      rememberDeferredInstallPrompt(promptEvent);
+      setDeferredPrompt(promptEvent);
       setIsVisible(true);
     };
 
     const handleAppInstalled = () => {
+      markPwaInstalled();
       setDeferredPrompt(null);
       setIsVisible(false);
     };
@@ -140,20 +93,21 @@ export function PwaInstallPrompt() {
 
     await promptEvent.prompt();
     const choice = await promptEvent.userChoice;
+    rememberDeferredInstallPrompt(null);
     setDeferredPrompt(null);
     setIsVisible(false);
 
     if (choice.outcome === "dismissed") {
-      window.localStorage.setItem(DISMISS_KEY, "true");
+      dismissPwaInstallPrompt();
     } else {
-      window.localStorage.removeItem(DISMISS_KEY);
+      clearPwaInstallDismissal();
     }
   };
 
   const handleDismiss = () => {
     setDeferredPrompt(null);
     setIsVisible(false);
-    window.localStorage.setItem(DISMISS_KEY, "true");
+    dismissPwaInstallPrompt();
   };
 
   const isNativePromptAvailable = deferredPrompt !== null;

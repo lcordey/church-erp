@@ -1,4 +1,5 @@
 import { AppThemeToggle } from "@/src/components/app-theme-toggle";
+import { PwaInstallSettings } from "@/src/components/pwa-install-settings";
 import { MusicNotationToggle } from "@/src/modules/songs/components/music-notation-toggle";
 import { SongRenderPreferencesControls } from "@/src/modules/songs/components/song-render-preferences-controls";
 
@@ -44,6 +45,10 @@ export default function SettingsPage() {
             </p>
           </div>
           <SongRenderPreferencesControls showDescription />
+        </div>
+
+        <div className="settings-section settings-section--stacked">
+          <PwaInstallSettings />
         </div>
       </section>
     </main>

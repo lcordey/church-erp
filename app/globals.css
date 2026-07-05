@@ -784,6 +784,47 @@ a {
   flex-direction: column;
 }
 
+.settings-install-card {
+  display: grid;
+  gap: 18px;
+}
+
+.settings-install-card h2 {
+  margin: 0;
+}
+
+.settings-install-card p {
+  margin: 8px 0 0;
+}
+
+.settings-install-card__actions {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.settings-install-card__button {
+  min-height: 42px;
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  padding: 0 18px;
+  color: var(--ink);
+  background: var(--surface-input);
+  cursor: pointer;
+  font: 800 0.82rem/1 var(--sans);
+}
+
+.settings-install-card__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.settings-install-card__status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .settings-badge {
   display: inline-flex;
   min-height: 34px;

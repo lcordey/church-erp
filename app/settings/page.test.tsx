@@ -13,5 +13,6 @@ describe("settings page", () => {
     expect(markup.indexOf("<h2>Thème</h2>")).toBeLessThan(
       markup.indexOf("<h2>Lecture des chants</h2>"),
     );
+    expect(markup).toContain("<h2>Application</h2>");
   });
 });

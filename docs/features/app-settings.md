@@ -11,3 +11,12 @@
   formulaires, les dialogues et les réglages de lecture suivent le thème actif.
 - Les pages de PDF et de partition restent sur un papier clair pour préserver le
   contraste des documents sources et des notations produites par OSMD.
+
+## Installation de l'application
+
+- Un bloc `Application` est disponible dans `Réglages` pour relancer
+  l'installation PWA sur l'appareil courant.
+- Ce point d'entrée permet de réessayer même si la bannière automatique a déjà
+  été fermée.
+- Sur iPhone et iPad, les réglages affichent l'instruction manuelle via le menu
+  Partager quand le navigateur ne propose pas de fenêtre native.
