@@ -20,10 +20,7 @@ import { ChordSheet } from "./chord-sheet";
 import { LyricsSheet } from "./lyrics-sheet";
 import { useMusicNotation } from "./music-notation-provider";
 import { buildSongDocumentFileStem } from "./song-document-file-name";
-import {
-  chordColorOptions,
-  defaultSongRenderPreferences,
-} from "./song-render-preferences";
+import { chordColorOptions } from "./song-render-preferences";
 import { useSongRenderPreferences } from "./song-render-preferences-provider";
 
 type TransposableSongSheetProps = {
@@ -281,11 +278,6 @@ export const TransposableSongSheet = forwardRef<
             <div className="song-render-settings__item song-render-settings__item--tone">
               <div className="song-render-settings__heading">
                 <span>Tonalité</span>
-                <strong>
-                  {displayedKey
-                    ? formatMusicalKey(displayedKey, notation)
-                    : `${manualOffset >= 0 ? "+" : ""}${manualOffset}`}
-                </strong>
               </div>
               <div className="song-render-settings__tone-controls">
                 <button
@@ -342,7 +334,6 @@ export const TransposableSongSheet = forwardRef<
             <label className="song-render-settings__item song-render-settings__item--color">
               <div className="song-render-settings__heading">
                 <span>Couleur des accords</span>
-                <strong>{chordColorLabels[preferences.chordColor]}</strong>
               </div>
               <select
                 aria-label="Couleur des accords"
@@ -364,14 +355,6 @@ export const TransposableSongSheet = forwardRef<
             <label className="song-render-settings__item song-render-settings__item--metric">
               <div className="song-render-settings__heading">
                 <span>Taille des accords</span>
-                <strong>
-                  {Math.round(
-                    (preferences.chordFontScale /
-                      defaultSongRenderPreferences.chordFontScale) *
-                      100,
-                  )}
-                  %
-                </strong>
               </div>
               <input
                 aria-label="Taille des accords"
@@ -391,14 +374,6 @@ export const TransposableSongSheet = forwardRef<
             <label className="song-render-settings__item song-render-settings__item--metric">
               <div className="song-render-settings__heading">
                 <span>Taille du texte</span>
-                <strong>
-                  {Math.round(
-                    (preferences.lyricsFontScale /
-                      defaultSongRenderPreferences.lyricsFontScale) *
-                      100,
-                  )}
-                  %
-                </strong>
               </div>
               <input
                 aria-label="Taille du texte"
@@ -418,7 +393,6 @@ export const TransposableSongSheet = forwardRef<
             <label className="song-render-settings__item song-render-settings__item--metric">
               <div className="song-render-settings__heading">
                 <span>Interligne</span>
-                <strong>{preferences.lineHeight.toFixed(2)}</strong>
               </div>
               <input
                 aria-label="Interligne des chants"

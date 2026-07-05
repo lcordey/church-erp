@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
 import { getLoginHref } from "@/src/shared/navigation/login-redirect";
@@ -72,6 +73,13 @@ export function SongPageWorkspace({
   const [adminSong, setAdminSong] = useState(initialAdminSong);
   const readableSong = adminSong ?? song;
   const [collectionSongs, setCollectionSongs] = useState<PublicSongSummary[]>([]);
+
+  useEffect(() => {
+    setAdminSong(initialAdminSong);
+    setMode(
+      initialMode === "edition" && initialAdminSong ? "edition" : "selection",
+    );
+  }, [initialAdminSong, initialMode]);
   const updateMode = useCallback(
     (nextMode: "selection" | "edition") => {
       if (nextMode === "edition") {
@@ -153,7 +161,7 @@ export function SongPageWorkspace({
     return () => controller.abort();
   }, [mode, readableSong.collection]);
 
-  const navigationActions = useMemo(() => {
+  const navigationActions = useMemo<ReactNode>(() => {
     if (mode !== "selection" || collectionSongs.length < 2) {
       return undefined;
     }
@@ -207,6 +215,7 @@ export function SongPageWorkspace({
         {mode === "selection" ? (
           <AppTopBar
             activeViewMode={mode}
+            actions={navigationActions}
             backHref={backHref}
             backIconOnly
             backLabel="Retour au répertoire"
@@ -239,7 +248,6 @@ export function SongPageWorkspace({
           />
         ) : (
           <SongDetailView
-            actions={navigationActions}
             canAccessScores={canAccessScores}
             key={readableSong.id}
             song={readableSong}
