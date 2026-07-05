@@ -6,10 +6,9 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
+import { ReorderItemActions } from "@/src/components/reorder-item-actions";
+import type { PublicSongSummary } from "@/src/modules/songs/types/public-song";
 import { useUnsavedChangesGuard } from "@/src/shared/hooks/use-unsaved-changes-guard";
-import type {
-  PublicSongSummary,
-} from "@/src/modules/songs/types/public-song";
 
 import type { SetlistDetail } from "../types/setlist";
 
@@ -357,7 +356,7 @@ export function SetlistEditor({
               </div>
             </div>
 
-            <div className="setlist-editor__items">
+            <div className="reorderable-list setlist-editor__items">
               {songIds.length > 0 ? (
                 songIds.map((songId, index) => {
                   const song = songsById.get(songId);
@@ -369,17 +368,18 @@ export function SetlistEditor({
                   return (
                     <article
                       className={[
+                        "reorderable-item",
                         "setlist-editor__item",
                         draggedIndex === index
-                          ? "setlist-editor__item--dragging"
+                          ? "reorderable-item--dragging"
                           : "",
                         dropIndicator?.targetIndex === index &&
                         dropIndicator.placement === "before"
-                          ? "setlist-editor__item--drop-before"
+                          ? "reorderable-item--drop-before"
                           : "",
                         dropIndicator?.targetIndex === index &&
                         dropIndicator.placement === "after"
-                          ? "setlist-editor__item--drop-after"
+                          ? "reorderable-item--drop-after"
                           : "",
                       ]
                         .filter(Boolean)
@@ -401,35 +401,22 @@ export function SetlistEditor({
                         <strong>{song.title}</strong>
                         <small>{songLabel(song)}</small>
                       </div>
-                      <div>
-                        <button
-                          aria-label="Monter le chant"
-                          disabled={index === 0}
-                          onClick={() => moveSong(index, -1)}
-                          type="button"
-                        >
-                          ↑
-                        </button>
-                        <button
-                          aria-label="Descendre le chant"
-                          disabled={index === songIds.length - 1}
-                          onClick={() => moveSong(index, 1)}
-                          type="button"
-                        >
-                          ↓
-                        </button>
-                        <button
-                          aria-label="Retirer le chant"
-                          onClick={() =>
-                            setSongIds((current) =>
-                              current.filter((_, itemIndex) => itemIndex !== index),
-                            )
-                          }
-                          type="button"
-                        >
-                          ×
-                        </button>
-                      </div>
+                      <ReorderItemActions
+                        downLabel="Descendre le chant"
+                        isDownDisabled={index === songIds.length - 1}
+                        isUpDisabled={index === 0}
+                        onMoveDown={() => moveSong(index, 1)}
+                        onMoveUp={() => moveSong(index, -1)}
+                        onRemove={() =>
+                          setSongIds((current) =>
+                            current.filter(
+                              (_, itemIndex) => itemIndex !== index,
+                            ),
+                          )
+                        }
+                        removeLabel="Retirer le chant"
+                        upLabel="Monter le chant"
+                      />
                     </article>
                   );
                 })

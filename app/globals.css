@@ -2184,8 +2184,7 @@ a {
 }
 
 .setlist-editor__items {
-  display: flex;
-  flex-direction: column;
+  margin-top: 12px;
 }
 
 .setlist-editor__item {
@@ -2194,23 +2193,7 @@ a {
   align-items: center;
   gap: 16px;
   min-height: 78px;
-  border-bottom: 1px solid var(--line);
-  padding: 14px 0;
-  cursor: grab;
-  touch-action: none;
-}
-
-.setlist-editor__item--dragging {
-  opacity: 0.58;
-  cursor: grabbing;
-}
-
-.setlist-editor__item--drop-before {
-  box-shadow: inset 0 3px 0 var(--accent);
-}
-
-.setlist-editor__item--drop-after {
-  box-shadow: inset 0 -3px 0 var(--accent);
+  padding: 14px 16px;
 }
 
 .setlist-editor__item > span {
@@ -2230,30 +2213,87 @@ a {
   color: var(--muted);
 }
 
-.setlist-editor__item div:last-child {
+.setlist-editor__catalog-section {
+  padding-top: 0;
+}
+
+.reorderable-list {
+  display: grid;
+  width: min(680px, calc(100% - 18px));
+  gap: 12px;
+}
+
+.reorderable-item {
+  position: relative;
+  border: 1px solid var(--accent-border);
+  border-radius: 18px;
+  background: var(--surface-input);
+  cursor: grab;
+  touch-action: none;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.reorderable-item--dragging {
+  opacity: 0.62;
+  cursor: grabbing;
+}
+
+.reorderable-item--drop-before::before,
+.reorderable-item--drop-after::after {
+  position: absolute;
+  z-index: 1;
+  right: 12px;
+  left: 12px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent);
+  content: "";
+  pointer-events: none;
+}
+
+.reorderable-item--drop-before::before {
+  top: -8px;
+}
+
+.reorderable-item--drop-after::after {
+  bottom: -8px;
+}
+
+.reorderable-item__actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
 }
 
-.setlist-editor__item button {
+.reorderable-item__action {
   display: inline-grid;
   width: 34px;
   height: 34px;
   place-items: center;
-  border: 1px solid var(--line);
+  border: 1px solid var(--accent-border);
   border-radius: 50%;
   color: var(--accent);
   background: var(--paper-strong);
+  font: 700 1rem/1 var(--sans);
   cursor: pointer;
 }
 
-.setlist-editor__item button:disabled {
-  color: var(--line);
+.reorderable-item__action:hover {
+  border-color: var(--accent-border-strong);
+}
+
+.reorderable-item__action:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-.setlist-editor__catalog-section {
-  padding-top: 0;
+.reorderable-item__action--remove {
+  color: var(--danger);
 }
 
 .song-navigation__count {
@@ -2773,9 +2813,7 @@ a {
 }
 
 .song-render-preferences__priority-list {
-  display: grid;
   margin-top: 14px;
-  gap: 12px;
   padding-top: 14px;
   border-top: 1px solid var(--border-soft);
 }
@@ -2786,31 +2824,6 @@ a {
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
-  border: 1px solid var(--accent-border);
-  border-radius: 18px;
-  background: var(--surface-input);
-  cursor: grab;
-  touch-action: none;
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    opacity 160ms ease,
-    transform 160ms ease;
-}
-
-.song-render-preferences__priority-item--dragging {
-  opacity: 0.72;
-  cursor: grabbing;
-}
-
-.song-render-preferences__priority-item--drop-before {
-  border-top-color: var(--accent);
-  box-shadow: inset 0 3px 0 var(--accent);
-}
-
-.song-render-preferences__priority-item--drop-after {
-  border-bottom-color: var(--accent);
-  box-shadow: inset 0 -3px 0 var(--accent);
 }
 
 .song-render-preferences__priority-main {
@@ -2851,34 +2864,6 @@ a {
   font-size: 0.84rem;
   line-height: 1.5;
   text-transform: none;
-}
-
-.song-render-preferences__priority-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.song-render-preferences__priority-button {
-  min-height: 40px;
-  padding: 0 12px;
-  border: 1px solid var(--accent-border);
-  border-radius: 999px;
-  color: var(--ink);
-  background: var(--surface-glass);
-  font: 700 0.72rem/1 var(--sans);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.song-render-preferences__priority-button:hover {
-  border-color: var(--accent-border-strong);
-}
-
-.song-render-preferences__priority-button:disabled {
-  opacity: 0.48;
-  cursor: not-allowed;
 }
 
 .song-render-preferences__priority-help {
@@ -4026,7 +4011,7 @@ a {
     grid-template-columns: 1fr;
   }
 
-  .song-render-preferences__priority-actions {
+  .reorderable-item__actions {
     justify-content: flex-start;
   }
 

@@ -15,6 +15,17 @@ export default function SettingsPage() {
 
         <div className="settings-section">
           <div>
+            <h2>Thème</h2>
+            <p>
+              Choisissez l’ambiance générale de l’application. Le thème est
+              conservé localement sur l’appareil.
+            </p>
+          </div>
+          <AppThemeToggle />
+        </div>
+
+        <div className="settings-section">
+          <div>
             <h2>Notation musicale</h2>
             <p>
               Choisissez la convention utilisée pour les tonalités et les
@@ -33,17 +44,6 @@ export default function SettingsPage() {
             </p>
           </div>
           <SongRenderPreferencesControls showDescription />
-        </div>
-
-        <div className="settings-section">
-          <div>
-            <h2>Thème</h2>
-            <p>
-              Choisissez l’ambiance générale de l’application. Le thème est
-              conservé localement sur l’appareil.
-            </p>
-          </div>
-          <AppThemeToggle />
         </div>
       </section>
     </main>

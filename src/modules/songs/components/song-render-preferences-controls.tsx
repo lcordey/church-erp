@@ -6,6 +6,8 @@ import {
   useState,
 } from "react";
 
+import { ReorderItemActions } from "@/src/components/reorder-item-actions";
+
 import {
   chordColorOptions,
   defaultSongRenderPreferences,
@@ -246,23 +248,24 @@ export function SongRenderPreferencesControls({
             </div>
             <div
               aria-label="Ordre de priorité des sources"
-              className="song-render-preferences__priority-list"
+              className="reorderable-list song-render-preferences__priority-list"
               role="list"
             >
               {preferences.sourcePriority.map((source, index) => (
                 <div
                   className={[
+                    "reorderable-item",
                     "song-render-preferences__priority-item",
                     draggedSource === source
-                      ? "song-render-preferences__priority-item--dragging"
+                      ? "reorderable-item--dragging"
                       : "",
                     dropIndicator?.target === source &&
                     dropIndicator.placement === "before"
-                      ? "song-render-preferences__priority-item--drop-before"
+                      ? "reorderable-item--drop-before"
                       : "",
                     dropIndicator?.target === source &&
                     dropIndicator.placement === "after"
-                      ? "song-render-preferences__priority-item--drop-after"
+                      ? "reorderable-item--drop-after"
                       : "",
                   ]
                     .filter(Boolean)
@@ -290,35 +293,22 @@ export function SongRenderPreferencesControls({
                     </div>
                   </div>
 
-                  <div className="song-render-preferences__priority-actions">
-                    <button
-                      aria-label={`Monter ${sourceLabels[source]}`}
-                      className="song-render-preferences__priority-button"
-                      disabled={index === 0}
-                      onClick={() => moveSource(source, -1)}
-                      type="button"
-                    >
-                      Monter
-                    </button>
-                    <button
-                      aria-label={`Descendre ${sourceLabels[source]}`}
-                      className="song-render-preferences__priority-button"
-                      disabled={
-                        index === preferences.sourcePriority.length - 1
-                      }
-                      onClick={() => moveSource(source, 1)}
-                      type="button"
-                    >
-                      Descendre
-                    </button>
-                  </div>
+                  <ReorderItemActions
+                    downLabel={`Descendre ${sourceLabels[source]}`}
+                    isDownDisabled={
+                      index === preferences.sourcePriority.length - 1
+                    }
+                    isUpDisabled={index === 0}
+                    onMoveDown={() => moveSource(source, 1)}
+                    onMoveUp={() => moveSource(source, -1)}
+                    upLabel={`Monter ${sourceLabels[source]}`}
+                  />
                 </div>
               ))}
             </div>
             <p className="song-render-preferences__priority-help">
               Astuce: fais glisser la carte directement. Sur mobile, maintiens
-              la carte puis déplace-la. Les boutons Monter et Descendre restent
-              disponibles.
+              la carte puis déplace-la. Les flèches restent disponibles.
             </p>
           </div>
         ) : null}
