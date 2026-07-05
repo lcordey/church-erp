@@ -3579,14 +3579,25 @@ a {
   }
 
   .song-render-preferences__section--compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .song-render-preferences__section--compact .sheet-controls__field {
     grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .song-render-preferences__section--compact .sheet-controls__field strong {
+    min-width: 0;
+    text-align: left;
   }
 
   .song-render-preferences__section--compact .sheet-controls__field:nth-child(2n) {
-    border-left: 0;
+    border-left: 1px solid rgb(49 91 120 / 8%);
   }
 
-  .song-render-preferences__section--compact .sheet-controls__field:nth-child(n + 2) {
+  .song-render-preferences__section--compact .sheet-controls__field:nth-child(n + 3) {
     border-top: 1px solid rgb(49 91 120 / 8%);
   }
 
