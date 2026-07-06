@@ -1709,6 +1709,28 @@ a {
   outline-offset: 2px;
 }
 
+.song-document-viewer__source-label,
+.song-document-viewer__locked-source {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  padding: 0 14px;
+  font: 750 0.82rem/1 var(--sans);
+  white-space: nowrap;
+}
+
+.song-document-viewer__source-label {
+  color: var(--ink);
+  background: var(--surface-input);
+}
+
+.song-document-viewer__locked-source {
+  color: var(--accent);
+  background: var(--accent-tint);
+}
+
 .song-document-viewer__actions {
   display: flex;
   justify-content: flex-end;

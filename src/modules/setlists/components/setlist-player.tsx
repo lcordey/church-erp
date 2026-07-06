@@ -103,6 +103,7 @@ export function SetlistPlayer({
           canAccessScores={canAccessScores}
           eyebrow={`${setlist.title} · ${currentIndex + 1}/${setlist.items.length}`}
           key={`${currentItem.song.id}-${currentIndex}`}
+          loginRedirectTo={`/setlist/${setlist.id}/play`}
           song={currentItem.song}
         />
       </div>

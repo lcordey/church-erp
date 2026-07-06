@@ -1,7 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+
+import { getLoginHref } from "@/src/shared/navigation/login-redirect";
 
 import { formatSongCollectionLabel } from "../collections/song-collection";
 import type { AdminSong } from "../types/admin-song";
@@ -119,12 +122,14 @@ type SongDetailViewProps = {
   actions?: ReactNode;
   canAccessScores?: boolean;
   eyebrow?: string;
+  loginRedirectTo?: string;
 };
 
 export function SongDetailView({
   song,
   actions,
   canAccessScores = false,
+  loginRedirectTo,
 }: SongDetailViewProps) {
   const containerRef = useRef<HTMLElement>(null);
   const {
@@ -155,6 +160,17 @@ export function SongDetailView({
     [availableSources, currentSourceView, preferences.sourcePriority],
   );
   const hasAvailableSource = availableSources.length > 0;
+  const lockedScoreLabels = !canAccessScores
+    ? [
+        ...(song.pdfSource ? ["PDF"] : []),
+        ...(song.musicXmlSource ? ["Partition"] : []),
+      ]
+    : [];
+  const shouldOfferScoreLogin =
+    !hasAvailableSource && lockedScoreLabels.length > 0;
+  const scoreLoginHref = getLoginHref(
+    loginRedirectTo ?? `/chants/${song.slug}`,
+  );
   const collectionLabel = formatSongCollectionLabel(
     song.collection,
     song.collectionNumber,
@@ -274,33 +290,44 @@ export function SongDetailView({
       >
         <header className="song-document-viewer__toolbar">
           <div className="song-document-viewer__source">
-            <label className="sr-only" htmlFor={`song-source-${song.id}`}>
-              Source du chant
-            </label>
-            <select
-              disabled={availableSources.length <= 1}
-              id={`song-source-${song.id}`}
-              onChange={(event) => {
-                setCurrentSourceView(
-                  event.target.value as
-                    | "chordpro"
-                    | "lyrics"
-                    | "pdf"
-                    | "musicxml",
-                );
-              }}
-              value={availableSources.length > 0 ? resolvedSourceView : ""}
-            >
-              {availableSources.length > 0 ? (
-                availableSources.map((source) => (
-                  <option key={source} value={source}>
-                    {sourceLabels[source]}
-                  </option>
-                ))
-              ) : (
-                <option value="">Aucune source</option>
-              )}
-            </select>
+            {availableSources.length > 1 ? (
+              <>
+                <label className="sr-only" htmlFor={`song-source-${song.id}`}>
+                  Source du chant
+                </label>
+                <select
+                  id={`song-source-${song.id}`}
+                  onChange={(event) => {
+                    setCurrentSourceView(
+                      event.target.value as SongSourceView,
+                    );
+                  }}
+                  value={resolvedSourceView}
+                >
+                  {availableSources.map((source) => (
+                    <option key={source} value={source}>
+                      {sourceLabels[source]}
+                    </option>
+                  ))}
+                </select>
+              </>
+            ) : availableSources.length === 1 ? (
+              <span className="song-document-viewer__source-label">
+                {sourceLabels[availableSources[0]]}
+              </span>
+            ) : !shouldOfferScoreLogin ? (
+              <span className="song-document-viewer__source-label">
+                Aucune source
+              </span>
+            ) : null}
+            {shouldOfferScoreLogin ? (
+              <Link
+                className="song-document-viewer__locked-source"
+                href={scoreLoginHref}
+              >
+                {lockedScoreLabels.join(" + ")} · Se connecter
+              </Link>
+            ) : null}
             {actions ? (
               <div className="song-detail-view__actions">{actions}</div>
             ) : null}
@@ -448,7 +475,19 @@ export function SongDetailView({
 
         {!hasAvailableSource ? (
           <div className="empty-state">
-            <p>Aucun contenu de lecture disponible pour ce chant.</p>
+            <p>
+              {shouldOfferScoreLogin
+                ? "Connecte-toi pour consulter la partition de ce chant."
+                : "Aucun contenu de lecture disponible pour ce chant."}
+            </p>
+            {shouldOfferScoreLogin ? (
+              <Link
+                className="admin-button admin-button--primary"
+                href={scoreLoginHref}
+              >
+                Se connecter
+              </Link>
+            ) : null}
           </div>
         ) : canAccessScores &&
           resolvedSourceView === "pdf" &&

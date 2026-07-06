@@ -264,6 +264,7 @@ export function SongPageWorkspace({
             <SongDetailView
               canAccessScores={canAccessScores}
               key={readableSong.id}
+              loginRedirectTo={createSongHref(readableSong.slug, { backHref })}
               song={readableSong}
             />
           )
