@@ -141,7 +141,6 @@ export function PwaInstallPrompt() {
   };
 
   const handleDismiss = () => {
-    setDeferredPrompt(null);
     setIsVisible(false);
     dismissPwaInstallPrompt();
   };
@@ -160,7 +159,7 @@ export function PwaInstallPrompt() {
         <p className="pwa-install-prompt__eyebrow">Application mobile</p>
         <h2>
           {isNativePromptAvailable
-            ? "Télécharger ChurchERP sur ce téléphone"
+            ? "Installer ChurchERP sur ce téléphone"
             : "Ajouter ChurchERP à l'écran d'accueil"}
         </h2>
         <p>
@@ -177,7 +176,7 @@ export function PwaInstallPrompt() {
             onClick={handleInstall}
             type="button"
           >
-            Télécharger
+            Installer
           </button>
         ) : null}
         <button

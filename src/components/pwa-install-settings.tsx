@@ -10,9 +10,11 @@ import {
   getPwaInstallState,
   isRunningStandalone,
   markPwaInstalled,
+  markPwaNotInstalled,
   rememberDeferredInstallPrompt,
   subscribeToPwaInstall,
   updateInstalledPwa,
+  waitForPwaInstallPrompt,
 } from "./pwa-install";
 
 export function PwaInstallSettings() {
@@ -36,15 +38,36 @@ export function PwaInstallSettings() {
       setIsInstalled(nextState.isInstalled || isRunningStandalone());
     });
 
-    void detectInstalledPwa().then((installed) => {
-      if (isActive && installed) {
-        markPwaInstalled();
-        setIsInstalled(true);
+    const refreshInstalledState = () => {
+      void detectInstalledPwa().then((installation) => {
+        if (!isActive) {
+          return;
+        }
+
+        if (installation === "installed") {
+          markPwaInstalled();
+          setIsInstalled(true);
+        } else if (installation === "not-installed") {
+          markPwaNotInstalled();
+          setIsInstalled(false);
+        }
+      });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refreshInstalledState();
       }
-    });
+    };
+
+    refreshInstalledState();
+    window.addEventListener("pageshow", refreshInstalledState);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       isActive = false;
+      window.removeEventListener("pageshow", refreshInstalledState);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       unsubscribe();
     };
   }, []);
@@ -52,95 +75,108 @@ export function PwaInstallSettings() {
   const installPlatform =
     typeof window === "undefined" ? "desktop" : getInstallPlatform();
 
+  const promptForInstallation = async () => {
+    const promptEvent =
+      deferredPrompt ?? (await waitForPwaInstallPrompt());
+
+    if (promptEvent === null) {
+      return false;
+    }
+
+    await promptEvent.prompt();
+    const choice = await promptEvent.userChoice;
+    rememberDeferredInstallPrompt(null);
+    setDeferredPrompt(null);
+
+    if (choice.outcome === "accepted") {
+      clearPwaInstallDismissal();
+      setStatusMessage(
+        "Installation acceptée. ChurchERP apparaîtra dans vos applications.",
+      );
+    } else {
+      dismissPwaInstallPrompt();
+      setStatusMessage("La demande d’installation a été refermée.");
+    }
+
+    return true;
+  };
+
   const handleInstall = async () => {
     clearPwaInstallDismissal();
     setStatusMessage("");
+    setIsActionPending(true);
 
-    if (isInstalled) {
-      setIsActionPending(true);
+    try {
+      if (isInstalled) {
+        const installation = await detectInstalledPwa();
 
-      try {
-        const result = await updateInstalledPwa();
+        if (installation === "not-installed") {
+          markPwaNotInstalled();
+          setIsInstalled(false);
 
-        if (result === "updated") {
-          setStatusMessage("Mise à jour installée. Redémarrage…");
-          window.location.reload();
-        } else if (result === "current") {
-          setStatusMessage("L’application utilise déjà la dernière version.");
+          if (await promptForInstallation()) {
+            return;
+          }
         } else {
-          setStatusMessage(
-            "La mise à jour automatique n’est pas disponible sur ce navigateur.",
-          );
+          const result = await updateInstalledPwa();
+
+          if (result === "updated") {
+            setStatusMessage("Mise à jour installée. Redémarrage…");
+            window.location.reload();
+          } else if (result === "current") {
+            setStatusMessage("L’application utilise déjà la dernière version.");
+          } else {
+            setStatusMessage(
+              "La mise à jour automatique n’est pas disponible sur ce navigateur.",
+            );
+          }
+
+          return;
         }
-      } catch {
+      } else if (await promptForInstallation()) {
+        return;
+      }
+
+      if (installPlatform === "ios") {
         setStatusMessage(
-          "La mise à jour n’a pas pu être vérifiée. Réessayez dans quelques instants.",
+          "Sur iPhone ou iPad, ouvrez cette page dans Safari, puis le menu Partager et choisissez « Sur l’écran d’accueil ».",
         );
-      } finally {
-        setIsActionPending(false);
+        return;
       }
 
-      return;
-    }
-
-    const promptEvent = deferredPrompt;
-
-    if (promptEvent !== null) {
-      setIsActionPending(true);
-
-      try {
-        await promptEvent.prompt();
-        const choice = await promptEvent.userChoice;
-        rememberDeferredInstallPrompt(null);
-
-        if (choice.outcome === "accepted") {
-          clearPwaInstallDismissal();
-          markPwaInstalled();
-          setDeferredPrompt(null);
-          setStatusMessage("L’installation a été lancée sur cet appareil.");
-        } else {
-          dismissPwaInstallPrompt();
-          setDeferredPrompt(null);
-          setStatusMessage("La demande d’installation a été refermée.");
-        }
-      } finally {
-        setIsActionPending(false);
+      if (!window.isSecureContext) {
+        setStatusMessage(
+          "L’installation exige une adresse HTTPS. Ouvrez ChurchERP avec une adresse qui commence par https:// puis réessayez.",
+        );
+        return;
       }
 
-      return;
-    }
+      if (!("serviceWorker" in navigator)) {
+        setStatusMessage(
+          "Ce navigateur ne permet pas d’installer ChurchERP comme application.",
+        );
+        return;
+      }
 
-    if (installPlatform === "ios") {
+      if (installPlatform === "desktop") {
+        setStatusMessage(
+          "Chrome ne propose pas encore l’installation. Rechargez la page, attendez quelques secondes, puis choisissez « Installer ChurchERP » dans la barre d’adresse ou le menu du navigateur.",
+        );
+        return;
+      }
+
       setStatusMessage(
-        "Sur iPhone ou iPad, ouvrez le menu Partager de Safari puis choisissez « Sur l’écran d’accueil ».",
+        "Chrome ne propose pas encore l’installation. Rechargez la page, attendez quelques secondes, puis ouvrez le menu ⋮ et choisissez « Installer l’application ». « Ajouter à l’écran d’accueil » seul crée uniquement un raccourci.",
       );
-      return;
-    }
-
-    if (installPlatform === "desktop") {
+    } catch {
       setStatusMessage(
-        "Utilisez le menu du navigateur puis l’option d’installation de l’application.",
+        isInstalled
+          ? "La mise à jour n’a pas pu être vérifiée. Réessayez dans quelques instants."
+          : "L’installation n’a pas pu être ouverte. Rechargez la page puis réessayez.",
       );
-      return;
+    } finally {
+      setIsActionPending(false);
     }
-
-    if (!window.isSecureContext) {
-      setStatusMessage(
-        "Chrome exige une adresse HTTPS pour installer l’application. Ouvrez ChurchERP avec une adresse qui commence par https:// puis réessayez.",
-      );
-      return;
-    }
-
-    if (!("serviceWorker" in navigator)) {
-      setStatusMessage(
-        "Cette version de Chrome ne permet pas l’installation de l’application.",
-      );
-      return;
-    }
-
-    setStatusMessage(
-      "Chrome prépare encore l’installation. Rechargez cette page puis réessayez. Vous pouvez aussi appuyer sur ⋮ à droite de la barre d’adresse, puis sur « Ajouter à l’écran d’accueil » et « Installer ».",
-    );
   };
 
   return (
@@ -167,7 +203,7 @@ export function PwaInstallSettings() {
               : "Mettre à jour l’application"
             : isActionPending
               ? "Ouverture…"
-              : "Télécharger l’application"}
+              : "Installer l’application"}
         </button>
         {statusMessage ? (
           <p className="settings-install-card__status">{statusMessage}</p>

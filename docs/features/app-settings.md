@@ -18,9 +18,19 @@
   l'installation PWA sur l'appareil courant.
 - Ce point d'entrée permet de réessayer même si la bannière automatique a déjà
   été fermée.
+- Le choix `Plus tard` masque la bannière pendant 24 heures, puis la rend de
+  nouveau éligible. Les anciennes fermetures sans date sont automatiquement
+  oubliées.
 - Sur Chrome Android, l'événement d'installation reste mémorisé après la
   fermeture de la bannière interne et dès le chargement initial afin que le
   bouton des réglages puisse toujours ouvrir la fenêtre native.
+- Le bouton des réglages attend brièvement l'événement natif si Chrome est
+  encore en train d'évaluer l'installabilité. Après une désinstallation, l'état
+  est resynchronisé quand la page redevient visible et quand Chrome repropose
+  l'installation.
+- Si Chrome ne fournit pas l'événement natif, l'interface distingue
+  `Installer l'application` de `Ajouter à l'écran d'accueil`, qui peut ne créer
+  qu'un raccourci selon le navigateur et l'appareil.
 - Le service worker intercepte réellement les navigations et fournit une page
   de secours neutre sans connexion. Chrome peut ainsi reconnaître
   l'application comme installable au lieu d'ignorer un gestionnaire vide.

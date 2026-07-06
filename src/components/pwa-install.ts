@@ -28,8 +28,10 @@ type WindowWithInstallPrompt = Window & {
 
 export type InstallPlatform = "ios" | "android" | "other-mobile" | "desktop";
 export type PwaUpdateResult = "current" | "updated" | "unsupported";
+export type InstalledPwaDetection = "installed" | "not-installed" | "unsupported";
 
 export const PWA_INSTALL_DISMISS_KEY = "churcherp:pwa-install-dismissed";
+export const PWA_INSTALL_DISMISS_DURATION_MS = 24 * 60 * 60 * 1_000;
 
 let currentDeferredPrompt: BeforeInstallPromptEvent | null = null;
 let isAppInstalled = false;
@@ -59,6 +61,10 @@ export function rememberDeferredInstallPrompt(
 ) {
   currentDeferredPrompt = promptEvent;
 
+  if (promptEvent !== null) {
+    isAppInstalled = false;
+  }
+
   if (typeof window !== "undefined") {
     (window as WindowWithInstallPrompt).__churchErpInstallPrompt = promptEvent;
   }
@@ -76,6 +82,17 @@ export function getEarlyInstallPrompt() {
 export function markPwaInstalled() {
   currentDeferredPrompt = null;
   isAppInstalled = true;
+
+  if (typeof window !== "undefined") {
+    (window as WindowWithInstallPrompt).__churchErpInstallPrompt = null;
+    clearPwaInstallDismissal();
+  }
+
+  notifyListeners();
+}
+
+export function markPwaNotInstalled() {
+  isAppInstalled = false;
   notifyListeners();
 }
 
@@ -84,11 +101,22 @@ export function clearPwaInstallDismissal() {
 }
 
 export function dismissPwaInstallPrompt() {
-  window.localStorage.setItem(PWA_INSTALL_DISMISS_KEY, "true");
+  window.localStorage.setItem(PWA_INSTALL_DISMISS_KEY, String(Date.now()));
 }
 
 export function isPwaInstallDismissed() {
-  return window.localStorage.getItem(PWA_INSTALL_DISMISS_KEY) === "true";
+  const storedValue = window.localStorage.getItem(PWA_INSTALL_DISMISS_KEY);
+  const dismissedAt = storedValue === null ? Number.NaN : Number(storedValue);
+
+  if (
+    !Number.isFinite(dismissedAt) ||
+    Date.now() - dismissedAt >= PWA_INSTALL_DISMISS_DURATION_MS
+  ) {
+    clearPwaInstallDismissal();
+    return false;
+  }
+
+  return true;
 }
 
 export function isMobileDevice(): boolean {
@@ -135,26 +163,54 @@ export function isRunningStandalone() {
   );
 }
 
-export async function detectInstalledPwa() {
+export async function detectInstalledPwa(): Promise<InstalledPwaDetection> {
   if (isRunningStandalone()) {
-    return true;
+    return "installed";
   }
 
   const navigatorWithRelatedApps =
     window.navigator as NavigatorWithStandalone;
 
   if (!navigatorWithRelatedApps.getInstalledRelatedApps) {
-    return false;
+    return "unsupported";
   }
 
   try {
     const relatedApps =
       await navigatorWithRelatedApps.getInstalledRelatedApps();
 
-    return relatedApps.some((app) => app.platform === "webapp");
+    return relatedApps.some((app) => app.platform === "webapp")
+      ? "installed"
+      : "not-installed";
   } catch {
-    return false;
+    return "unsupported";
   }
+}
+
+export function waitForPwaInstallPrompt(
+  timeoutMs = 2_000,
+): Promise<BeforeInstallPromptEvent | null> {
+  const existingPrompt = getPwaInstallState().deferredPrompt;
+
+  if (existingPrompt !== null) {
+    return Promise.resolve(existingPrompt);
+  }
+
+  return new Promise((resolve) => {
+    const unsubscribe = subscribeToPwaInstall(() => {
+      const promptEvent = getPwaInstallState().deferredPrompt;
+
+      if (promptEvent !== null) {
+        window.clearTimeout(timeout);
+        unsubscribe();
+        resolve(promptEvent);
+      }
+    });
+    const timeout = window.setTimeout(() => {
+      unsubscribe();
+      resolve(null);
+    }, timeoutMs);
+  });
 }
 
 function waitForWorkerInstallation(
