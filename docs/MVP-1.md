@@ -48,6 +48,7 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 - support initial du format ChordPro
 - support d'une partition PDF optionnelle par chant
 - support d'une partition MusicXML optionnelle par chant
+- liens d'ecoute YouTube et Spotify optionnels par chant
 - chants officiels JEMAF stockes en lecture seule avec provenance JEMAF
 - snapshot local de recueils JEMAF regenerable puis rejouable hors ligne
 - recherche simple par titre ou numero de recueil

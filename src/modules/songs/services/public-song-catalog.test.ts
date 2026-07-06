@@ -23,6 +23,8 @@ const publishedSong: SongCatalogRecord = {
   collection: "JEM",
   collectionNumber: 1,
   sourcePageUrl: "https://jemaf.fr/chant/jem001",
+  spotifyUrl: "https://open.spotify.com/track/example",
+  youtubeUrl: "https://www.youtube.com/watch?v=example",
   pdfSource: null,
   musicXmlSource: null,
   chordProContent: "[D]Paroles",
@@ -134,6 +136,8 @@ describe("public song catalog", () => {
       },
     ]);
     expect(catalog.songs[0]).not.toHaveProperty("chordProContent");
+    expect(catalog.songs[0]).not.toHaveProperty("spotifyUrl");
+    expect(catalog.songs[0]).not.toHaveProperty("youtubeUrl");
     expect(catalog).toMatchObject({
       hasMore: false,
       limit: 20,

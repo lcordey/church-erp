@@ -1084,13 +1084,13 @@ a {
 
 .catalog-filter-dropdown {
   position: relative;
-  z-index: 31;
+  z-index: 21;
   min-width: 0;
   flex: 1 1 0;
 }
 
 .catalog-filter-dropdown[open] {
-  z-index: 33;
+  z-index: 23;
 }
 
 .catalog-filter-backdrop {
@@ -1161,7 +1161,7 @@ a {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  z-index: 34;
+  z-index: 24;
   display: none;
   width: min(420px, calc(100vw - 40px));
   border: 1px solid var(--line);
@@ -1765,6 +1765,17 @@ a {
   font-size: 0.78rem;
 }
 
+.song-document-viewer__external-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 14px;
+}
+
+.song-document-viewer__external-links a {
+  margin-top: 0;
+}
+
 .song-document-viewer__details a {
   color: var(--accent);
   font-weight: 800;
@@ -2131,7 +2142,7 @@ a {
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  touch-action: auto;
+  touch-action: pan-x pan-y;
   background: var(--score-paper);
 }
 

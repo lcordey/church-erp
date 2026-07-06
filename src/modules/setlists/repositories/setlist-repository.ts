@@ -65,6 +65,8 @@ type SetlistItemRow = {
   musicXmlFileName: string | null;
   musicXmlMimeType: string | null;
   musicXmlFileSizeBytes: number | null;
+  spotifyUrl: string | null;
+  youtubeUrl: string | null;
 };
 
 type PdfRow = {
@@ -131,6 +133,8 @@ function toSongDetail(
     collection: row.collection,
     collectionNumber: row.collectionNumber,
     sourcePageUrl: row.sourcePageUrl,
+    spotifyUrl: row.spotifyUrl,
+    youtubeUrl: row.youtubeUrl,
     pdfSource,
     musicXmlSource,
     chordProContent: row.chordProContent,
@@ -142,6 +146,8 @@ export function createSetlistRepository(): SetlistRepository {
   const chordProSources = alias(songSources, "setlist_song_chordpro_sources");
   const pdfSources = alias(songSources, "setlist_song_pdf_sources");
   const musicXmlSources = alias(songSources, "setlist_song_musicxml_sources");
+  const spotifySources = alias(songSources, "setlist_song_spotify_sources");
+  const youtubeSources = alias(songSources, "setlist_song_youtube_sources");
   const publishedSongHasActiveSourceCondition = and(
     publishedSongCondition,
     exists(
@@ -164,6 +170,8 @@ export function createSetlistRepository(): SetlistRepository {
         musicXmlFileName: musicXmlSources.fileName,
         musicXmlMimeType: musicXmlSources.mimeType,
         musicXmlFileSizeBytes: musicXmlSources.fileSizeBytes,
+        spotifyUrl: spotifySources.externalUrl,
+        youtubeUrl: youtubeSources.externalUrl,
       })
       .from(setlistItems)
       .innerJoin(songs, eq(setlistItems.songId, songs.id))
@@ -181,6 +189,22 @@ export function createSetlistRepository(): SetlistRepository {
           eq(musicXmlSources.songId, songs.id),
           eq(musicXmlSources.sourceType, "musicxml"),
           eq(musicXmlSources.status, "active"),
+        ),
+      )
+      .leftJoin(
+        spotifySources,
+        and(
+          eq(spotifySources.songId, songs.id),
+          eq(spotifySources.sourceType, "spotify"),
+          eq(spotifySources.status, "active"),
+        ),
+      )
+      .leftJoin(
+        youtubeSources,
+        and(
+          eq(youtubeSources.songId, songs.id),
+          eq(youtubeSources.sourceType, "youtube"),
+          eq(youtubeSources.status, "active"),
         ),
       )
       .where(

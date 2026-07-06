@@ -53,6 +53,8 @@ function toDetail(song: SongCatalogRecord): PublicSongDetail {
     chordProContent: song.chordProContent,
     pdfSource: song.pdfSource,
     musicXmlSource: song.musicXmlSource,
+    spotifyUrl: song.spotifyUrl,
+    youtubeUrl: song.youtubeUrl,
   };
 }
 

@@ -17,6 +17,7 @@ export const songSourceType = pgEnum("song_source_type", [
   "chordpro",
   "musicxml",
   "pdf",
+  "spotify",
   "youtube",
 ]);
 export const songSourceStatus = pgEnum("song_source_status", [
@@ -113,6 +114,7 @@ export const songSources = pgTable(
         (${table.sourceType} = 'chordpro' and nullif(btrim(${table.textContent}), '') is not null)
         or (${table.sourceType} = 'musicxml' and nullif(btrim(${table.textContent}), '') is not null)
         or (${table.sourceType} = 'pdf' and nullif(btrim(${table.storagePath}), '') is not null)
+        or (${table.sourceType} = 'spotify' and nullif(btrim(${table.externalUrl}), '') is not null)
         or (${table.sourceType} = 'youtube' and nullif(btrim(${table.externalUrl}), '') is not null)
       )`,
     ),

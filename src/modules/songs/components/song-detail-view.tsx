@@ -372,14 +372,39 @@ export function SongDetailView({
                   </div>
                 ) : null}
               </dl>
-              {song.sourcePageUrl ? (
-                <a
-                  href={song.sourcePageUrl}
-                  rel="noreferrer"
-                  target="_blank"
+              {song.sourcePageUrl || song.youtubeUrl || song.spotifyUrl ? (
+                <div
+                  aria-label="Liens externes"
+                  className="song-document-viewer__external-links"
                 >
-                  Consulter la source
-                </a>
+                  {song.sourcePageUrl ? (
+                    <a
+                      href={song.sourcePageUrl}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      Source officielle
+                    </a>
+                  ) : null}
+                  {song.youtubeUrl ? (
+                    <a
+                      href={song.youtubeUrl}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      YouTube
+                    </a>
+                  ) : null}
+                  {song.spotifyUrl ? (
+                    <a
+                      href={song.spotifyUrl}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      Spotify
+                    </a>
+                  ) : null}
+                </div>
               ) : null}
               {"isEditable" in song && !song.isEditable ? (
                 <small>Source officielle</small>

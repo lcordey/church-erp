@@ -47,6 +47,8 @@ type FormState = {
   author: string;
   copyright: string;
   defaultKey: string;
+  spotifyUrl: string;
+  youtubeUrl: string;
   chordProContent: string;
   themeIds: string[];
   labelIds: string[];
@@ -108,6 +110,8 @@ function initialState(song?: AdminSong): FormState {
     author: song?.author ?? "LeMont",
     copyright: song?.copyright ?? "LeMont",
     defaultKey: song?.defaultKey ?? "",
+    spotifyUrl: song?.spotifyUrl ?? "",
+    youtubeUrl: song?.youtubeUrl ?? "",
     chordProContent: song?.chordProContent ?? createChordProTemplate(),
     themeIds: song?.themes.map((theme) => theme.id) ?? [],
     labelIds: song?.labels.map((label) => label.id) ?? [],
@@ -625,6 +629,34 @@ export function AdminSongForm({
               </a>
             </div>
           ) : null}
+
+          <label className="field">
+            <span>Lien YouTube</span>
+            <input
+              inputMode="url"
+              placeholder="https://www.youtube.com/watch?v=…"
+              type="url"
+              value={form.youtubeUrl}
+              onChange={(event) =>
+                updateField("youtubeUrl", event.target.value)
+              }
+            />
+            {errors.youtubeUrl ? <small>{errors.youtubeUrl}</small> : null}
+          </label>
+
+          <label className="field">
+            <span>Lien Spotify</span>
+            <input
+              inputMode="url"
+              placeholder="https://open.spotify.com/track/…"
+              type="url"
+              value={form.spotifyUrl}
+              onChange={(event) =>
+                updateField("spotifyUrl", event.target.value)
+              }
+            />
+            {errors.spotifyUrl ? <small>{errors.spotifyUrl}</small> : null}
+          </label>
 
           <fieldset className="field field--wide taxonomy-selection">
             <legend>Thèmes</legend>

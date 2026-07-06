@@ -41,6 +41,8 @@ const input: AdminSongInput = {
   author: null,
   copyright: null,
   defaultKey: "C",
+  spotifyUrl: null,
+  youtubeUrl: null,
   chordProContent: "[C]Paroles",
   themeIds: [],
   labelIds: [],

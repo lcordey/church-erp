@@ -20,6 +20,8 @@ describe("validateAdminSongInput", () => {
         author: "Une autrice",
         copyright: "© Exemple",
         defaultKey: null,
+        spotifyUrl: null,
+        youtubeUrl: null,
         chordProContent: "[C]Paroles",
         themeIds: [],
         labelIds: [],
@@ -135,6 +137,58 @@ describe("validateAdminSongInput", () => {
         themeIds: [themeId],
         labelIds: [labelId],
       }),
+    });
+  });
+
+  it("accepts YouTube and Spotify links", () => {
+    const result = validateAdminSongInput({
+      title: "Mon chant",
+      slug: "mon-chant",
+      chordProContent: "[C]Paroles",
+      youtubeUrl: " https://youtu.be/example ",
+      spotifyUrl: " https://open.spotify.com/track/example ",
+    });
+
+    expect(result).toEqual({
+      success: true,
+      data: expect.objectContaining({
+        youtubeUrl: "https://youtu.be/example",
+        spotifyUrl: "https://open.spotify.com/track/example",
+      }),
+    });
+  });
+
+  it("rejects links from another provider", () => {
+    const result = validateAdminSongInput({
+      title: "Mon chant",
+      slug: "mon-chant",
+      chordProContent: "[C]Paroles",
+      youtubeUrl: "https://example.com/video",
+      spotifyUrl: "https://example.com/audio",
+    });
+
+    expect(result).toMatchObject({
+      success: false,
+      errors: {
+        youtubeUrl: expect.any(String),
+        spotifyUrl: expect.any(String),
+      },
+    });
+  });
+
+  it("requires HTTPS external links", () => {
+    const result = validateAdminSongInput({
+      title: "Mon chant",
+      slug: "mon-chant",
+      chordProContent: "[C]Paroles",
+      youtubeUrl: "http://youtube.com/watch?v=example",
+    });
+
+    expect(result).toMatchObject({
+      success: false,
+      errors: {
+        youtubeUrl: expect.any(String),
+      },
     });
   });
 });

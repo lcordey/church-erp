@@ -54,6 +54,8 @@ export type PublicSongDetail = PublicSongSummary & {
   chordProContent: string | null;
   pdfSource: SongPdfSource | null;
   musicXmlSource: SongMusicXmlSource | null;
+  spotifyUrl: string | null;
+  youtubeUrl: string | null;
 };
 
 export type SongCatalogListRecord = PublicSongSummary & {

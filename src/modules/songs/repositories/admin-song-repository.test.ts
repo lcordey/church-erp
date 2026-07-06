@@ -62,6 +62,8 @@ describe("admin song repository", () => {
               collectionNumber: 12,
               sourcePageUrl: null,
               sourceChordProUrl: null,
+              spotifyUrl: null,
+              youtubeUrl: "https://youtu.be/example",
               isEditable: true,
               chordProContent: null,
               createdAt: new Date("2026-07-05T09:00:00Z"),
@@ -86,6 +88,7 @@ describe("admin song repository", () => {
     expect(song).toMatchObject({
       id: "song-1",
       chordProContent: "",
+      youtubeUrl: "https://youtu.be/example",
       pdfSource: null,
       musicXmlSource: null,
       themes: [],
@@ -129,6 +132,8 @@ describe("admin song repository", () => {
               collectionNumber: 12,
               sourcePageUrl: null,
               sourceChordProUrl: null,
+              spotifyUrl: null,
+              youtubeUrl: "https://youtu.be/example",
               isEditable: true,
               chordProContent: "[C]Texte",
               createdAt: new Date("2026-07-05T09:00:00Z"),
@@ -155,6 +160,8 @@ describe("admin song repository", () => {
       author: null,
       copyright: null,
       defaultKey: "C",
+      spotifyUrl: null,
+      youtubeUrl: "https://youtu.be/example",
       chordProContent: "[C]Texte",
       themeIds: [],
       labelIds: [],
@@ -165,6 +172,12 @@ describe("admin song repository", () => {
       sourceType: "chordpro",
       status: "active",
       textContent: "[C]Texte",
+    });
+    expect(insertValues).toHaveBeenCalledWith({
+      songId: "song-1",
+      sourceType: "youtube",
+      status: "active",
+      externalUrl: "https://youtu.be/example",
     });
     expect(song?.chordProContent).toBe("[C]Texte");
   });

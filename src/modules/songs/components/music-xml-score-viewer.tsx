@@ -34,6 +34,13 @@ type MusicXmlScoreViewerProps = {
   sourceUrl: string;
 };
 
+type ScorePinchGesture = {
+  distance: number;
+  focalX: number;
+  focalY: number;
+  zoom: number;
+};
+
 export type MusicXmlScoreViewerHandle = {
   downloadPdf: () => Promise<void>;
   openDocument: () => void;
@@ -149,6 +156,34 @@ function applySvgDisplayWidth(
   });
 }
 
+function getTouchDistance(touches: TouchList) {
+  const firstTouch = touches.item(0);
+  const secondTouch = touches.item(1);
+
+  if (!firstTouch || !secondTouch) {
+    return null;
+  }
+
+  return Math.hypot(
+    secondTouch.clientX - firstTouch.clientX,
+    secondTouch.clientY - firstTouch.clientY,
+  );
+}
+
+function getTouchCenter(touches: TouchList) {
+  const firstTouch = touches.item(0);
+  const secondTouch = touches.item(1);
+
+  if (!firstTouch || !secondTouch) {
+    return null;
+  }
+
+  return {
+    x: (firstTouch.clientX + secondTouch.clientX) / 2,
+    y: (firstTouch.clientY + secondTouch.clientY) / 2,
+  };
+}
+
 async function loadSvgImage(svg: SVGSVGElement) {
   const serializer = new XMLSerializer();
   const clonedSvg = svg.cloneNode(true);
@@ -226,6 +261,7 @@ export const MusicXmlScoreViewer = forwardRef<
   } | null>(null);
   const renderWidthRef = useRef(0);
   const zoomRef = useRef(DEFAULT_SCORE_ZOOM);
+  const pinchGestureRef = useRef<ScorePinchGesture | null>(null);
   const [status, setStatus] = useState("Chargement de la partition…");
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const [fullscreenMarkup, setFullscreenMarkup] = useState("");
@@ -565,6 +601,100 @@ export const MusicXmlScoreViewer = forwardRef<
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isFullscreenOpen]);
+
+  useEffect(() => {
+    const currentViewport = fullscreenViewportRef.current;
+
+    if (!isFullscreenOpen || !currentViewport) {
+      return;
+    }
+
+    const viewport: HTMLDivElement = currentViewport;
+
+    function startPinch(event: TouchEvent) {
+      if (event.touches.length !== 2) {
+        return;
+      }
+
+      const distance = getTouchDistance(event.touches);
+      const center = getTouchCenter(event.touches);
+
+      if (!distance || !center) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const viewportBounds = viewport.getBoundingClientRect();
+      const localCenterX = center.x - viewportBounds.left;
+      const localCenterY = center.y - viewportBounds.top;
+
+      pinchGestureRef.current = {
+        distance,
+        focalX: viewport.scrollLeft + localCenterX,
+        focalY: viewport.scrollTop + localCenterY,
+        zoom: zoomRef.current,
+      };
+    }
+
+    function updatePinch(event: TouchEvent) {
+      const gesture = pinchGestureRef.current;
+
+      if (!gesture || event.touches.length !== 2) {
+        return;
+      }
+
+      const distance = getTouchDistance(event.touches);
+      const center = getTouchCenter(event.touches);
+
+      if (!distance || !center) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const nextZoom = clampScoreZoom(
+        gesture.zoom * (distance / gesture.distance),
+      );
+      const scale = nextZoom / gesture.zoom;
+      const viewportBounds = viewport.getBoundingClientRect();
+      const localCenterX = center.x - viewportBounds.left;
+      const localCenterY = center.y - viewportBounds.top;
+
+      applySvgDisplayWidth(
+        fullscreenSheetRef.current,
+        renderWidthRef.current,
+        nextZoom,
+      );
+      zoomRef.current = nextZoom;
+      setZoom(nextZoom);
+      viewport.scrollLeft = gesture.focalX * scale - localCenterX;
+      viewport.scrollTop = gesture.focalY * scale - localCenterY;
+    }
+
+    function stopPinch(event: TouchEvent) {
+      if (event.touches.length < 2) {
+        pinchGestureRef.current = null;
+      }
+    }
+
+    viewport.addEventListener("touchstart", startPinch, {
+      passive: false,
+    });
+    viewport.addEventListener("touchmove", updatePinch, {
+      passive: false,
+    });
+    viewport.addEventListener("touchend", stopPinch);
+    viewport.addEventListener("touchcancel", stopPinch);
+
+    return () => {
+      pinchGestureRef.current = null;
+      viewport.removeEventListener("touchstart", startPinch);
+      viewport.removeEventListener("touchmove", updatePinch);
+      viewport.removeEventListener("touchend", stopPinch);
+      viewport.removeEventListener("touchcancel", stopPinch);
     };
   }, [isFullscreenOpen]);
 

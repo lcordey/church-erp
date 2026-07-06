@@ -41,6 +41,8 @@ function createDetail(input: SetlistInput): SetlistDetail {
         collection: "LeMont",
         collectionNumber: null,
         sourcePageUrl: null,
+        spotifyUrl: null,
+        youtubeUrl: null,
         pdfSource: null,
         musicXmlSource: null,
         chordProContent: "[C]Paroles",

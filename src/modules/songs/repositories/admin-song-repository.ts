@@ -39,6 +39,9 @@ export class InvalidSongTaxonomySelectionError extends Error {
 
 const defaultLocalCollection = "LeMont";
 const activeChordProSources = alias(songSources, "active_admin_chordpro_sources");
+const activeSpotifySources = alias(songSources, "active_admin_spotify_sources");
+const activeYoutubeSources = alias(songSources, "active_admin_youtube_sources");
+type ExternalLinkSourceType = "spotify" | "youtube";
 
 export interface AdminSongRepository {
   listAll(): Promise<AdminSongListItem[]>;
@@ -73,6 +76,8 @@ const adminSongSelection = {
   collectionNumber: songs.collectionNumber,
   sourcePageUrl: songs.sourcePageUrl,
   sourceChordProUrl: activeChordProSources.externalUrl,
+  spotifyUrl: activeSpotifySources.externalUrl,
+  youtubeUrl: activeYoutubeSources.externalUrl,
   isEditable: songs.isEditable,
   chordProContent: activeChordProSources.textContent,
   createdAt: songs.createdAt,
@@ -200,6 +205,8 @@ function toAdminSongListItem(song: AdminSong): AdminSongListItem {
     collectionNumber: song.collectionNumber,
     sourcePageUrl: song.sourcePageUrl,
     sourceChordProUrl: song.sourceChordProUrl,
+    spotifyUrl: song.spotifyUrl,
+    youtubeUrl: song.youtubeUrl,
     pdfSource: song.pdfSource,
     musicXmlSource: song.musicXmlSource,
     isEditable: song.isEditable,
@@ -225,6 +232,16 @@ export function createAdminSongRepository(): AdminSongRepository {
     eq(activeChordProSources.songId, songs.id),
     eq(activeChordProSources.sourceType, "chordpro"),
     eq(activeChordProSources.status, "active"),
+  );
+  const activeSpotifyJoin = and(
+    eq(activeSpotifySources.songId, songs.id),
+    eq(activeSpotifySources.sourceType, "spotify"),
+    eq(activeSpotifySources.status, "active"),
+  );
+  const activeYoutubeJoin = and(
+    eq(activeYoutubeSources.songId, songs.id),
+    eq(activeYoutubeSources.sourceType, "youtube"),
+    eq(activeYoutubeSources.status, "active"),
   );
   const activeChordPro = and(
     eq(songSources.sourceType, "chordpro"),
@@ -377,11 +394,60 @@ export function createAdminSongRepository(): AdminSongRepository {
     }
   }
 
+  async function replaceExternalLink(
+    transaction: Parameters<Parameters<typeof database.transaction>[0]>[0],
+    songId: string,
+    sourceType: ExternalLinkSourceType,
+    externalUrl: string | null,
+  ) {
+    const [existingSource] = await transaction
+      .select({ id: songSources.id, externalUrl: songSources.externalUrl })
+      .from(songSources)
+      .where(
+        and(
+          eq(songSources.songId, songId),
+          eq(songSources.sourceType, sourceType),
+          eq(songSources.status, "active"),
+        ),
+      )
+      .limit(1);
+
+    if (existingSource && externalUrl) {
+      if (existingSource.externalUrl !== externalUrl) {
+        await transaction
+          .update(songSources)
+          .set({ externalUrl, updatedAt: new Date() })
+          .where(eq(songSources.id, existingSource.id));
+      }
+
+      return;
+    }
+
+    if (existingSource) {
+      await transaction
+        .update(songSources)
+        .set({ status: "archived", updatedAt: new Date() })
+        .where(eq(songSources.id, existingSource.id));
+      return;
+    }
+
+    if (externalUrl) {
+      await transaction.insert(songSources).values({
+        songId,
+        sourceType,
+        status: "active",
+        externalUrl,
+      });
+    }
+  }
+
   async function findById(id: string): Promise<AdminSong | null> {
     const rows = await database
       .select(adminSongSelection)
       .from(songs)
       .leftJoin(activeChordProSources, activeChordProJoin)
+      .leftJoin(activeSpotifySources, activeSpotifyJoin)
+      .leftJoin(activeYoutubeSources, activeYoutubeJoin)
       .where(eq(songs.id, id))
       .limit(1);
 
@@ -410,6 +476,8 @@ export function createAdminSongRepository(): AdminSongRepository {
         .select(adminSongSelection)
         .from(songs)
         .leftJoin(activeChordProSources, activeChordProJoin)
+        .leftJoin(activeSpotifySources, activeSpotifyJoin)
+        .leftJoin(activeYoutubeSources, activeYoutubeJoin)
         .orderBy(asc(songs.title));
 
       const pdfSources = await findActivePdfSources(
@@ -458,6 +526,24 @@ export function createAdminSongRepository(): AdminSongRepository {
             status: "active",
             textContent: input.chordProContent,
           });
+          await Promise.all([
+            input.spotifyUrl
+              ? transaction.insert(songSources).values({
+                  songId: createdSong.id,
+                  sourceType: "spotify",
+                  status: "active",
+                  externalUrl: input.spotifyUrl,
+                })
+              : Promise.resolve(),
+            input.youtubeUrl
+              ? transaction.insert(songSources).values({
+                  songId: createdSong.id,
+                  sourceType: "youtube",
+                  status: "active",
+                  externalUrl: input.youtubeUrl,
+                })
+              : Promise.resolve(),
+          ]);
           await replaceTaxonomyAssignments(
             transaction,
             createdSong.id,
@@ -527,6 +613,20 @@ export function createAdminSongRepository(): AdminSongRepository {
           }
 
           await replaceTaxonomyAssignments(transaction, id, input);
+          await Promise.all([
+            replaceExternalLink(
+              transaction,
+              id,
+              "spotify",
+              input.spotifyUrl,
+            ),
+            replaceExternalLink(
+              transaction,
+              id,
+              "youtube",
+              input.youtubeUrl,
+            ),
+          ]);
 
           return true;
         });

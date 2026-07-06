@@ -100,7 +100,7 @@ Represents the shared identity and metadata of a song, regardless of how the son
 
 ## Entity: `song_sources`
 
-Represents one attached source for a song, such as a ChordPro document, a MusicXML score, a PDF file, or a future YouTube link.
+Represents one attached source for a song, such as a ChordPro document, a MusicXML score, a PDF file, or a YouTube or Spotify link.
 
 ### Fields
 
@@ -117,7 +117,7 @@ Represents one attached source for a song, such as a ChordPro document, a MusicX
 - `source_type`
   - type: `song_source_type`
   - required: yes
-  - notes: identifies the source family such as `chordpro`, `musicxml`, `pdf`, or `youtube`
+  - notes: identifies the source family such as `chordpro`, `musicxml`, `pdf`, `youtube`, or `spotify`
 
 - `status`
   - type: `song_source_status`
@@ -152,7 +152,7 @@ Represents one attached source for a song, such as a ChordPro document, a MusicX
 - `external_url`
   - type: `text`
   - required: no
-  - notes: URL for an external source, including official ChordPro files
+  - notes: URL for an external source, including official ChordPro files and YouTube or Spotify links
 
 - `created_at`
   - type: `timestamptz`
@@ -184,13 +184,14 @@ Recommended values:
 - `chordpro`
 - `musicxml`
 - `pdf`
+- `spotify`
 - `youtube`
 
 Reasoning:
 - `chordpro` is needed now
 - `musicxml` is used for rendered score display from structured notation
 - `pdf` is used for attached score documents
-- `youtube` is already a plausible future source and costs almost nothing to reserve
+- `youtube` and `spotify` are used for optional external listening links
 
 Adding a new enum value later is straightforward through a migration.
 

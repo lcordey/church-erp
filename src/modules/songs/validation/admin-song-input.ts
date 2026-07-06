@@ -7,6 +7,8 @@ export type AdminSongField =
   | "author"
   | "copyright"
   | "defaultKey"
+  | "spotifyUrl"
+  | "youtubeUrl"
   | "chordProContent"
   | "themeIds"
   | "labelIds";
@@ -40,6 +42,47 @@ function optionalText(value: unknown): string | null {
 
   const normalized = value.trim();
   return normalized || null;
+}
+
+function externalLink(
+  value: unknown,
+  provider: "spotify" | "youtube",
+  errors: AdminSongValidationErrors,
+): string | null {
+  const normalized = optionalText(value);
+
+  if (!normalized) {
+    return null;
+  }
+
+  let url: URL;
+
+  try {
+    url = new URL(normalized);
+  } catch {
+    errors[`${provider}Url`] = "Saisis une adresse web valide.";
+    return null;
+  }
+
+  const hostname = url.hostname.toLowerCase();
+  const isExpectedHost =
+    provider === "youtube"
+      ? hostname === "youtu.be" ||
+        hostname === "youtube.com" ||
+        hostname.endsWith(".youtube.com")
+      : hostname === "spotify.link" ||
+        hostname === "spotify.com" ||
+        hostname.endsWith(".spotify.com");
+
+  if (url.protocol !== "https:" || !isExpectedHost) {
+    errors[`${provider}Url`] =
+      provider === "youtube"
+        ? "Utilise un lien HTTPS YouTube ou youtu.be."
+        : "Utilise un lien HTTPS Spotify.";
+    return null;
+  }
+
+  return normalized;
 }
 
 function findFrenchChordRoot(part: string): string | null {
@@ -146,6 +189,8 @@ export function validateAdminSongInput(
   const errors: AdminSongValidationErrors = {};
   const themeIds = taxonomyIds(values.themeIds, "themeIds", errors);
   const labelIds = taxonomyIds(values.labelIds, "labelIds", errors);
+  const spotifyUrl = externalLink(values.spotifyUrl, "spotify", errors);
+  const youtubeUrl = externalLink(values.youtubeUrl, "youtube", errors);
 
   if (!title) {
     errors.title = "Le titre est obligatoire.";
@@ -189,6 +234,8 @@ export function validateAdminSongInput(
       author: optionalText(values.author),
       copyright: optionalText(values.copyright),
       defaultKey,
+      spotifyUrl,
+      youtubeUrl,
       chordProContent,
       themeIds,
       labelIds,

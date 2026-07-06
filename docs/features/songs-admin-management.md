@@ -18,6 +18,7 @@ publier automatiquement et supprimer des chants depuis leur ecran d'edition.
 - supprimer definitivement un chant depuis son ecran d'edition
 - ajouter, remplacer ou retirer une partition PDF attachee au chant
 - ajouter, remplacer ou retirer une partition MusicXML attachee au chant
+- ajouter, modifier ou retirer un lien YouTube et un lien Spotify
 - generer une proposition de source ChordPro a partir du MusicXML attache
 - consulter les metadonnees utiles cote administration
 - consulter les chants officiels importes avec edition partielle
@@ -31,7 +32,8 @@ publier automatiquement et supprimer des chants depuis leur ecran d'edition.
 - enregistrer un chant editable publie automatiquement sa version courante
 - un chant publie doit d'abord etre retire du catalogue avant suppression ; l'interface peut enchainer ce retrait puis la suppression dans la meme action
 - un meme chant pourra a terme posseder plusieurs sources dans plusieurs formats
-- un chant MVP-1 possede au maximum une source ChordPro active, une source PDF active et une source MusicXML active
+- un chant MVP-1 possede au maximum une source active par type : ChordPro, PDF, MusicXML, YouTube et Spotify
+- les liens YouTube et Spotify sont optionnels, doivent utiliser HTTPS et pointer vers le fournisseur correspondant
 - les chants provenant d'une source officielle hors collection locale `LeMont` restent modifiables pour le titre, la tonalite, les sources et le contenu ChordPro
 - l'auteur, le copyright et le recueil d'un chant provenant d'une source officielle hors collection locale `LeMont` restent verrouilles
 - le verrouillage des metadonnees officielles est applique cote service, pas seulement dans l'interface
@@ -73,6 +75,7 @@ Pour MVP-1 :
 - une source `ChordPro` active est requise pour publier
 - une source `PDF` active est optionnelle
 - une source `MusicXML` active est optionnelle et stockee comme contenu texte en base
+- une source `YouTube` active et une source `Spotify` active sont optionnelles et stockees comme liens externes
 - quand une source `MusicXML` active existe, l'edition peut proposer une generation initiale de `ChordPro` sans enregistrer automatiquement le resultat
 - la generation ChordPro separe les lignes de paroles MusicXML numerotees en couplets distincts
 - les syllabes d'un meme mot sont reunies sans tiret de cesure
@@ -120,6 +123,8 @@ Implementation actuelle :
 - validation bloquante des accords ChordPro avec message sous le champ source
 - section `Partition PDF` pour ajouter, remplacer ou retirer le fichier attache
 - section `Partition` pour ajouter, remplacer ou retirer le fichier MusicXML attache
+- champs `Lien YouTube` et `Lien Spotify` dans l'edition du chant
+- liens externes affiches avec la source officielle dans les informations de lecture
 - action `Generer depuis la partition` dans l'edition quand un MusicXML est disponible
 - selections multiples de themes et labels dans le formulaire de chant
 - menu `Admin` et route `/admin/referentiels` pour ajouter et supprimer les valeurs disponibles
@@ -154,6 +159,7 @@ Contraintes UI :
 - tests API sur la creation, le changement de publication et la suppression
 - tests API sur l'ajout, le remplacement et la suppression de partition PDF
 - tests API sur l'ajout, le remplacement et la suppression de partition MusicXML
+- tests de validation et de persistance des liens YouTube et Spotify
 - verification HTTP reelle du parcours creation, modification, publication, retrait et suppression
 - test navigateur automatise reporte a l'installation de Playwright
 

@@ -17,6 +17,8 @@ export type AdminSong = {
   collectionNumber: number | null;
   sourcePageUrl: string | null;
   sourceChordProUrl: string | null;
+  spotifyUrl: string | null;
+  youtubeUrl: string | null;
   pdfSource: SongPdfSource | null;
   musicXmlSource: SongMusicXmlSource | null;
   isEditable: boolean;
@@ -33,6 +35,8 @@ export type AdminSongInput = {
   author: string | null;
   copyright: string | null;
   defaultKey: string | null;
+  spotifyUrl: string | null;
+  youtubeUrl: string | null;
   chordProContent: string;
   themeIds: string[];
   labelIds: string[];

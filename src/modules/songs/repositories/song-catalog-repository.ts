@@ -202,6 +202,8 @@ export function createSongCatalogRepository(): SongCatalogRepository {
   const chordProSources = alias(songSources, "published_song_chordpro_sources");
   const pdfSources = alias(songSources, "published_song_pdf_sources");
   const musicXmlSources = alias(songSources, "published_song_musicxml_sources");
+  const spotifySources = alias(songSources, "published_song_spotify_sources");
+  const youtubeSources = alias(songSources, "published_song_youtube_sources");
   const publishedSongCondition = eq(songs.status, "published");
   const publishedSongHasActiveSourceCondition = and(
     publishedSongCondition,
@@ -369,6 +371,8 @@ export function createSongCatalogRepository(): SongCatalogRepository {
           musicXmlFileName: musicXmlSources.fileName,
           musicXmlMimeType: musicXmlSources.mimeType,
           musicXmlFileSizeBytes: musicXmlSources.fileSizeBytes,
+          spotifyUrl: spotifySources.externalUrl,
+          youtubeUrl: youtubeSources.externalUrl,
         })
         .from(songs)
         .leftJoin(
@@ -395,6 +399,22 @@ export function createSongCatalogRepository(): SongCatalogRepository {
             eq(musicXmlSources.status, "active"),
           ),
         )
+        .leftJoin(
+          spotifySources,
+          and(
+            eq(spotifySources.songId, songs.id),
+            eq(spotifySources.sourceType, "spotify"),
+            eq(spotifySources.status, "active"),
+          ),
+        )
+        .leftJoin(
+          youtubeSources,
+          and(
+            eq(youtubeSources.songId, songs.id),
+            eq(youtubeSources.sourceType, "youtube"),
+            eq(youtubeSources.status, "active"),
+          ),
+        )
         .where(and(publishedSongHasActiveSourceCondition, eq(songs.slug, slug)))
         .limit(1);
 
@@ -415,6 +435,8 @@ export function createSongCatalogRepository(): SongCatalogRepository {
         collection: row.collection,
         collectionNumber: row.collectionNumber,
         sourcePageUrl: row.sourcePageUrl,
+        spotifyUrl: row.spotifyUrl,
+        youtubeUrl: row.youtubeUrl,
         chordProContent: row.chordProContent,
         pdfSource: row.pdfStoragePath
           ? toPublicPdfSource(
