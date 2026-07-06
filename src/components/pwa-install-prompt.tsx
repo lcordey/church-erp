@@ -61,7 +61,30 @@ export function PwaInstallPrompt() {
       }
 
       try {
-        await navigator.serviceWorker.register("/sw.js");
+        const registration = await navigator.serviceWorker.register("/sw.js");
+
+        if (!isRunningStandalone()) {
+          const activateWaitingWorker = () => {
+            registration.waiting?.postMessage({ type: "SKIP_WAITING" });
+          };
+          const watchInstallingWorker = () => {
+            const installingWorker = registration.installing;
+
+            if (!installingWorker) {
+              return;
+            }
+
+            installingWorker.addEventListener("statechange", () => {
+              if (installingWorker.state === "installed") {
+                activateWaitingWorker();
+              }
+            });
+          };
+
+          registration.addEventListener("updatefound", watchInstallingWorker);
+          activateWaitingWorker();
+          watchInstallingWorker();
+        }
       } catch {
         // Failing to register should not break the app shell.
       }

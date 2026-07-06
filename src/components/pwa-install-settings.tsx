@@ -124,8 +124,22 @@ export function PwaInstallSettings() {
       return;
     }
 
+    if (!window.isSecureContext) {
+      setStatusMessage(
+        "Chrome exige une adresse HTTPS pour installer l’application. Ouvrez ChurchERP avec une adresse qui commence par https:// puis réessayez.",
+      );
+      return;
+    }
+
+    if (!("serviceWorker" in navigator)) {
+      setStatusMessage(
+        "Cette version de Chrome ne permet pas l’installation de l’application.",
+      );
+      return;
+    }
+
     setStatusMessage(
-      "Si la fenêtre d’installation n’apparaît pas, ouvrez le menu du navigateur puis choisissez l’option d’installation.",
+      "Chrome prépare encore l’installation. Rechargez cette page puis réessayez. Vous pouvez aussi appuyer sur ⋮ à droite de la barre d’adresse, puis sur « Ajouter à l’écran d’accueil » et « Installer ».",
     );
   };
 

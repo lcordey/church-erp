@@ -14,5 +14,8 @@ describe("service worker route", () => {
     expect(source).toContain("__CHURCH_ERP_VERSION__");
     expect(source).toContain('"SKIP_WAITING"');
     expect(source).toContain("self.skipWaiting()");
+    expect(source).toContain('event.request.mode !== "navigate"');
+    expect(source).toContain("event.respondWith(");
+    expect(source).toContain("Connexion indisponible");
   });
 });

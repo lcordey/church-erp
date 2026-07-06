@@ -21,6 +21,11 @@
 - Sur Chrome Android, l'événement d'installation reste mémorisé après la
   fermeture de la bannière interne et dès le chargement initial afin que le
   bouton des réglages puisse toujours ouvrir la fenêtre native.
+- Le service worker intercepte réellement les navigations et fournit une page
+  de secours neutre sans connexion. Chrome peut ainsi reconnaître
+  l'application comme installable au lieu d'ignorer un gestionnaire vide.
+- Si la page n'est pas servie en HTTPS, les réglages expliquent directement que
+  Chrome bloque l'installation dans ce contexte.
 - Quand l'application est déjà installée, le même bloc détecte cet état et
   permet de vérifier puis d'activer la dernière version disponible.
 - Sur iPhone et iPad, les réglages affichent l'instruction manuelle via le menu
