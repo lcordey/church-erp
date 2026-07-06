@@ -120,6 +120,14 @@ export function hasChordProChords(content: string): boolean {
   return chordTokenPattern.test(content);
 }
 
+export function hasChordProLyrics(content: string): boolean {
+  return parseChordPro(content).some(
+    (line) =>
+      line.type === "lyrics" &&
+      line.segments.some((segment) => Boolean(segment.lyrics.trim())),
+  );
+}
+
 export function groupChordProSegmentsForWrap(
   segments: ChordProSegment[],
 ): ChordProSegmentGroup[] {

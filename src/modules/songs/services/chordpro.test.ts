@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   groupChordProSegmentsForWrap,
   hasChordProChords,
+  hasChordProLyrics,
   parseChordPro,
 } from "./chordpro";
 
@@ -57,6 +58,12 @@ describe("parseChordPro", () => {
   it("detects when a ChordPro source contains chords", () => {
     expect(hasChordProChords("[C]Ligne")).toBe(true);
     expect(hasChordProChords("Ligne sans accord")).toBe(false);
+  });
+
+  it("only detects lyrics when the source contains visible words", () => {
+    expect(hasChordProLyrics("{title: Exemple}\n{key: C}")).toBe(false);
+    expect(hasChordProLyrics("{comment: Intro}\n[C]")).toBe(false);
+    expect(hasChordProLyrics("{title: Exemple}\n[C]Paroles")).toBe(true);
   });
 
   it("keeps a chorded word in one wrap group", () => {

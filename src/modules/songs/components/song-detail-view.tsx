@@ -8,7 +8,10 @@ import type { AdminSong } from "../types/admin-song";
 import type { PublicSongDetail } from "../types/public-song";
 import { MusicalKeyText } from "./musical-key-text";
 import type { MusicXmlScoreViewerHandle } from "./music-xml-score-viewer";
-import { hasChordProChords } from "../services/chordpro";
+import {
+  hasChordProChords,
+  hasChordProLyrics,
+} from "../services/chordpro";
 import {
   resolveSongSourceView,
   type SongSourceView,
@@ -30,6 +33,13 @@ const SongPdfViewer = lazy(() =>
     default: module.SongPdfViewer,
   })),
 );
+
+const sourceLabels: Record<SongSourceView, string> = {
+  chordpro: "Accords",
+  lyrics: "Paroles",
+  musicxml: "Partition",
+  pdf: "PDF",
+};
 
 function DocumentViewerLoadingState() {
   return (
@@ -122,7 +132,7 @@ export function SongDetailView({
     preferences,
     setCurrentSourceView,
   } = useSongRenderPreferences();
-  const hasLyrics = Boolean(song.chordProContent?.trim());
+  const hasLyrics = hasChordProLyrics(song.chordProContent ?? "");
   const hasChords = hasLyrics && hasChordProChords(song.chordProContent ?? "");
   const availableSources = useMemo<SongSourceView[]>(
     () => [
@@ -144,6 +154,7 @@ export function SongDetailView({
       ),
     [availableSources, currentSourceView, preferences.sourcePriority],
   );
+  const hasAvailableSource = availableSources.length > 0;
   const collectionLabel = formatSongCollectionLabel(
     song.collection,
     song.collectionNumber,
@@ -267,6 +278,7 @@ export function SongDetailView({
               Source du chant
             </label>
             <select
+              disabled={availableSources.length <= 1}
               id={`song-source-${song.id}`}
               onChange={(event) => {
                 setCurrentSourceView(
@@ -277,16 +289,17 @@ export function SongDetailView({
                     | "musicxml",
                 );
               }}
-              value={resolvedSourceView}
+              value={availableSources.length > 0 ? resolvedSourceView : ""}
             >
-              <option value="lyrics">Paroles</option>
-              {hasChords ? <option value="chordpro">Accords</option> : null}
-              {canAccessScores && song.pdfSource ? (
-                <option value="pdf">PDF</option>
-              ) : null}
-              {canAccessScores && song.musicXmlSource ? (
-                <option value="musicxml">Partition</option>
-              ) : null}
+              {availableSources.length > 0 ? (
+                availableSources.map((source) => (
+                  <option key={source} value={source}>
+                    {sourceLabels[source]}
+                  </option>
+                ))
+              ) : (
+                <option value="">Aucune source</option>
+              )}
             </select>
             {actions ? (
               <div className="song-detail-view__actions">{actions}</div>
@@ -339,6 +352,7 @@ export function SongDetailView({
             <button
               aria-label="Télécharger le document"
               className="icon-button song-document-viewer__icon-button"
+              disabled={!hasAvailableSource}
               onClick={() => void downloadActiveDocument()}
               title="Télécharger"
               type="button"
@@ -432,7 +446,13 @@ export function SongDetailView({
           </div>
         ) : null}
 
-        {canAccessScores && resolvedSourceView === "pdf" && song.pdfSource ? (
+        {!hasAvailableSource ? (
+          <div className="empty-state">
+            <p>Aucun contenu de lecture disponible pour ce chant.</p>
+          </div>
+        ) : canAccessScores &&
+          resolvedSourceView === "pdf" &&
+          song.pdfSource ? (
           <Suspense fallback={<DocumentViewerLoadingState />}>
             <SongPdfViewer
               copyright={song.copyright}
