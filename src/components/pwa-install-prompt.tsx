@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   clearPwaInstallDismissal,
   dismissPwaInstallPrompt,
+  getEarlyInstallPrompt,
   getInstallPlatform,
   isPwaInstallDismissed,
   isRunningStandalone,
@@ -20,6 +21,40 @@ export function PwaInstallPrompt() {
     typeof window === "undefined" ? "desktop" : getInstallPlatform();
 
   useEffect(() => {
+    const platform = getInstallPlatform();
+
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      const promptEvent = event as BeforeInstallPromptEvent;
+      rememberDeferredInstallPrompt(promptEvent);
+      setDeferredPrompt(promptEvent);
+
+      if (!isPwaInstallDismissed()) {
+        setIsVisible(true);
+      }
+    };
+
+    const handleAppInstalled = () => {
+      markPwaInstalled();
+      setDeferredPrompt(null);
+      setIsVisible(false);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    const earlyPrompt = getEarlyInstallPrompt();
+    const earlyPromptTimer = earlyPrompt
+      ? window.setTimeout(() => {
+          rememberDeferredInstallPrompt(earlyPrompt);
+          setDeferredPrompt(earlyPrompt);
+
+          if (!isPwaInstallDismissed()) {
+            setIsVisible(true);
+          }
+        }, 0)
+      : null;
+
     const registerServiceWorker = async () => {
       if (!("serviceWorker" in navigator)) {
         return;
@@ -34,43 +69,21 @@ export function PwaInstallPrompt() {
 
     void registerServiceWorker();
 
-    const platform = getInstallPlatform();
-
-    if (isRunningStandalone() || platform === "desktop") {
-      return;
-    }
-
-    if (isPwaInstallDismissed()) {
-      return;
-    }
-
     const revealTimer =
-      platform === "ios"
+      platform === "ios" &&
+      !isRunningStandalone() &&
+      !isPwaInstallDismissed()
         ? window.setTimeout(() => {
             setIsVisible(true);
           }, 0)
         : null;
 
-    const handleBeforeInstallPrompt = (event: Event) => {
-      event.preventDefault();
-      const promptEvent = event as BeforeInstallPromptEvent;
-      rememberDeferredInstallPrompt(promptEvent);
-      setDeferredPrompt(promptEvent);
-      setIsVisible(true);
-    };
-
-    const handleAppInstalled = () => {
-      markPwaInstalled();
-      setDeferredPrompt(null);
-      setIsVisible(false);
-    };
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
-
     return () => {
       if (revealTimer !== null) {
         window.clearTimeout(revealTimer);
+      }
+      if (earlyPromptTimer !== null) {
+        window.clearTimeout(earlyPromptTimer);
       }
       window.removeEventListener(
         "beforeinstallprompt",

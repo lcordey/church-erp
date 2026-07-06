@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/",
     name: "ChurchERP",
     short_name: "ChurchERP",
     description: "Catalogue public des chants de l’équipe louange.",
@@ -20,6 +21,13 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/icons/churcherp-512.png",
         sizes: "512x512",
         type: "image/png",
+      },
+    ],
+    related_applications: [
+      {
+        platform: "webapp",
+        url: "/manifest.webmanifest",
+        id: "/",
       },
     ],
   };

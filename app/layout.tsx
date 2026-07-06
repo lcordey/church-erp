@@ -20,6 +20,16 @@ const themeBootstrapScript = `
   })();
 `;
 
+const pwaInstallBootstrapScript = `
+  (() => {
+    window.__churchErpInstallPrompt = null;
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      window.__churchErpInstallPrompt = event;
+    });
+  })();
+`;
+
 export const metadata: Metadata = {
   applicationName: "ChurchERP",
   title: {
@@ -57,6 +67,9 @@ export default async function RootLayout({
     <html lang="fr" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+        <script
+          dangerouslySetInnerHTML={{ __html: pwaInstallBootstrapScript }}
+        />
       </head>
       <body>
         <AppThemeProvider>

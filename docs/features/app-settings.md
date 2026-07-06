@@ -18,5 +18,10 @@
   l'installation PWA sur l'appareil courant.
 - Ce point d'entrée permet de réessayer même si la bannière automatique a déjà
   été fermée.
+- Sur Chrome Android, l'événement d'installation reste mémorisé après la
+  fermeture de la bannière interne et dès le chargement initial afin que le
+  bouton des réglages puisse toujours ouvrir la fenêtre native.
+- Quand l'application est déjà installée, le même bloc détecte cet état et
+  permet de vérifier puis d'activer la dernière version disponible.
 - Sur iPhone et iPad, les réglages affichent l'instruction manuelle via le menu
   Partager quand le navigateur ne propose pas de fenêtre native.

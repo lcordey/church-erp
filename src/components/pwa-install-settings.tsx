@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import {
   clearPwaInstallDismissal,
+  detectInstalledPwa,
   dismissPwaInstallPrompt,
   getInstallPlatform,
   getPwaInstallState,
@@ -11,6 +12,7 @@ import {
   markPwaInstalled,
   rememberDeferredInstallPrompt,
   subscribeToPwaInstall,
+  updateInstalledPwa,
 } from "./pwa-install";
 
 export function PwaInstallSettings() {
@@ -23,14 +25,28 @@ export function PwaInstallSettings() {
       (typeof window !== "undefined" && isRunningStandalone()),
   );
   const [statusMessage, setStatusMessage] = useState("");
-  const [isPromptPending, setIsPromptPending] = useState(false);
+  const [isActionPending, setIsActionPending] = useState(false);
 
   useEffect(() => {
-    return subscribeToPwaInstall(() => {
+    let isActive = true;
+
+    const unsubscribe = subscribeToPwaInstall(() => {
       const nextState = getPwaInstallState();
       setDeferredPrompt(nextState.deferredPrompt);
       setIsInstalled(nextState.isInstalled || isRunningStandalone());
     });
+
+    void detectInstalledPwa().then((installed) => {
+      if (isActive && installed) {
+        markPwaInstalled();
+        setIsInstalled(true);
+      }
+    });
+
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
   }, []);
 
   const installPlatform =
@@ -39,10 +55,38 @@ export function PwaInstallSettings() {
   const handleInstall = async () => {
     clearPwaInstallDismissal();
     setStatusMessage("");
+
+    if (isInstalled) {
+      setIsActionPending(true);
+
+      try {
+        const result = await updateInstalledPwa();
+
+        if (result === "updated") {
+          setStatusMessage("Mise à jour installée. Redémarrage…");
+          window.location.reload();
+        } else if (result === "current") {
+          setStatusMessage("L’application utilise déjà la dernière version.");
+        } else {
+          setStatusMessage(
+            "La mise à jour automatique n’est pas disponible sur ce navigateur.",
+          );
+        }
+      } catch {
+        setStatusMessage(
+          "La mise à jour n’a pas pu être vérifiée. Réessayez dans quelques instants.",
+        );
+      } finally {
+        setIsActionPending(false);
+      }
+
+      return;
+    }
+
     const promptEvent = deferredPrompt;
 
     if (promptEvent !== null) {
-      setIsPromptPending(true);
+      setIsActionPending(true);
 
       try {
         await promptEvent.prompt();
@@ -60,7 +104,7 @@ export function PwaInstallSettings() {
           setStatusMessage("La demande d’installation a été refermée.");
         }
       } finally {
-        setIsPromptPending(false);
+        setIsActionPending(false);
       }
 
       return;
@@ -90,21 +134,24 @@ export function PwaInstallSettings() {
       <div>
         <h2>Application</h2>
         <p>
-          Relancez l’installation de ChurchERP sur cet appareil, même si la
-          proposition automatique a déjà été fermée.
+          {isInstalled
+            ? "Vérifiez et installez la dernière version de ChurchERP sur cet appareil."
+            : "Installez ChurchERP sur cet appareil, même si la proposition automatique a déjà été fermée."}
         </p>
       </div>
 
       <div className="settings-install-card__actions">
         <button
           className="settings-install-card__button"
-          disabled={isInstalled || isPromptPending}
+          disabled={isActionPending}
           onClick={() => void handleInstall()}
           type="button"
         >
           {isInstalled
-            ? "Application déjà installée"
-            : isPromptPending
+            ? isActionPending
+              ? "Mise à jour…"
+              : "Mettre à jour l’application"
+            : isActionPending
               ? "Ouverture…"
               : "Télécharger l’application"}
         </button>

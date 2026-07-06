@@ -13,9 +13,21 @@ type NavigatorWithStandalone = Navigator & {
   userAgentData?: {
     mobile?: boolean;
   };
+  getInstalledRelatedApps?: () => Promise<
+    Array<{
+      id?: string;
+      platform?: string;
+      url?: string;
+    }>
+  >;
+};
+
+type WindowWithInstallPrompt = Window & {
+  __churchErpInstallPrompt?: BeforeInstallPromptEvent | null;
 };
 
 export type InstallPlatform = "ios" | "android" | "other-mobile" | "desktop";
+export type PwaUpdateResult = "current" | "updated" | "unsupported";
 
 export const PWA_INSTALL_DISMISS_KEY = "churcherp:pwa-install-dismissed";
 
@@ -46,7 +58,19 @@ export function rememberDeferredInstallPrompt(
   promptEvent: BeforeInstallPromptEvent | null,
 ) {
   currentDeferredPrompt = promptEvent;
+
+  if (typeof window !== "undefined") {
+    (window as WindowWithInstallPrompt).__churchErpInstallPrompt = promptEvent;
+  }
+
   notifyListeners();
+}
+
+export function getEarlyInstallPrompt() {
+  return (
+    (window as WindowWithInstallPrompt).__churchErpInstallPrompt ??
+    currentDeferredPrompt
+  );
 }
 
 export function markPwaInstalled() {
@@ -109,4 +133,114 @@ export function isRunningStandalone() {
     window.matchMedia("(display-mode: standalone)").matches ||
     (window.navigator as NavigatorWithStandalone).standalone === true
   );
+}
+
+export async function detectInstalledPwa() {
+  if (isRunningStandalone()) {
+    return true;
+  }
+
+  const navigatorWithRelatedApps =
+    window.navigator as NavigatorWithStandalone;
+
+  if (!navigatorWithRelatedApps.getInstalledRelatedApps) {
+    return false;
+  }
+
+  try {
+    const relatedApps =
+      await navigatorWithRelatedApps.getInstalledRelatedApps();
+
+    return relatedApps.some((app) => app.platform === "webapp");
+  } catch {
+    return false;
+  }
+}
+
+function waitForWorkerInstallation(
+  registration: ServiceWorkerRegistration,
+): Promise<ServiceWorker | null> {
+  const worker = registration.installing;
+
+  if (!worker) {
+    return Promise.resolve(registration.waiting);
+  }
+
+  if (worker.state === "installed") {
+    return Promise.resolve(registration.waiting ?? worker);
+  }
+
+  return new Promise((resolve) => {
+    const timeout = window.setTimeout(() => {
+      worker.removeEventListener("statechange", handleStateChange);
+      resolve(null);
+    }, 10_000);
+
+    const handleStateChange = () => {
+      if (worker.state === "installed") {
+        window.clearTimeout(timeout);
+        worker.removeEventListener("statechange", handleStateChange);
+        resolve(registration.waiting ?? worker);
+      } else if (worker.state === "redundant") {
+        window.clearTimeout(timeout);
+        worker.removeEventListener("statechange", handleStateChange);
+        resolve(null);
+      }
+    };
+
+    worker.addEventListener("statechange", handleStateChange);
+  });
+}
+
+function waitForControllerChange(): Promise<void> {
+  return new Promise((resolve) => {
+    const timeout = window.setTimeout(() => {
+      navigator.serviceWorker.removeEventListener(
+        "controllerchange",
+        handleControllerChange,
+      );
+      resolve();
+    }, 5_000);
+
+    const handleControllerChange = () => {
+      window.clearTimeout(timeout);
+      navigator.serviceWorker.removeEventListener(
+        "controllerchange",
+        handleControllerChange,
+      );
+      resolve();
+    };
+
+    navigator.serviceWorker.addEventListener(
+      "controllerchange",
+      handleControllerChange,
+    );
+  });
+}
+
+export async function updateInstalledPwa(): Promise<PwaUpdateResult> {
+  if (!("serviceWorker" in navigator)) {
+    return "unsupported";
+  }
+
+  const registration = await navigator.serviceWorker.getRegistration("/");
+
+  if (!registration) {
+    return "unsupported";
+  }
+
+  await registration.update();
+
+  const waitingWorker =
+    registration.waiting ?? (await waitForWorkerInstallation(registration));
+
+  if (!waitingWorker || !navigator.serviceWorker.controller) {
+    return "current";
+  }
+
+  const controllerChange = waitForControllerChange();
+  waitingWorker.postMessage({ type: "SKIP_WAITING" });
+  await controllerChange;
+
+  return "updated";
 }

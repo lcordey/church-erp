@@ -14,5 +14,6 @@ describe("settings page", () => {
       markup.indexOf("<h2>Lecture des chants</h2>"),
     );
     expect(markup).toContain("<h2>Application</h2>");
+    expect(markup).toContain("Télécharger l’application");
   });
 });
