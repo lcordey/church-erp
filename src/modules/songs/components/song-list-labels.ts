@@ -8,8 +8,8 @@ function getCollectionLabel(song: PublicSongSummary) {
   );
 }
 
-export function formatSongCatalogTitle(song: PublicSongSummary) {
-  return `${getCollectionLabel(song)} - ${song.title}`;
+export function formatSongCatalogMetadata(song: PublicSongSummary) {
+  return `${getCollectionLabel(song)} - ${song.author ?? "Auteur non renseigné"}`;
 }
 
 export function formatSongCollectionAndAuthor(song: PublicSongSummary) {

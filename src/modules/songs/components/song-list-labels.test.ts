@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { PublicSongSummary } from "../types/public-song";
 import {
-  formatSongCatalogTitle,
+  formatSongCatalogMetadata,
   formatSongCollectionAndAuthor,
 } from "./song-list-labels";
 
@@ -19,9 +19,9 @@ const song: PublicSongSummary = {
 };
 
 describe("song list labels", () => {
-  it("combines collection and title for catalog entries", () => {
-    expect(formatSongCatalogTitle(song)).toBe(
-      "J'aime l'Eternel 042 - Grâce infinie",
+  it("combines collection and author for catalog entries", () => {
+    expect(formatSongCatalogMetadata(song)).toBe(
+      "J'aime l'Eternel 042 - Collectif Cieux Ouverts",
     );
   });
 

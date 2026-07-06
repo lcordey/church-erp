@@ -2,7 +2,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import type { PublicSongSummary } from "../types/public-song";
-import { formatSongCatalogTitle } from "./song-list-labels";
+import { formatSongCatalogMetadata } from "./song-list-labels";
 
 type SongCardProps = {
   href?: string;
@@ -52,7 +52,7 @@ export function SongCard({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [shouldPrefetch, setShouldPrefetch] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const catalogMetadata = formatSongCatalogTitle(song);
+  const catalogMetadata = formatSongCatalogMetadata(song);
 
   useEffect(() => {
     if (!isMenuOpen) {
