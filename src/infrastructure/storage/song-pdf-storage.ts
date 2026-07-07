@@ -14,6 +14,15 @@ export class StorageObjectNotFoundError extends Error {
   }
 }
 
+export class StorageRequestError extends Error {
+  constructor(
+    readonly status: number,
+    readonly responseBody: string,
+  ) {
+    super(`Song PDF storage request failed with status ${status}.`);
+  }
+}
+
 type StorageConfig = {
   baseUrl: string;
   serviceRoleKey: string;
@@ -48,10 +57,33 @@ function storageHeaders(config: StorageConfig, contentType?: string) {
 }
 
 function objectUrl(config: StorageConfig, storagePath: string) {
+  if (/^https?:\/\//i.test(storagePath)) {
+    return storagePath;
+  }
+
   return `${config.baseUrl}/${storagePath
     .split("/")
     .map(encodeURIComponent)
     .join("/")}`;
+}
+
+function isStorageNotFoundResponse(status: number, responseBody: string) {
+  if (status === 404) {
+    return true;
+  }
+
+  if (status !== 400) {
+    return false;
+  }
+
+  const normalizedBody = responseBody.toLowerCase();
+
+  return (
+    normalizedBody.includes("not found") ||
+    normalizedBody.includes("not_found") ||
+    normalizedBody.includes("no such") ||
+    normalizedBody.includes("does not exist")
+  );
 }
 
 export function getSongPdfStoragePath(songId: string) {
@@ -89,13 +121,15 @@ export async function downloadSongPdf(storagePath: string): Promise<Response> {
     headers: storageHeaders(config),
   });
 
-  if (response.status === 404) {
+  if (response.ok) {
+    return response;
+  }
+
+  const responseBody = await response.text().catch(() => "");
+
+  if (isStorageNotFoundResponse(response.status, responseBody)) {
     throw new StorageObjectNotFoundError();
   }
 
-  if (!response.ok) {
-    throw new Error(`Song PDF download failed with status ${response.status}.`);
-  }
-
-  return response;
+  throw new StorageRequestError(response.status, responseBody);
 }

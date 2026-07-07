@@ -5,7 +5,9 @@ import {
 } from "@/src/infrastructure/auth/require-admin";
 import {
   downloadSongPdf,
+  StorageConfigurationError,
   StorageObjectNotFoundError,
+  StorageRequestError,
 } from "@/src/infrastructure/storage/song-pdf-storage";
 import { getPublicSongPdfBySlug } from "@/src/modules/songs/services/public-song-catalog";
 
@@ -80,7 +82,17 @@ export async function GET(request: Request, { params }: RouteContext) {
       return pdfNotFoundResponse();
     }
 
-    console.error(error);
+    if (error instanceof StorageConfigurationError) {
+      console.error("Song PDF storage is not configured.");
+    } else if (error instanceof StorageRequestError) {
+      console.error("Song PDF storage request failed.", {
+        status: error.status,
+        responseBody: error.responseBody,
+        storagePath: pdfSource.storagePath,
+      });
+    } else {
+      console.error(error);
+    }
 
     return Response.json(
       {
