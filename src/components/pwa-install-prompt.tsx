@@ -92,10 +92,13 @@ export function PwaInstallPrompt() {
 
     void registerServiceWorker();
 
-    const revealTimer =
-      platform === "ios" &&
+    const canShowManualInstallHelp =
+      (platform === "ios" || platform === "android") &&
       !isRunningStandalone() &&
-      !isPwaInstallDismissed()
+      !isPwaInstallDismissed();
+
+    const revealTimer =
+      canShowManualInstallHelp
         ? window.setTimeout(() => {
             setIsVisible(true);
           }, 0)
@@ -146,12 +149,18 @@ export function PwaInstallPrompt() {
   };
 
   const isNativePromptAvailable = deferredPrompt !== null;
-  const showManualIosInstructions =
-    installPlatform === "ios" && !isNativePromptAvailable;
+  const showManualInstallInstructions =
+    (installPlatform === "ios" || installPlatform === "android") &&
+    !isNativePromptAvailable;
 
-  if (!isNativePromptAvailable && !showManualIosInstructions) {
+  if (!isNativePromptAvailable && !showManualInstallInstructions) {
     return null;
   }
+
+  const manualInstallInstructions =
+    installPlatform === "android"
+      ? "Sur Android, ouvrez le menu ⋮ de Chrome puis choisissez \"Installer l'application\". Si Chrome affiche seulement \"Ajouter à l'écran d'accueil\", rechargez cette page et réessayez après quelques secondes."
+      : "Sur iPhone, ouvrez le menu Partager puis choisissez \"Sur l'écran d'accueil\".";
 
   return (
     <section className="pwa-install-prompt" aria-label="Installer l'application">
@@ -165,7 +174,7 @@ export function PwaInstallPrompt() {
         <p>
           {isNativePromptAvailable
             ? "Accès plus rapide depuis l'écran d'accueil, comme une vraie application."
-            : "Sur iPhone, ouvrez le menu Partager puis choisissez \"Sur l'écran d'accueil\"."}
+            : manualInstallInstructions}
         </p>
       </div>
 

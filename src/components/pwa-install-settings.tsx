@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import {
   clearPwaInstallDismissal,
   detectInstalledPwa,
+  getAvailableInstallPrompt,
   dismissPwaInstallPrompt,
   getInstallPlatform,
   getPwaInstallState,
@@ -77,7 +78,9 @@ export function PwaInstallSettings() {
 
   const promptForInstallation = async () => {
     const promptEvent =
-      deferredPrompt ?? (await waitForPwaInstallPrompt());
+      deferredPrompt ??
+      getAvailableInstallPrompt() ??
+      (await waitForPwaInstallPrompt());
 
     if (promptEvent === null) {
       return false;

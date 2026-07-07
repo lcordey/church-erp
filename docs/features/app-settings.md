@@ -23,7 +23,8 @@
   oubliées.
 - Sur Chrome Android, l'événement d'installation reste mémorisé après la
   fermeture de la bannière interne et dès le chargement initial afin que le
-  bouton des réglages puisse toujours ouvrir la fenêtre native.
+  bouton des réglages puisse toujours ouvrir la fenêtre native, même si
+  l'événement a été capturé avant l'hydratation React.
 - Le bouton des réglages attend brièvement l'événement natif si Chrome est
   encore en train d'évaluer l'installabilité. Après une désinstallation, l'état
   est resynchronisé quand la page redevient visible et quand Chrome repropose
@@ -31,6 +32,8 @@
 - Si Chrome ne fournit pas l'événement natif, l'interface distingue
   `Installer l'application` de `Ajouter à l'écran d'accueil`, qui peut ne créer
   qu'un raccourci selon le navigateur et l'appareil.
+- Sur Android, la bannière mobile reste visible avec l'instruction du menu
+  Chrome quand la fenêtre native n'est pas encore disponible.
 - Le service worker intercepte réellement les navigations et fournit une page
   de secours neutre sans connexion. Chrome peut ainsi reconnaître
   l'application comme installable au lieu d'ignorer un gestionnaire vide.

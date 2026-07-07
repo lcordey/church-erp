@@ -79,6 +79,17 @@ export function getEarlyInstallPrompt() {
   );
 }
 
+export function getAvailableInstallPrompt() {
+  const promptEvent = getEarlyInstallPrompt();
+
+  if (promptEvent !== null && promptEvent !== undefined) {
+    rememberDeferredInstallPrompt(promptEvent);
+    return promptEvent;
+  }
+
+  return null;
+}
+
 export function markPwaInstalled() {
   currentDeferredPrompt = null;
   isAppInstalled = true;
@@ -190,7 +201,7 @@ export async function detectInstalledPwa(): Promise<InstalledPwaDetection> {
 export function waitForPwaInstallPrompt(
   timeoutMs = 2_000,
 ): Promise<BeforeInstallPromptEvent | null> {
-  const existingPrompt = getPwaInstallState().deferredPrompt;
+  const existingPrompt = getAvailableInstallPrompt();
 
   if (existingPrompt !== null) {
     return Promise.resolve(existingPrompt);

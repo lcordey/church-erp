@@ -2,10 +2,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   dismissPwaInstallPrompt,
+  getAvailableInstallPrompt,
+  getPwaInstallState,
   isPwaInstallDismissed,
   PWA_INSTALL_DISMISS_DURATION_MS,
   PWA_INSTALL_DISMISS_KEY,
+  rememberDeferredInstallPrompt,
+  type BeforeInstallPromptEvent,
 } from "./pwa-install";
+
+type WindowWithInstallPrompt = Window & {
+  __churchErpInstallPrompt?: BeforeInstallPromptEvent | null;
+};
 
 describe("PWA install dismissal", () => {
   const storage = new Map<string, string>();
@@ -44,5 +52,23 @@ describe("PWA install dismissal", () => {
 
     expect(isPwaInstallDismissed()).toBe(false);
     expect(storage.has(PWA_INSTALL_DISMISS_KEY)).toBe(false);
+  });
+
+  it("uses the prompt captured before React hydration", () => {
+    const promptEvent = new Event(
+      "beforeinstallprompt",
+    ) as BeforeInstallPromptEvent;
+
+    (window as WindowWithInstallPrompt).__churchErpInstallPrompt = promptEvent;
+
+    expect(getAvailableInstallPrompt()).toBe(promptEvent);
+    expect(getPwaInstallState().deferredPrompt).toBe(promptEvent);
+  });
+
+  it("returns null when no prompt has been captured", () => {
+    rememberDeferredInstallPrompt(null);
+    (window as WindowWithInstallPrompt).__churchErpInstallPrompt = null;
+
+    expect(getAvailableInstallPrompt()).toBeNull();
   });
 });
