@@ -19,6 +19,15 @@ type PdfRenderScaleOptions = {
   viewportWidth: number;
 };
 
+export function getPdfDocumentOptions(pdfData: ArrayBuffer) {
+  return {
+    data: pdfData,
+    isImageDecoderSupported: false,
+    isOffscreenCanvasSupported: false,
+    wasmUrl: "/pdfjs/wasm/",
+  };
+}
+
 function applyPdfCanvasZoom(container: HTMLElement | null, zoom: number) {
   if (!container) {
     return;
@@ -148,10 +157,7 @@ export function SongPdfViewer({
           return;
         }
 
-        loadingTask = getDocument({
-          data: pdfData,
-          wasmUrl: "/pdfjs/wasm/",
-        });
+        loadingTask = getDocument(getPdfDocumentOptions(pdfData));
         const pdf = await loadingTask.promise;
 
         if (isCancelled) {

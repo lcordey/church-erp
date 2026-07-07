@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { resolvePdfRenderScale } from "./song-pdf-viewer";
+import {
+  getPdfDocumentOptions,
+  resolvePdfRenderScale,
+} from "./song-pdf-viewer";
 
 import { GET as getPdfJsWasm } from "@/app/pdfjs/wasm/[file]/route";
 
@@ -36,5 +39,16 @@ describe("resolvePdfRenderScale", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("application/wasm");
     expect(Array.from(body.slice(0, 4))).toEqual([0, 97, 115, 109]);
+  });
+
+  it("loads PDFs with browser image decoder fallbacks disabled", () => {
+    const pdfData = new ArrayBuffer(8);
+
+    expect(getPdfDocumentOptions(pdfData)).toEqual({
+      data: pdfData,
+      isImageDecoderSupported: false,
+      isOffscreenCanvasSupported: false,
+      wasmUrl: "/pdfjs/wasm/",
+    });
   });
 });
