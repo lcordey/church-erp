@@ -2,11 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 
+const MAX_PDF_CANVAS_DIMENSION = 4096;
+const MAX_PDF_CANVAS_PIXELS = 4_194_304;
+
 type SongPdfViewerProps = {
   copyright: string | null;
   sourceUrl: string;
   title: string;
   zoom: number;
+};
+
+type PdfRenderScaleOptions = {
+  devicePixelRatio: number;
+  displayScale: number;
+  viewportHeight: number;
+  viewportWidth: number;
 };
 
 function applyPdfCanvasZoom(container: HTMLElement | null, zoom: number) {
@@ -25,6 +35,30 @@ function applyPdfCanvasZoom(container: HTMLElement | null, zoom: number) {
     canvas.style.width = `${Math.round(baseWidth * zoom)}px`;
     canvas.style.height = `${Math.round(baseHeight * zoom)}px`;
   });
+}
+
+export function resolvePdfRenderScale({
+  devicePixelRatio,
+  displayScale,
+  viewportHeight,
+  viewportWidth,
+}: PdfRenderScaleOptions) {
+  const preferredScale = displayScale * Math.min(devicePixelRatio || 1, 2);
+  const maxScaleByWidth = MAX_PDF_CANVAS_DIMENSION / viewportWidth;
+  const maxScaleByHeight = MAX_PDF_CANVAS_DIMENSION / viewportHeight;
+  const maxScaleByPixels = Math.sqrt(
+    MAX_PDF_CANVAS_PIXELS / (viewportWidth * viewportHeight),
+  );
+
+  return Math.max(
+    0.1,
+    Math.min(
+      preferredScale,
+      maxScaleByWidth,
+      maxScaleByHeight,
+      maxScaleByPixels,
+    ),
+  );
 }
 
 export function SongPdfViewer({
@@ -123,7 +157,6 @@ export function SongPdfViewer({
 
         const pageSpacing = stageWidth < 720 ? 16 : 24;
         const targetWidth = Math.max(stageWidth - pageSpacing * 2, 220);
-        const outputScale = Math.min(window.devicePixelRatio || 1, 2);
 
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
           const page = await pdf.getPage(pageNumber);
@@ -134,8 +167,14 @@ export function SongPdfViewer({
 
           const viewport = page.getViewport({ scale: 1 });
           const displayScale = targetWidth / viewport.width;
+          const renderScale = resolvePdfRenderScale({
+            devicePixelRatio: window.devicePixelRatio || 1,
+            displayScale,
+            viewportHeight: viewport.height,
+            viewportWidth: viewport.width,
+          });
           const scaledViewport = page.getViewport({
-            scale: displayScale * outputScale,
+            scale: renderScale,
           });
 
           const pageElement = document.createElement("figure");
@@ -167,6 +206,7 @@ export function SongPdfViewer({
             canvasContext: context,
             viewport: scaledViewport,
           }).promise;
+          page.cleanup();
         }
 
         if (!isCancelled) {
@@ -196,6 +236,8 @@ export function SongPdfViewer({
     };
   }, [sourceUrl, stageWidth]);
 
+  const fallbackDownloadUrl = `${sourceUrl}${sourceUrl.includes("?") ? "&" : "?"}download=1`;
+
   return (
     <div
       ref={stageRef}
@@ -203,7 +245,15 @@ export function SongPdfViewer({
     >
       {status ? (
         <div className="song-document-viewer__status-row">
-          <p className="song-document-viewer__status">{status}</p>
+          <p className="song-document-viewer__status">
+            {status}
+            {status.startsWith("Impossible") ? (
+              <>
+                {" "}
+                <a href={fallbackDownloadUrl}>Télécharger le PDF</a>
+              </>
+            ) : null}
+          </p>
         </div>
       ) : null}
       <div
