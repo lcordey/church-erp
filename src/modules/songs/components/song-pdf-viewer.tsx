@@ -148,7 +148,10 @@ export function SongPdfViewer({
           return;
         }
 
-        loadingTask = getDocument({ data: pdfData });
+        loadingTask = getDocument({
+          data: pdfData,
+          wasmUrl: "/pdfjs/wasm/",
+        });
         const pdf = await loadingTask.promise;
 
         if (isCancelled) {

@@ -20,29 +20,6 @@ const themeBootstrapScript = `
   })();
 `;
 
-const pwaInstallBootstrapScript = `
-  (() => {
-    window.__churchErpInstallPrompt = null;
-    window.addEventListener("beforeinstallprompt", (event) => {
-      event.preventDefault();
-      window.__churchErpInstallPrompt = event;
-    });
-    if ("serviceWorker" in navigator) {
-      const registerChurchErpServiceWorker = () => {
-        navigator.serviceWorker.register("/sw.js").catch(() => {});
-      };
-
-      if (document.readyState === "complete") {
-        registerChurchErpServiceWorker();
-      } else {
-        window.addEventListener("load", registerChurchErpServiceWorker, {
-          once: true,
-        });
-      }
-    }
-  })();
-`;
-
 export const metadata: Metadata = {
   applicationName: "ChurchERP",
   title: {
@@ -50,19 +27,6 @@ export const metadata: Metadata = {
     template: "%s · ChurchERP",
   },
   description: "Catalogue public des chants de l’équipe louange.",
-  manifest: "/manifest.webmanifest",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "ChurchERP",
-  },
-  icons: {
-    icon: [
-      { url: "/icons/churcherp-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/churcherp-512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: [{ url: "/icons/churcherp-192.png", sizes: "192x192", type: "image/png" }],
-  },
 };
 
 export const viewport: Viewport = {
@@ -80,9 +44,6 @@ export default async function RootLayout({
     <html lang="fr" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
-        <script
-          dangerouslySetInnerHTML={{ __html: pwaInstallBootstrapScript }}
-        />
       </head>
       <body>
         <AppThemeProvider>

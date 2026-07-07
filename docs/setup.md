@@ -19,7 +19,7 @@ As of this revision:
 - responsive desktop and phone access has been validated locally
 - local HTTPS and WSL2-to-Windows port forwarding scripts are available
 - Vitest covers the current business rules and API contracts
-- Playwright is still planned, but the first PWA installability slice is now in place
+- Playwright is still planned
 
 ## Runtime
 
@@ -301,8 +301,7 @@ The following are planned but not yet set up in this repo:
 ## Expected Next Setup Steps
 
 1. Add Playwright for the main public and administration browser journeys.
-2. Extend PWA behavior only if offline caching becomes a real need.
-3. Prepare the next MVP module only after the worship-team workflow is validated.
+2. Prepare the next MVP module only after the worship-team workflow is validated.
 
 ## Local Phone Testing
 

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { resolvePdfRenderScale } from "./song-pdf-viewer";
 
+import { GET as getPdfJsWasm } from "@/app/pdfjs/wasm/[file]/route";
+
 describe("resolvePdfRenderScale", () => {
   it("keeps the preferred scale for ordinary pages", () => {
     expect(
@@ -23,5 +25,16 @@ describe("resolvePdfRenderScale", () => {
         viewportWidth: 4000,
       }),
     ).toBeCloseTo(0.418, 3);
+  });
+
+  it("serves the PDF.js JBIG2 decoder used by scanned PDF pages", async () => {
+    const response = await getPdfJsWasm(new Request("http://localhost"), {
+      params: Promise.resolve({ file: "jbig2.wasm" }),
+    });
+    const body = new Uint8Array(await response.arrayBuffer());
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/wasm");
+    expect(Array.from(body.slice(0, 4))).toEqual([0, 97, 115, 109]);
   });
 });

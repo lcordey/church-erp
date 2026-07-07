@@ -63,7 +63,6 @@ src/
     database/
     auth/
     storage/
-    pwa/
     i18n/
   shared/
     types/
@@ -185,17 +184,13 @@ Likely responsibilities:
 - Prefer module-local feature components over a large shared domain-components directory.
 - Reserve `src/components` for thin cross-module controls such as navigation.
 
-## PWA Direction
+## Mobile Direction
 
-PWA compatibility is part of the architecture from the start, but MVP-1 keeps the scope narrow:
+Mobile browser compatibility is part of the architecture from the start, but
+MVP-1 keeps the scope narrow:
 - responsive layouts
 - local desktop and phone operation
-- manifest and icons when implementation begins
 - local phone testing on the same network
-
-Deferred beyond MVP-1 unless explicitly requested:
-- advanced offline cache
-- background sync
 - push notifications
 
 ## Delivery Strategy

@@ -24,7 +24,6 @@ Likely features:
 - richer PDF workflows such as bulk import, OCR metadata, or generated score exports
 - richer source history and support for multiple active sources of the same type
 - dedicated source management UI beyond the current song editor fields
-- richer PWA behavior after the installable MVP-1 shell
 
 ## MVP-3 Candidates
 

@@ -9,7 +9,6 @@ Livrer la plus petite application utile pour l'equipe louange, tout en validant 
 - fonctionnalites connectees a la base
 - tests locaux
 - utilisation confortable sur telephone
-- structure compatible avec une future PWA
 
 Cette phase est volontairement etroite. Ce n'est pas encore l'ERP complet de l'eglise.
 
@@ -60,10 +59,9 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 - notation musicale anglaise ou francaise
 - transposition temporaire a la lecture sans modifier la source
 
-### Mobile et compatibilite PWA
+### Mobile
 - interface responsive pour telephone
 - test local dans le navigateur d'un telephone
-- installation PWA de base avec prompt navigateur quand disponible
 
 ### Qualite locale
 - migrations de base de donnees
@@ -105,7 +103,6 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 1. catalogue public des chants en ChordPro - livre
 2. administration des chants - livre
 3. acces et verifications mobile - livre
-4. premiere couche PWA - livre
 
 ## Etat actuel
 
@@ -132,7 +129,6 @@ Livre :
 - acces local depuis un telephone avec HTTPS et support WSL2
 
 Restant pour terminer MVP-1 :
-- validation d'installabilite
 - tests navigateur Playwright des parcours principaux
 
 ## Standard de tranche verticale
