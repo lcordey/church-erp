@@ -55,7 +55,12 @@ function createRepository(
           Boolean(song.collection && options.collections.includes(song.collection));
         const matchesSearch =
           !options?.search ||
-          song.title.toLowerCase().includes(options.search.toLowerCase());
+          song.title.toLowerCase().includes(options.search.toLowerCase()) ||
+          Boolean(
+            song.author
+              ?.toLowerCase()
+              .includes(options.search.toLowerCase()),
+          );
 
         return matchesCollection && matchesSearch;
       });
@@ -168,6 +173,28 @@ describe("public song catalog", () => {
     expect(catalog.songs).toHaveLength(1);
     expect(catalog.total).toBe(1);
     expect(catalog.hasMore).toBe(false);
+  });
+
+  it("matches songs by author when searching", async () => {
+    const catalog = await listPublicSongResults(
+      { search: "auteur cible" },
+      createRepository([
+        {
+          ...publishedSong,
+          author: "Auteur cible",
+        },
+        {
+          ...publishedSong,
+          id: "33333333-3333-4333-8333-333333333333",
+          author: "Autre personne",
+          slug: "autre-chant",
+          title: "Autre chant",
+        },
+      ]),
+    );
+
+    expect(catalog.songs).toHaveLength(1);
+    expect(catalog.songs[0]?.author).toBe("Auteur cible");
   });
 
   it("bounds public page size", async () => {

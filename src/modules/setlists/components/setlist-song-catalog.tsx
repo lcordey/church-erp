@@ -35,7 +35,7 @@ export function SetlistSongCatalog({
       loadOnMount
       onOpenSong={onOpenSong}
       searchInputId="setlist-song-search"
-      searchPlaceholder="Titre ou numéro de recueil"
+      searchPlaceholder="Titre, auteur ou numéro de recueil"
       syncUrl={false}
     />
   );

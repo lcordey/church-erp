@@ -240,6 +240,9 @@ export function createSongCatalogRepository(): SongCatalogRepository {
           accentInsensitiveTitleSearch
             ? sql`immutable_unaccent(lower(${songs.title})) like concat('%', immutable_unaccent(${normalizedSearchLower ?? ""}), '%')`
             : ilike(songs.title, `%${normalizedSearch}%`),
+          accentInsensitiveTitleSearch
+            ? sql`immutable_unaccent(lower(coalesce(${songs.author}, ''))) like concat('%', immutable_unaccent(${normalizedSearchLower ?? ""}), '%')`
+            : ilike(songs.author, `%${normalizedSearch}%`),
           ilike(
             sql`cast(${songs.collectionNumber} as text)`,
             normalizedSearch,

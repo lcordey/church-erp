@@ -96,7 +96,7 @@ export function SongCatalog({
   onOpenSong,
   searchInputId = "song-search",
   searchLabel = "Recherche",
-  searchPlaceholder = "Titre ou numéro de recueil",
+  searchPlaceholder = "Titre, auteur ou numéro de recueil",
   showHeading = true,
   syncUrl = true,
 }: SongCatalogProps) {
