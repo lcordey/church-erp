@@ -98,12 +98,11 @@ describe("admin song repository", () => {
 
   it("creates a chordpro source on update when the song has none yet", async () => {
     const insertValues = vi.fn(() => Promise.resolve(undefined));
+    const updateSongQuery = createQueryMock([{ id: "song-1" }], "returning");
     const transaction = {
       update: vi
         .fn()
-        .mockReturnValueOnce(
-          createQueryMock([{ id: "song-1" }], "returning"),
-        )
+        .mockReturnValueOnce(updateSongQuery)
         .mockReturnValueOnce(createQueryMock(undefined, "where"))
         .mockReturnValueOnce(createQueryMock(undefined, "where")),
       select: vi.fn(() =>
@@ -160,6 +159,7 @@ describe("admin song repository", () => {
       author: null,
       copyright: null,
       defaultKey: "C",
+      collectionNumber: 12,
       spotifyUrl: null,
       youtubeUrl: "https://youtu.be/example",
       chordProContent: "[C]Texte",
@@ -167,6 +167,11 @@ describe("admin song repository", () => {
       labelIds: [],
     });
 
+    expect(updateSongQuery.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collectionNumber: 12,
+      }),
+    );
     expect(insertValues).toHaveBeenCalledWith({
       songId: "song-1",
       sourceType: "chordpro",

@@ -31,6 +31,12 @@ export class SongSlugConflictError extends Error {
   }
 }
 
+export class SongCollectionNumberConflictError extends Error {
+  constructor() {
+    super("A song already uses this collection number.");
+  }
+}
+
 export class InvalidSongTaxonomySelectionError extends Error {
   constructor() {
     super("One or more selected themes or labels do not exist.");
@@ -224,6 +230,27 @@ function isUniqueViolation(error: unknown): boolean {
     "code" in error &&
     error.code === "23505"
   );
+}
+
+function getUniqueViolationConstraint(error: unknown): string | null {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "constraint" in error &&
+    typeof error.constraint === "string"
+  ) {
+    return error.constraint;
+  }
+
+  return null;
+}
+
+function toUniqueViolationError(error: unknown): Error {
+  if (getUniqueViolationConstraint(error) === "songs_collection_number_unique") {
+    return new SongCollectionNumberConflictError();
+  }
+
+  return new SongSlugConflictError();
 }
 
 export function createAdminSongRepository(): AdminSongRepository {
@@ -517,6 +544,7 @@ export function createAdminSongRepository(): AdminSongRepository {
               copyright: input.copyright,
               defaultKey: input.defaultKey,
               collection: defaultLocalCollection,
+              collectionNumber: input.collectionNumber,
             })
             .returning({ id: songs.id });
 
@@ -562,7 +590,7 @@ export function createAdminSongRepository(): AdminSongRepository {
         return created;
       } catch (error) {
         if (isUniqueViolation(error)) {
-          throw new SongSlugConflictError();
+          throw toUniqueViolationError(error);
         }
 
         throw error;
@@ -580,6 +608,7 @@ export function createAdminSongRepository(): AdminSongRepository {
               author: input.author,
               copyright: input.copyright,
               defaultKey: input.defaultKey,
+              collectionNumber: input.collectionNumber,
               updatedAt: new Date(),
             })
             .where(eq(songs.id, id))
@@ -634,7 +663,7 @@ export function createAdminSongRepository(): AdminSongRepository {
         return updated ? findById(id) : null;
       } catch (error) {
         if (isUniqueViolation(error)) {
-          throw new SongSlugConflictError();
+          throw toUniqueViolationError(error);
         }
 
         throw error;

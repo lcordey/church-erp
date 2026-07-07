@@ -7,6 +7,7 @@ export type AdminSongField =
   | "author"
   | "copyright"
   | "defaultKey"
+  | "collectionNumber"
   | "spotifyUrl"
   | "youtubeUrl"
   | "chordProContent"
@@ -42,6 +43,30 @@ function optionalText(value: unknown): string | null {
 
   const normalized = value.trim();
   return normalized || null;
+}
+
+function optionalPositiveInteger(
+  value: unknown,
+  field: "collectionNumber",
+  errors: AdminSongValidationErrors,
+): number | null {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const normalized =
+    typeof value === "string" ? Number(value.trim()) : Number(value);
+
+  if (
+    !Number.isInteger(normalized) ||
+    normalized <= 0 ||
+    normalized > 9999
+  ) {
+    errors[field] = "Saisis un numéro entier positif.";
+    return null;
+  }
+
+  return normalized;
 }
 
 function externalLink(
@@ -187,6 +212,11 @@ export function validateAdminSongInput(
       : "";
   const defaultKey = optionalText(values.defaultKey);
   const errors: AdminSongValidationErrors = {};
+  const collectionNumber = optionalPositiveInteger(
+    values.collectionNumber,
+    "collectionNumber",
+    errors,
+  );
   const themeIds = taxonomyIds(values.themeIds, "themeIds", errors);
   const labelIds = taxonomyIds(values.labelIds, "labelIds", errors);
   const spotifyUrl = externalLink(values.spotifyUrl, "spotify", errors);
@@ -234,6 +264,7 @@ export function validateAdminSongInput(
       author: optionalText(values.author),
       copyright: optionalText(values.copyright),
       defaultKey,
+      collectionNumber,
       spotifyUrl,
       youtubeUrl,
       chordProContent,

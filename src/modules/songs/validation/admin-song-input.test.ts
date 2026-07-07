@@ -20,11 +20,44 @@ describe("validateAdminSongInput", () => {
         author: "Une autrice",
         copyright: "© Exemple",
         defaultKey: null,
+        collectionNumber: null,
         spotifyUrl: null,
         youtubeUrl: null,
         chordProContent: "[C]Paroles",
         themeIds: [],
         labelIds: [],
+      },
+    });
+  });
+
+  it("normalizes a collection number", () => {
+    const result = validateAdminSongInput({
+      title: "Mon chant",
+      slug: "mon-chant",
+      collectionNumber: " 42 ",
+      chordProContent: "[C]Paroles",
+    });
+
+    expect(result).toEqual({
+      success: true,
+      data: expect.objectContaining({
+        collectionNumber: 42,
+      }),
+    });
+  });
+
+  it("rejects invalid collection numbers", () => {
+    const result = validateAdminSongInput({
+      title: "Mon chant",
+      slug: "mon-chant",
+      collectionNumber: "4.2",
+      chordProContent: "[C]Paroles",
+    });
+
+    expect(result).toMatchObject({
+      success: false,
+      errors: {
+        collectionNumber: expect.any(String),
       },
     });
   });

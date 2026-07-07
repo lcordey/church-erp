@@ -35,6 +35,7 @@ export type AdminSongInput = {
   author: string | null;
   copyright: string | null;
   defaultKey: string | null;
+  collectionNumber: number | null;
   spotifyUrl: string | null;
   youtubeUrl: string | null;
   chordProContent: string;

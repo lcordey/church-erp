@@ -47,6 +47,7 @@ type FormState = {
   author: string;
   copyright: string;
   defaultKey: string;
+  collectionNumber: string;
   spotifyUrl: string;
   youtubeUrl: string;
   chordProContent: string;
@@ -110,6 +111,9 @@ function initialState(song?: AdminSong): FormState {
     author: song?.author ?? "LeMont",
     copyright: song?.copyright ?? "LeMont",
     defaultKey: song?.defaultKey ?? "",
+    collectionNumber: song?.collectionNumber
+      ? String(song.collectionNumber)
+      : "",
     spotifyUrl: song?.spotifyUrl ?? "",
     youtubeUrl: song?.youtubeUrl ?? "",
     chordProContent: song?.chordProContent ?? createChordProTemplate(),
@@ -196,12 +200,16 @@ export function AdminSongForm({
     const endpoint = song
       ? `/api/admin/songs/${song.id}`
       : "/api/admin/songs";
+    const body = {
+      ...form,
+      collectionNumber: form.collectionNumber.trim() || null,
+    };
     const response = await fetch(
       endpoint,
       {
         method: isEditing ? "PUT" : "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       },
     );
     const payload = (await response.json()) as ApiError & { data?: AdminSong };
@@ -611,15 +619,37 @@ export function AdminSongForm({
             <div className="field field--readonly">
               <span>Recueil</span>
               <strong>
-                {formatSongCollectionLabel(song.collection, song.collectionNumber)}
+                {formatSongCollectionLabel(song.collection, null)}
               </strong>
               {hasOfficialMetadataLock ? (
                 <p className="field__hint">
-                  Le recueil d’un chant officiel reste verrouillé.
+                  Le nom du recueil officiel reste verrouillé.
                 </p>
               ) : null}
             </div>
           ) : null}
+
+          <label className="field">
+            <span>Numéro dans le recueil</span>
+            <input
+              inputMode="numeric"
+              min="1"
+              pattern="[0-9]*"
+              placeholder={song?.collection ? "Ex. 42" : "Optionnel"}
+              type="number"
+              value={form.collectionNumber}
+              onChange={(event) =>
+                updateField("collectionNumber", event.target.value)
+              }
+            />
+            {errors.collectionNumber ? (
+              <small>{errors.collectionNumber}</small>
+            ) : (
+              <p className="field__hint">
+                Laisse vide si le chant n’a pas encore de numéro.
+              </p>
+            )}
+          </label>
 
           {song?.sourcePageUrl ? (
             <div className="field field--readonly">

@@ -5,6 +5,7 @@ import {
 
 import {
   InvalidSongTaxonomySelectionError,
+  SongCollectionNumberConflictError,
   SongSlugConflictError,
 } from "../repositories/admin-song-repository";
 import {
@@ -120,6 +121,21 @@ export function adminSongErrorResponse(error: unknown) {
           message: "Ce slug est déjà utilisé par un autre chant.",
           fields: {
             slug: "Choisis un slug unique.",
+          },
+        },
+      },
+      { status: 409 },
+    );
+  }
+
+  if (error instanceof SongCollectionNumberConflictError) {
+    return Response.json(
+      {
+        error: {
+          code: "COLLECTION_NUMBER_CONFLICT",
+          message: "Ce numéro est déjà utilisé dans ce recueil.",
+          fields: {
+            collectionNumber: "Choisis un numéro disponible.",
           },
         },
       },
