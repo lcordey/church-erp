@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import { getLoginHref } from "@/src/shared/navigation/login-redirect";
@@ -43,6 +43,20 @@ const sourceLabels: Record<SongSourceView, string> = {
   musicxml: "Partition",
   pdf: "PDF",
 };
+
+const PDF_MIN_ZOOM = 0.6;
+const PDF_MAX_ZOOM = 2;
+const SCORE_MIN_ZOOM = 0.2;
+const SCORE_MAX_ZOOM = 1.8;
+const TEXT_LYRICS_MIN_ZOOM = 0.9;
+const TEXT_LYRICS_MAX_ZOOM = 1.28;
+const TEXT_CHORD_MIN_ZOOM = 0.68;
+const TEXT_CHORD_MAX_ZOOM = 1.24;
+const FOCUS_ZOOM_STEP = 0.1;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, Math.round(value * 100) / 100));
+}
 
 function DocumentViewerLoadingState() {
   return (
@@ -136,6 +150,7 @@ export function SongDetailView({
     currentSourceView,
     preferences,
     setCurrentSourceView,
+    setPreferences,
   } = useSongRenderPreferences();
   const hasLyrics = hasChordProLyrics(song.chordProContent ?? "");
   const hasChords = hasLyrics && hasChordProChords(song.chordProContent ?? "");
@@ -180,7 +195,8 @@ export function SongDetailView({
   const [areSettingsVisible, setAreSettingsVisible] = useState(false);
   const [areDetailsVisible, setAreDetailsVisible] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
-  const [isFocusExitVisible, setIsFocusExitVisible] = useState(false);
+  const [musicXmlZoom, setMusicXmlZoom] = useState(1);
+  const [pdfZoom, setPdfZoom] = useState(1);
 
   useEffect(() => {
     if (currentSourceView !== resolvedSourceView) {
@@ -192,7 +208,6 @@ export function SongDetailView({
     function handleFullscreenChange() {
       const isActive = document.fullscreenElement === containerRef.current;
       setIsFocusMode(isActive);
-      setIsFocusExitVisible(isActive);
 
       if (!isActive) {
         setAreDetailsVisible(false);
@@ -206,18 +221,6 @@ export function SongDetailView({
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
-
-  useEffect(() => {
-    if (!isFocusMode || !isFocusExitVisible) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setIsFocusExitVisible(false);
-    }, 1600);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [isFocusExitVisible, isFocusMode]);
 
   function getDownloadHref(sourceUrl: string) {
     const separator = sourceUrl.includes("?") ? "&" : "?";
@@ -261,28 +264,66 @@ export function SongDetailView({
     await document.exitFullscreen();
   }
 
-  function handleFocusPointerDown(event: ReactPointerEvent<HTMLElement>) {
-    if (!isFocusMode) {
-      return;
+  function getFocusZoomValue() {
+    if (resolvedSourceView === "pdf") {
+      return pdfZoom;
     }
 
-    const target = event.target;
-
-    if (!(target instanceof HTMLElement)) {
-      return;
+    if (resolvedSourceView === "musicxml") {
+      return musicXmlZoom;
     }
 
-    if (target.closest("button, a, select, input, label")) {
-      return;
-    }
-
-    setIsFocusExitVisible(true);
+    return preferences.lyricsFontScale;
   }
+
+  function getFocusZoomBounds() {
+    if (resolvedSourceView === "pdf") {
+      return { max: PDF_MAX_ZOOM, min: PDF_MIN_ZOOM };
+    }
+
+    if (resolvedSourceView === "musicxml") {
+      return { max: SCORE_MAX_ZOOM, min: SCORE_MIN_ZOOM };
+    }
+
+    return { max: TEXT_LYRICS_MAX_ZOOM, min: TEXT_LYRICS_MIN_ZOOM };
+  }
+
+  function changeFocusZoom(step: number) {
+    if (resolvedSourceView === "pdf") {
+      setPdfZoom((current) => clamp(current + step, PDF_MIN_ZOOM, PDF_MAX_ZOOM));
+      return;
+    }
+
+    if (resolvedSourceView === "musicxml") {
+      musicXmlViewerRef.current?.changeZoom(step);
+      return;
+    }
+
+    setPreferences({
+      chordFontScale:
+        resolvedSourceView === "chordpro"
+          ? clamp(
+              preferences.chordFontScale + step,
+              TEXT_CHORD_MIN_ZOOM,
+              TEXT_CHORD_MAX_ZOOM,
+            )
+          : preferences.chordFontScale,
+      lyricsFontScale: clamp(
+        preferences.lyricsFontScale + step,
+        TEXT_LYRICS_MIN_ZOOM,
+        TEXT_LYRICS_MAX_ZOOM,
+      ),
+    });
+  }
+
+  const focusZoomValue = getFocusZoomValue();
+  const focusZoomBounds = getFocusZoomBounds();
+  const isFocusZoomOutDisabled = focusZoomValue <= focusZoomBounds.min;
+  const isFocusZoomInDisabled = focusZoomValue >= focusZoomBounds.max;
 
   return (
     <section
       className={`song-detail-view${isFocusMode ? " song-detail-view--focus" : ""}`}
-      onPointerDown={handleFocusPointerDown}
       ref={containerRef}
     >
       <section
@@ -455,13 +496,31 @@ export function SongDetailView({
         </header>
 
         {isFocusMode ? (
-          <div
-            className={`song-document-viewer__focus-exit${
-              isFocusExitVisible
-                ? " song-document-viewer__focus-exit--visible"
-                : ""
-            }`}
-          >
+          <div className="song-document-viewer__focus-controls">
+            <div
+              aria-label="Zoom du document"
+              className="song-document-viewer__focus-zoom"
+            >
+              <button
+                aria-label="Réduire le zoom du document"
+                disabled={isFocusZoomOutDisabled}
+                onClick={() => changeFocusZoom(-FOCUS_ZOOM_STEP)}
+                type="button"
+              >
+                −
+              </button>
+              <output aria-label="Zoom actuel">
+                {Math.round(focusZoomValue * 100)}%
+              </output>
+              <button
+                aria-label="Augmenter le zoom du document"
+                disabled={isFocusZoomInDisabled}
+                onClick={() => changeFocusZoom(FOCUS_ZOOM_STEP)}
+                type="button"
+              >
+                +
+              </button>
+            </div>
             <button
               aria-label="Quitter le mode focus"
               className="icon-button song-document-viewer__focus-exit-button"
@@ -497,6 +556,7 @@ export function SongDetailView({
               copyright={song.copyright}
               sourceUrl={song.pdfSource.downloadUrl}
               title={song.title}
+              zoom={pdfZoom}
             />
           </Suspense>
         ) : canAccessScores &&
@@ -510,6 +570,7 @@ export function SongDetailView({
               collectionNumber={song.collectionNumber}
               copyright={song.copyright}
               defaultKey={song.defaultKey}
+              onZoomChange={setMusicXmlZoom}
               showSettings={areSettingsVisible}
               sourceUrl={song.musicXmlSource.downloadUrl}
               title={song.title}

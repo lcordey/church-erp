@@ -29,6 +29,7 @@ type MusicXmlScoreViewerProps = {
   collectionNumber: number | null;
   copyright: string | null;
   defaultKey: string | null;
+  onZoomChange?: (zoom: number) => void;
   showSettings?: boolean;
   title: string;
   sourceUrl: string;
@@ -42,6 +43,7 @@ type ScorePinchGesture = {
 };
 
 export type MusicXmlScoreViewerHandle = {
+  changeZoom: (step: number) => void;
   downloadPdf: () => Promise<void>;
   openDocument: () => void;
   openFullscreen: () => void;
@@ -242,6 +244,7 @@ export const MusicXmlScoreViewer = forwardRef<
     collectionNumber,
     copyright,
     defaultKey,
+    onZoomChange,
     showSettings = true,
     title,
     sourceUrl,
@@ -316,6 +319,10 @@ export const MusicXmlScoreViewer = forwardRef<
   zoomRef.current = zoom;
 
   useEffect(() => {
+    onZoomChange?.(zoom);
+  }, [onZoomChange, zoom]);
+
+  useEffect(() => {
     const mediaQuery = window.matchMedia(MOBILE_SCORE_MEDIA_QUERY);
 
     function updateRenderingMode() {
@@ -376,6 +383,9 @@ export const MusicXmlScoreViewer = forwardRef<
   useImperativeHandle(
     ref,
     () => ({
+      changeZoom(step: number) {
+        setZoom((current) => clampScoreZoom(current + step));
+      },
       async downloadPdf() {
         const container = containerRef.current;
 

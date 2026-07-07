@@ -6,12 +6,14 @@ type SongPdfViewerProps = {
   copyright: string | null;
   sourceUrl: string;
   title: string;
+  zoom: number;
 };
 
 export function SongPdfViewer({
   copyright,
   sourceUrl,
   title,
+  zoom,
 }: SongPdfViewerProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -96,7 +98,7 @@ export function SongPdfViewer({
         }
 
         const pageSpacing = stageWidth < 720 ? 16 : 24;
-        const targetWidth = Math.max(stageWidth - pageSpacing * 2, 220);
+        const targetWidth = Math.max((stageWidth - pageSpacing * 2) * zoom, 220);
         const outputScale = Math.min(window.devicePixelRatio || 1, 2);
 
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
@@ -161,7 +163,7 @@ export function SongPdfViewer({
       void loadingTask?.destroy();
       worker.terminate();
     };
-  }, [sourceUrl, stageWidth]);
+  }, [sourceUrl, stageWidth, zoom]);
 
   return (
     <div
