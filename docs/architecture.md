@@ -191,6 +191,7 @@ MVP-1 keeps the scope narrow:
 - responsive layouts
 - local desktop and phone operation
 - local phone testing on the same network
+- minimal PWA installability without offline-first behavior
 - push notifications
 
 ## Delivery Strategy

@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 
 import { AppHeaderProvider, AppShellHeader } from "./app-header-context";
+import { PwaInstallBanner } from "./pwa-install-banner";
 import { getLoginHref } from "@/src/shared/navigation/login-redirect";
 
 type AppShellProps = {
@@ -147,6 +148,7 @@ export function AppShell({ children, isAuthenticated }: AppShellProps) {
             onToggleMenu={() => setIsOpen((current) => !current)}
           />
           {children}
+          <PwaInstallBanner isAuthenticated={isAuthenticated} />
         </div>
       </div>
     </AppHeaderProvider>

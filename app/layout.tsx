@@ -20,6 +20,17 @@ const themeBootstrapScript = `
   })();
 `;
 
+const installPromptBootstrapScript = `
+  (() => {
+    window.__churchErpDeferredInstallPrompt = null;
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      window.__churchErpDeferredInstallPrompt = event;
+      window.dispatchEvent(new Event("churcherpinstallpromptready"));
+    });
+  })();
+`;
+
 export const metadata: Metadata = {
   applicationName: "ChurchERP",
   title: {
@@ -27,6 +38,13 @@ export const metadata: Metadata = {
     template: "%s · ChurchERP",
   },
   description: "Catalogue public des chants de l’équipe louange.",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icons/churcherp-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/churcherp-512.png", sizes: "512x512", type: "image/png" },
+    ],
+  },
 };
 
 export const viewport: Viewport = {
@@ -44,6 +62,9 @@ export default async function RootLayout({
     <html lang="fr" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+        <script
+          dangerouslySetInnerHTML={{ __html: installPromptBootstrapScript }}
+        />
       </head>
       <body>
         <AppThemeProvider>
