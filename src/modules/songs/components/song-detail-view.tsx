@@ -58,6 +58,18 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, Math.round(value * 100) / 100));
 }
 
+function getFocusZoomBoundsForSource(source: SongSourceView) {
+  if (source === "pdf") {
+    return { max: PDF_MAX_ZOOM, min: PDF_MIN_ZOOM };
+  }
+
+  if (source === "musicxml") {
+    return { max: SCORE_MAX_ZOOM, min: SCORE_MIN_ZOOM };
+  }
+
+  return { max: TEXT_LYRICS_MAX_ZOOM, min: TEXT_LYRICS_MIN_ZOOM };
+}
+
 function DocumentViewerLoadingState() {
   return (
     <div
@@ -139,6 +151,41 @@ type SongDetailViewProps = {
   loginRedirectTo?: string;
 };
 
+type FocusPinchGesture = {
+  distance: number;
+  focalX: number;
+  focalY: number;
+  zoom: number;
+};
+
+function getTouchDistance(touches: TouchList) {
+  const firstTouch = touches.item(0);
+  const secondTouch = touches.item(1);
+
+  if (!firstTouch || !secondTouch) {
+    return null;
+  }
+
+  return Math.hypot(
+    secondTouch.clientX - firstTouch.clientX,
+    secondTouch.clientY - firstTouch.clientY,
+  );
+}
+
+function getTouchCenter(touches: TouchList) {
+  const firstTouch = touches.item(0);
+  const secondTouch = touches.item(1);
+
+  if (!firstTouch || !secondTouch) {
+    return null;
+  }
+
+  return {
+    x: (firstTouch.clientX + secondTouch.clientX) / 2,
+    y: (firstTouch.clientY + secondTouch.clientY) / 2,
+  };
+}
+
 export function SongDetailView({
   song,
   actions,
@@ -192,6 +239,13 @@ export function SongDetailView({
   );
   const musicXmlViewerRef = useRef<MusicXmlScoreViewerHandle>(null);
   const textViewerRef = useRef<TransposableSongSheetHandle>(null);
+  const focusPinchGestureRef = useRef<FocusPinchGesture | null>(null);
+  const resolvedSourceViewRef = useRef(resolvedSourceView);
+  const preferencesRef = useRef(preferences);
+  const focusZoomValueRef = useRef(1);
+  const setFocusZoomValueRef = useRef<(nextZoom: number) => void>(
+    () => undefined,
+  );
   const [areSettingsVisible, setAreSettingsVisible] = useState(false);
   const [areDetailsVisible, setAreDetailsVisible] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
@@ -221,6 +275,138 @@ export function SongDetailView({
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+
+    if (!isFocusMode || !container) {
+      return;
+    }
+
+    function getFocusViewport() {
+      const currentContainer = containerRef.current;
+
+      if (!currentContainer) {
+        return null;
+      }
+
+      if (resolvedSourceViewRef.current === "pdf") {
+        return currentContainer.querySelector<HTMLElement>(
+          ".song-document-viewer__stage--pdf",
+        );
+      }
+
+      if (resolvedSourceViewRef.current === "musicxml") {
+        return currentContainer.querySelector<HTMLElement>(
+          ".song-score-viewer__viewport",
+        );
+      }
+
+      return currentContainer.querySelector<HTMLElement>(
+        ".song-document-viewer__stage--text",
+      );
+    }
+
+    function startPinch(event: TouchEvent) {
+      if (event.touches.length !== 2) {
+        return;
+      }
+
+      const target = event.target;
+
+      if (
+        target instanceof HTMLElement &&
+        target.closest(".song-document-viewer__focus-controls")
+      ) {
+        return;
+      }
+
+      const viewport = getFocusViewport();
+
+      if (
+        !viewport ||
+        !(target instanceof Node) ||
+        !viewport.contains(target)
+      ) {
+        return;
+      }
+
+      const distance = getTouchDistance(event.touches);
+      const center = getTouchCenter(event.touches);
+
+      if (!distance || !center) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const viewportBounds = viewport.getBoundingClientRect();
+
+      focusPinchGestureRef.current = {
+        distance,
+        focalX: viewport.scrollLeft + center.x - viewportBounds.left,
+        focalY: viewport.scrollTop + center.y - viewportBounds.top,
+        zoom: focusZoomValueRef.current,
+      };
+    }
+
+    function updatePinch(event: TouchEvent) {
+      const gesture = focusPinchGestureRef.current;
+
+      if (!gesture || event.touches.length !== 2) {
+        return;
+      }
+
+      const viewport = getFocusViewport();
+      const distance = getTouchDistance(event.touches);
+      const center = getTouchCenter(event.touches);
+
+      if (!viewport || !distance || !center) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const bounds = getFocusZoomBoundsForSource(
+        resolvedSourceViewRef.current,
+      );
+      const nextZoom = clamp(
+        gesture.zoom * (distance / gesture.distance),
+        bounds.min,
+        bounds.max,
+      );
+      const scale = nextZoom / gesture.zoom;
+      const viewportBounds = viewport.getBoundingClientRect();
+      const localCenterX = center.x - viewportBounds.left;
+      const localCenterY = center.y - viewportBounds.top;
+
+      setFocusZoomValueRef.current(nextZoom);
+
+      window.requestAnimationFrame(() => {
+        viewport.scrollLeft = gesture.focalX * scale - localCenterX;
+        viewport.scrollTop = gesture.focalY * scale - localCenterY;
+      });
+    }
+
+    function stopPinch(event: TouchEvent) {
+      if (event.touches.length < 2) {
+        focusPinchGestureRef.current = null;
+      }
+    }
+
+    container.addEventListener("touchstart", startPinch, { passive: false });
+    container.addEventListener("touchmove", updatePinch, { passive: false });
+    container.addEventListener("touchend", stopPinch);
+    container.addEventListener("touchcancel", stopPinch);
+
+    return () => {
+      focusPinchGestureRef.current = null;
+      container.removeEventListener("touchstart", startPinch);
+      container.removeEventListener("touchmove", updatePinch);
+      container.removeEventListener("touchend", stopPinch);
+      container.removeEventListener("touchcancel", stopPinch);
+    };
+  }, [isFocusMode]);
 
   function getDownloadHref(sourceUrl: string) {
     const separator = sourceUrl.includes("?") ? "&" : "?";
@@ -277,49 +463,66 @@ export function SongDetailView({
   }
 
   function getFocusZoomBounds() {
-    if (resolvedSourceView === "pdf") {
-      return { max: PDF_MAX_ZOOM, min: PDF_MIN_ZOOM };
-    }
-
-    if (resolvedSourceView === "musicxml") {
-      return { max: SCORE_MAX_ZOOM, min: SCORE_MIN_ZOOM };
-    }
-
-    return { max: TEXT_LYRICS_MAX_ZOOM, min: TEXT_LYRICS_MIN_ZOOM };
+    return getFocusZoomBoundsForSource(resolvedSourceView);
   }
 
-  function changeFocusZoom(step: number) {
-    if (resolvedSourceView === "pdf") {
-      setPdfZoom((current) => clamp(current + step, PDF_MIN_ZOOM, PDF_MAX_ZOOM));
+  function setFocusZoomValue(nextZoom: number) {
+    const source = resolvedSourceViewRef.current;
+    const bounds = getFocusZoomBoundsForSource(source);
+    const clampedZoom = clamp(nextZoom, bounds.min, bounds.max);
+
+    if (source === "pdf") {
+      setPdfZoom(clampedZoom);
       return;
     }
 
-    if (resolvedSourceView === "musicxml") {
-      musicXmlViewerRef.current?.changeZoom(step);
+    if (source === "musicxml") {
+      musicXmlViewerRef.current?.setZoom(clampedZoom);
       return;
     }
+
+    const currentPreferences = preferencesRef.current;
+    const previousLyricsFontScale = currentPreferences.lyricsFontScale;
 
     setPreferences({
       chordFontScale:
-        resolvedSourceView === "chordpro"
+        source === "chordpro"
           ? clamp(
-              preferences.chordFontScale + step,
+              currentPreferences.chordFontScale +
+                clampedZoom -
+                previousLyricsFontScale,
               TEXT_CHORD_MIN_ZOOM,
               TEXT_CHORD_MAX_ZOOM,
             )
-          : preferences.chordFontScale,
-      lyricsFontScale: clamp(
-        preferences.lyricsFontScale + step,
-        TEXT_LYRICS_MIN_ZOOM,
-        TEXT_LYRICS_MAX_ZOOM,
-      ),
+          : currentPreferences.chordFontScale,
+      lyricsFontScale: clampedZoom,
     });
+  }
+
+  function changeFocusZoom(step: number) {
+    setFocusZoomValue(focusZoomValueRef.current + step);
   }
 
   const focusZoomValue = getFocusZoomValue();
   const focusZoomBounds = getFocusZoomBounds();
   const isFocusZoomOutDisabled = focusZoomValue <= focusZoomBounds.min;
   const isFocusZoomInDisabled = focusZoomValue >= focusZoomBounds.max;
+
+  useEffect(() => {
+    resolvedSourceViewRef.current = resolvedSourceView;
+  }, [resolvedSourceView]);
+
+  useEffect(() => {
+    preferencesRef.current = preferences;
+  }, [preferences]);
+
+  useEffect(() => {
+    focusZoomValueRef.current = focusZoomValue;
+  }, [focusZoomValue]);
+
+  useEffect(() => {
+    setFocusZoomValueRef.current = setFocusZoomValue;
+  });
 
   return (
     <section
@@ -353,8 +556,14 @@ export function SongDetailView({
                 </select>
               </>
             ) : availableSources.length === 1 ? (
-              <span className="song-document-viewer__source-label">
-                {sourceLabels[availableSources[0]]}
+              <span
+                aria-disabled="true"
+                aria-label={`Source unique disponible : ${sourceLabels[availableSources[0]]}`}
+                className="song-document-viewer__source-label song-document-viewer__source-label--single"
+                title="Une seule source est disponible pour ce chant."
+              >
+                <span>{sourceLabels[availableSources[0]]}</span>
+                <small>source unique</small>
               </span>
             ) : !shouldOfferScoreLogin ? (
               <span className="song-document-viewer__source-label">

@@ -1726,6 +1726,28 @@ a {
   background: var(--surface-input);
 }
 
+.song-document-viewer__source-label--single {
+  gap: 8px;
+  border-style: dashed;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface-input) 72%, transparent);
+  cursor: default;
+}
+
+.song-document-viewer__source-label--single > span {
+  color: var(--ink);
+}
+
+.song-document-viewer__source-label--single small {
+  display: inline-flex;
+  align-items: center;
+  border-left: 1px solid var(--border-soft);
+  padding-left: 8px;
+  color: var(--muted);
+  font: 700 0.68rem/1 var(--sans);
+  text-transform: uppercase;
+}
+
 .song-document-viewer__locked-source {
   color: var(--accent);
   background: var(--accent-tint);
@@ -1879,11 +1901,17 @@ a {
 
 .song-document-viewer__stage--pdf {
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
 }
 
 .song-document-viewer__stage--text {
   overflow: auto;
   background: var(--paper);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
 }
 
 .song-document-viewer--musicxml .song-document-viewer__stage {

@@ -9,6 +9,24 @@ type SongPdfViewerProps = {
   zoom: number;
 };
 
+function applyPdfCanvasZoom(container: HTMLElement | null, zoom: number) {
+  if (!container) {
+    return;
+  }
+
+  container.querySelectorAll("canvas").forEach((canvas) => {
+    const baseWidth = Number(canvas.dataset.baseWidth);
+    const baseHeight = Number(canvas.dataset.baseHeight);
+
+    if (!Number.isFinite(baseWidth) || !Number.isFinite(baseHeight)) {
+      return;
+    }
+
+    canvas.style.width = `${Math.round(baseWidth * zoom)}px`;
+    canvas.style.height = `${Math.round(baseHeight * zoom)}px`;
+  });
+}
+
 export function SongPdfViewer({
   copyright,
   sourceUrl,
@@ -19,6 +37,12 @@ export function SongPdfViewer({
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState("Chargement du PDF…");
   const [stageWidth, setStageWidth] = useState(0);
+  const zoomRef = useRef(zoom);
+
+  useEffect(() => {
+    zoomRef.current = zoom;
+    applyPdfCanvasZoom(containerRef.current, zoom);
+  }, [zoom]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -98,7 +122,7 @@ export function SongPdfViewer({
         }
 
         const pageSpacing = stageWidth < 720 ? 16 : 24;
-        const targetWidth = Math.max((stageWidth - pageSpacing * 2) * zoom, 220);
+        const targetWidth = Math.max(stageWidth - pageSpacing * 2, 220);
         const outputScale = Math.min(window.devicePixelRatio || 1, 2);
 
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
@@ -126,8 +150,14 @@ export function SongPdfViewer({
 
           canvas.width = Math.ceil(scaledViewport.width);
           canvas.height = Math.ceil(scaledViewport.height);
-          canvas.style.width = `${Math.round(viewport.width * displayScale)}px`;
-          canvas.style.height = `${Math.round(viewport.height * displayScale)}px`;
+          canvas.dataset.baseWidth = String(
+            Math.round(viewport.width * displayScale),
+          );
+          canvas.dataset.baseHeight = String(
+            Math.round(viewport.height * displayScale),
+          );
+          canvas.style.width = `${canvas.dataset.baseWidth}px`;
+          canvas.style.height = `${canvas.dataset.baseHeight}px`;
 
           pageElement.append(canvas);
           nextPages.append(pageElement);
@@ -141,6 +171,7 @@ export function SongPdfViewer({
 
         if (!isCancelled) {
           container.replaceChildren(nextPages);
+          applyPdfCanvasZoom(container, zoomRef.current);
           setStatus("");
         }
       } catch (error) {
@@ -163,7 +194,7 @@ export function SongPdfViewer({
       void loadingTask?.destroy();
       worker.terminate();
     };
-  }, [sourceUrl, stageWidth, zoom]);
+  }, [sourceUrl, stageWidth]);
 
   return (
     <div

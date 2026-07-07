@@ -47,6 +47,7 @@ export type MusicXmlScoreViewerHandle = {
   downloadPdf: () => Promise<void>;
   openDocument: () => void;
   openFullscreen: () => void;
+  setZoom: (zoom: number) => void;
 };
 
 const DEFAULT_SCORE_ZOOM = 1;
@@ -318,6 +319,10 @@ export const MusicXmlScoreViewer = forwardRef<
   renderWidthRef.current = renderWidth;
   zoomRef.current = zoom;
 
+  function setScoreZoom(nextZoom: number) {
+    setZoom(clampScoreZoom(nextZoom));
+  }
+
   useEffect(() => {
     onZoomChange?.(zoom);
   }, [onZoomChange, zoom]);
@@ -564,6 +569,9 @@ export const MusicXmlScoreViewer = forwardRef<
 
         setFullscreenMarkup(container.innerHTML);
         setIsFullscreenOpen(true);
+      },
+      setZoom(nextZoom: number) {
+        setScoreZoom(nextZoom);
       },
     }),
     [collection, collectionNumber, title],

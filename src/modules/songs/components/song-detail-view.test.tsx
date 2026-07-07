@@ -57,8 +57,10 @@ describe("SongDetailView source controls", () => {
       />,
     );
 
+    expect(markup).toContain("Paroles");
+    expect(markup).toContain("source unique");
     expect(markup).toContain(
-      'class="song-document-viewer__source-label">Paroles</span>',
+      "Une seule source est disponible pour ce chant.",
     );
     expect(markup).not.toContain("<select");
   });
