@@ -27,6 +27,19 @@ const pwaInstallBootstrapScript = `
       event.preventDefault();
       window.__churchErpInstallPrompt = event;
     });
+    if ("serviceWorker" in navigator) {
+      const registerChurchErpServiceWorker = () => {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+      };
+
+      if (document.readyState === "complete") {
+        registerChurchErpServiceWorker();
+      } else {
+        window.addEventListener("load", registerChurchErpServiceWorker, {
+          once: true,
+        });
+      }
+    }
   })();
 `;
 

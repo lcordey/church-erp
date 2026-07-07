@@ -58,6 +58,35 @@ function createSongHref(
 }
 
 export function SongPageWorkspace({
+  adminSong,
+  backHref,
+  canAccessScores,
+  initialMode,
+  isAuthenticated,
+  song,
+  availableTaxonomies,
+}: SongPageWorkspaceProps) {
+  const workspaceKey = [
+    song.id,
+    initialMode,
+    adminSong?.id ?? "public",
+  ].join(":");
+
+  return (
+    <SongPageWorkspaceContent
+      adminSong={adminSong}
+      availableTaxonomies={availableTaxonomies}
+      backHref={backHref}
+      canAccessScores={canAccessScores}
+      initialMode={initialMode}
+      isAuthenticated={isAuthenticated}
+      key={workspaceKey}
+      song={song}
+    />
+  );
+}
+
+function SongPageWorkspaceContent({
   adminSong: initialAdminSong,
   backHref,
   canAccessScores,
@@ -73,15 +102,23 @@ export function SongPageWorkspace({
   const [adminSong, setAdminSong] = useState(initialAdminSong);
   const [isEditionLoading, setIsEditionLoading] = useState(false);
   const readableSong = adminSong ?? song;
-  const [collectionSongs, setCollectionSongs] = useState<PublicSongSummary[]>([]);
+  const collectionKey =
+    mode === "selection" ? readableSong.collection : null;
+  const [collectionSongState, setCollectionSongState] = useState<{
+    collection: string | null;
+    songs: PublicSongSummary[];
+  }>({
+    collection: null,
+    songs: [],
+  });
+  const collectionSongs = useMemo(
+    () =>
+      collectionSongState.collection === collectionKey
+        ? collectionSongState.songs
+        : [],
+    [collectionKey, collectionSongState],
+  );
 
-  useEffect(() => {
-    setAdminSong(initialAdminSong);
-    setIsEditionLoading(false);
-    setMode(
-      initialMode === "edition" && initialAdminSong ? "edition" : "selection",
-    );
-  }, [initialAdminSong, initialMode]);
   const updateMode = useCallback(
     (nextMode: "selection" | "edition") => {
       if (nextMode === "edition") {
@@ -113,11 +150,11 @@ export function SongPageWorkspace({
   );
 
   useEffect(() => {
-    if (mode !== "selection" || !readableSong.collection) {
-      setCollectionSongs([]);
+    if (!collectionKey) {
       return;
     }
 
+    const activeCollection = collectionKey;
     const controller = new AbortController();
 
     async function loadCollectionSongs() {
@@ -127,7 +164,7 @@ export function SongPageWorkspace({
 
       while (hasMore) {
         const url = new URL("/api/songs", window.location.origin);
-        url.searchParams.set("collections", readableSong.collection ?? "");
+        url.searchParams.set("collections", activeCollection);
         url.searchParams.set("limit", "50");
         url.searchParams.set("offset", String(offset));
 
@@ -154,20 +191,30 @@ export function SongPageWorkspace({
         }
       }
 
-      setCollectionSongs(allSongs);
+      setCollectionSongState({
+        collection: activeCollection,
+        songs: allSongs,
+      });
     }
 
     void loadCollectionSongs().catch(() => {
       if (!controller.signal.aborted) {
-        setCollectionSongs([]);
+        setCollectionSongState({
+          collection: activeCollection,
+          songs: [],
+        });
       }
     });
 
     return () => controller.abort();
-  }, [mode, readableSong.collection]);
+  }, [collectionKey]);
 
   const navigationActions = useMemo<ReactNode>(() => {
-    if (mode !== "selection" || collectionSongs.length < 2) {
+    if (
+      mode !== "selection" ||
+      !readableSong.collection ||
+      collectionSongs.length < 2
+    ) {
       return undefined;
     }
 
@@ -200,7 +247,14 @@ export function SongPageWorkspace({
         total={collectionSongs.length}
       />
     );
-  }, [backHref, collectionSongs, mode, readableSong.id, router]);
+  }, [
+    backHref,
+    collectionSongs,
+    mode,
+    readableSong.collection,
+    readableSong.id,
+    router,
+  ]);
 
   return (
     <main

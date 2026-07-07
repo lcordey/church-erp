@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "ChurchERP",
     short_name: "ChurchERP",
     description: "Catalogue public des chants de l’équipe louange.",
-    start_url: "/",
+    start_url: "/worship",
     scope: "/",
     display: "standalone",
     background_color: "#f7f4ec",

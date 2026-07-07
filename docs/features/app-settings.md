@@ -25,6 +25,11 @@
   fermeture de la bannière interne et dès le chargement initial afin que le
   bouton des réglages puisse toujours ouvrir la fenêtre native, même si
   l'événement a été capturé avant l'hydratation React.
+- Le service worker est enregistré dès le bootstrap de page afin que Chrome
+  Android puisse valider l'installabilité avant l'affichage des composants
+  React.
+- Le manifeste démarre directement sur `/worship` pour éviter que Chrome
+  Android évalue une URL de départ qui redirige.
 - Le bouton des réglages attend brièvement l'événement natif si Chrome est
   encore en train d'évaluer l'installabilité. Après une désinstallation, l'état
   est resynchronisé quand la page redevient visible et quand Chrome repropose

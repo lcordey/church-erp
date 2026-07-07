@@ -7,6 +7,7 @@ describe("web app manifest", () => {
     const webManifest = manifest();
 
     expect(webManifest.id).toBe("/");
+    expect(webManifest.start_url).toBe("/worship");
     expect(webManifest.related_applications).toContainEqual({
       platform: "webapp",
       url: "/manifest.webmanifest",
