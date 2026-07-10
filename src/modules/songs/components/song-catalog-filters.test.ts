@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { isCatalogFilterActive } from "./song-catalog";
-import { normalizeSelectedFilterValues } from "./use-song-catalog-query";
+import {
+  createSongCatalogQueryKey,
+  normalizeSelectedFilterValues,
+} from "./use-song-catalog-query";
 
 describe("song catalog filters", () => {
   it("treats no selection as no effective filter", () => {
@@ -35,5 +38,26 @@ describe("song catalog filters", () => {
       normalizeSelectedFilterValues(["JEM"], ["JEM", "LeMont"]),
     ).toEqual(["JEM"]);
     expect(isCatalogFilterActive(["JEM"], ["JEM", "LeMont"])).toBe(true);
+  });
+
+  it("uses distinct query keys for filtered and unfiltered results", () => {
+    const unfilteredKey = createSongCatalogQueryKey({
+      collections: [],
+      themeIds: [],
+      labelIds: [],
+      limit: 20,
+      offset: 0,
+      search: "",
+    });
+    const filteredKey = createSongCatalogQueryKey({
+      collections: ["LeMont"],
+      themeIds: [],
+      labelIds: [],
+      limit: 20,
+      offset: 0,
+      search: "",
+    });
+
+    expect(filteredKey).not.toBe(unfilteredKey);
   });
 });

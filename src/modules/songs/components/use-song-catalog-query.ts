@@ -55,7 +55,7 @@ export function normalizeSelectedFilterValues(
   return selectedValues;
 }
 
-function createQueryKey(options: {
+export function createSongCatalogQueryKey(options: {
   collections: string[];
   themeIds: string[];
   labelIds: string[];
@@ -166,7 +166,7 @@ export function useSongCatalogQuery({
             initialCatalog.collections.includes(collection),
           )
       : [];
-  const initialKey = createQueryKey({
+  const initialKey = createSongCatalogQueryKey({
     collections: initialSelectedCollections,
     themeIds: initialThemeIds,
     labelIds: initialLabelIds,
@@ -219,6 +219,16 @@ export function useSongCatalogQuery({
     selectedLabelIds,
     availableLabels.map((label) => label.id),
   );
+  const currentQueryKey = createSongCatalogQueryKey({
+    collections: effectiveSelectedCollections,
+    themeIds: effectiveSelectedThemeIds,
+    labelIds: effectiveSelectedLabelIds,
+    limit: pageSize,
+    offset: 0,
+    search,
+  });
+  const [catalogQueryKey, setCatalogQueryKey] = useState(initialKey);
+  const hasStaleCatalog = catalogQueryKey !== currentQueryKey;
 
   useEffect(() => {
     if (!syncUrl) {
@@ -273,7 +283,7 @@ export function useSongCatalogQuery({
     }
 
     const normalizedSearch = search.trim();
-    const key = createQueryKey({
+    const key = createSongCatalogQueryKey({
       collections: effectiveSelectedCollections,
       themeIds: effectiveSelectedThemeIds,
       labelIds: effectiveSelectedLabelIds,
@@ -338,6 +348,7 @@ export function useSongCatalogQuery({
 
           hasLoadedCatalog.current = true;
           cache.set(key, nextCatalog);
+          setCatalogQueryKey(key);
           setCatalog({
             ...nextCatalog,
             collections: nextCollections,
@@ -393,27 +404,27 @@ export function useSongCatalogQuery({
     nextThemeIds: string[],
     nextLabelIds: string[],
   ) {
-    const cached = cache.get(
-      createQueryKey({
-        collections: normalizeSelectedFilterValues(
-          nextCollections,
-          availableCollectionsRef.current,
-        ),
-        themeIds: normalizeSelectedFilterValues(
-          nextThemeIds,
-          availableThemesRef.current.map((theme) => theme.id),
-        ),
-        labelIds: normalizeSelectedFilterValues(
-          nextLabelIds,
-          availableLabelsRef.current.map((label) => label.id),
-        ),
-        limit: pageSize,
-        offset: 0,
-        search: nextSearch,
-      }),
-    );
+    const cachedKey = createSongCatalogQueryKey({
+      collections: normalizeSelectedFilterValues(
+        nextCollections,
+        availableCollectionsRef.current,
+      ),
+      themeIds: normalizeSelectedFilterValues(
+        nextThemeIds,
+        availableThemesRef.current.map((theme) => theme.id),
+      ),
+      labelIds: normalizeSelectedFilterValues(
+        nextLabelIds,
+        availableLabelsRef.current.map((label) => label.id),
+      ),
+      limit: pageSize,
+      offset: 0,
+      search: nextSearch,
+    });
+    const cached = cache.get(cachedKey);
 
     if (cached) {
+      setCatalogQueryKey(cachedKey);
       setCatalog({
         ...cached,
         collections: availableCollectionsRef.current,
@@ -487,7 +498,7 @@ export function useSongCatalogQuery({
 
     const offset = catalog.songs.length;
     const normalizedSearch = search.trim();
-    const baseKey = createQueryKey({
+    const baseKey = createSongCatalogQueryKey({
       collections: effectiveSelectedCollections,
       themeIds: effectiveSelectedThemeIds,
       labelIds: effectiveSelectedLabelIds,
@@ -495,7 +506,7 @@ export function useSongCatalogQuery({
       offset: 0,
       search: normalizedSearch,
     });
-    const key = createQueryKey({
+    const key = createSongCatalogQueryKey({
       collections: effectiveSelectedCollections,
       themeIds: effectiveSelectedThemeIds,
       labelIds: effectiveSelectedLabelIds,
@@ -556,6 +567,7 @@ export function useSongCatalogQuery({
     availableLabels,
     catalog,
     errorMessage,
+    hasStaleCatalog,
     isFetching,
     isInitialLoading,
     isLoadingMore,

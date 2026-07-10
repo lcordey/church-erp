@@ -106,6 +106,7 @@ export function SongCatalog({
     availableLabels,
     catalog,
     errorMessage,
+    hasStaleCatalog,
     isFetching,
     isInitialLoading,
     isLoadingMore,
@@ -141,7 +142,8 @@ export function SongCatalog({
   });
   const pageSize = catalog.limit;
   const loadedCount = catalog.songs.length;
-  const isCatalogLoading = isInitialLoading || isFetching;
+  const shouldBlockStaleCatalog = hasStaleCatalog;
+  const isCatalogLoading = isInitialLoading || isFetching || shouldBlockStaleCatalog;
   const hasActiveCollectionFilter = isCatalogFilterActive(
     selectedCollections,
     availableCollections,
@@ -451,9 +453,9 @@ export function SongCatalog({
         />
       ) : null}
 
-      {isInitialLoading && catalog.songs.length === 0 ? (
+      {shouldBlockStaleCatalog || (isInitialLoading && catalog.songs.length === 0) ? (
         <CatalogLoadingState />
-      ) : errorMessage && catalog.songs.length === 0 ? (
+      ) : errorMessage && (catalog.songs.length === 0 || hasStaleCatalog) ? (
         <div className="catalog-error" role="alert">
           <p>{errorMessage}</p>
           <button onClick={retry} type="button">
