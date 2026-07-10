@@ -32,8 +32,20 @@ function contentDisposition(
   slug: string,
   asAttachment: boolean,
 ) {
-  const safeFileName = (fileName || `${slug}.pdf`).replace(/["\r\n]/g, "");
-  return `${asAttachment ? "attachment" : "inline"}; filename="${safeFileName}"`;
+  const preferredFileName = (fileName || `${slug}.pdf`).replace(/[\r\n]/g, "");
+  const fallbackFileName =
+    preferredFileName
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[^\x20-\x7e]/g, "")
+      .replace(/["\\]/g, "") || `${slug}.pdf`;
+  const encodedFileName = encodeURIComponent(preferredFileName).replace(
+    /['()*]/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+
+  return `${asAttachment ? "attachment" : "inline"}; filename="${fallbackFileName}"; filename*=UTF-8''${encodedFileName}`;
 }
 
 export async function GET(request: Request, { params }: RouteContext) {

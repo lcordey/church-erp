@@ -42,6 +42,31 @@ set -a
 source .env.local
 set +a
 
+auth_session_token="$(
+  node --input-type=module -e "
+    import { createHmac } from 'node:crypto';
+
+    const payload = Buffer.from(JSON.stringify({
+      accessMode: 'mvp-admin',
+      expiresAt: Date.now() + 60 * 60 * 1000,
+    })).toString('base64url');
+    const secret = process.env.AUTH_SESSION_SECRET
+      ?? process.env.CHURCHERP_LOGIN_PASSWORD
+      ?? 'church-erp-local-development-session';
+    const signature = createHmac('sha256', secret)
+      .update(payload)
+      .digest('base64url');
+
+    process.stdout.write(payload + '.' + signature);
+  "
+)"
+
+curl() {
+  command curl \
+    --header "Cookie: churcherp_session=${auth_session_token}" \
+    "$@"
+}
+
 pnpm db:start >/dev/null
 cleanup_smoke_song
 
@@ -64,11 +89,11 @@ done
 
 catalog="$(curl --fail --silent "${base_url}/api/songs")"
 search_catalog="$(curl --fail --silent "${base_url}/api/songs?q=001")"
-home_page="$(curl --fail --silent --location "${base_url}/")"
-admin_page="$(curl --fail --silent --location "${base_url}/admin/chants")"
+home_page="$(curl --fail --silent "${base_url}/worship")"
+admin_page="$(curl --fail --silent "${base_url}/admin/chants/nouveau")"
 setlist_page="$(curl --fail --silent "${base_url}/setlist")"
 
-if [[ "${catalog}" != *'"data":['* ]]; then
+if [[ "${catalog}" != *'"data":{"songs":['* ]]; then
   echo "Échec : le catalogue public n'a pas le format attendu."
   exit 1
 fi
@@ -78,7 +103,7 @@ if [[ "${search_catalog}" != *"jem-001-jaime-leternel"* ]]; then
   exit 1
 fi
 
-if [[ "${home_page}" != *"Des chants prêts à être partagés"* ]]; then
+if [[ "${home_page}" != *'aria-label="Répertoire"'* ]]; then
   echo "Échec : la page d'accueil ne contient pas le catalogue attendu."
   exit 1
 fi
@@ -88,7 +113,7 @@ if [[ "${admin_page}" != *"Nouveau chant"* ]]; then
   exit 1
 fi
 
-if [[ "${setlist_page}" != *"Préparer les séquences de chants"* ]]; then
+if [[ "${setlist_page}" != *'aria-label="Setlists"'* ]]; then
   echo "Échec : la page setlist n'est pas rendue."
   exit 1
 fi
@@ -98,7 +123,7 @@ first_song_id="$(
     node --input-type=module -e "
       let body = '';
       for await (const chunk of process.stdin) body += chunk;
-      const songs = JSON.parse(body).data;
+      const songs = JSON.parse(body).data.songs;
       process.stdout.write(songs[0]?.id ?? '');
     "
 )"

@@ -107,6 +107,40 @@ describe("GET /api/songs/:slug/pdf", () => {
     expect(response.headers.get("content-disposition")).toContain("attachment;");
   });
 
+  it.each([
+    ["06 - Chaîne d’amour.pdf", "06%20-%20Cha%C3%AEne%20d%E2%80%99amour.pdf"],
+    [
+      "07 - Cherchez d’abord.pdf",
+      "07%20-%20Cherchez%20d%E2%80%99abord.pdf",
+    ],
+  ])(
+    "serves PDFs whose file name contains Unicode: %s",
+    async (fileName, encodedFileName) => {
+      getPublicSongPdfBySlug.mockResolvedValue({
+        storagePath: "songs/song-id/score.pdf",
+        fileName,
+        mimeType: "application/pdf",
+        fileSizeBytes: 3,
+        downloadUrl: "/api/songs/chant/pdf",
+      });
+      downloadSongPdf.mockResolvedValue(
+        new Response("pdf", {
+          headers: { "content-type": "application/pdf" },
+        }),
+      );
+
+      const response = await GET(authenticatedRequest(), {
+        params: Promise.resolve({ slug: "chant" }),
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-disposition")).toContain(
+        `filename*=UTF-8''${encodedFileName}`,
+      );
+      expect(await response.text()).toBe("pdf");
+    },
+  );
+
   it("requires authentication", async () => {
     const response = await GET(new Request("http://localhost"), {
       params: Promise.resolve({ slug: "chant" }),
