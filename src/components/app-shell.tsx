@@ -148,7 +148,7 @@ export function AppShell({ children, isAuthenticated }: AppShellProps) {
             onToggleMenu={() => setIsOpen((current) => !current)}
           />
           {children}
-          <PwaInstallBanner isAuthenticated={isAuthenticated} />
+          <PwaInstallBanner />
         </div>
       </div>
     </AppHeaderProvider>

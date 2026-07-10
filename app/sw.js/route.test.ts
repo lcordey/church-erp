@@ -10,6 +10,12 @@ describe("service worker route", () => {
     expect(response.headers.get("content-type")).toBe(
       "application/javascript; charset=utf-8",
     );
+    expect(response.headers.get("cache-control")).toBe(
+      "no-cache, no-store, must-revalidate",
+    );
+    expect(source).toContain("CHURCH_ERP_SW_VERSION");
+    expect(source).toContain("CHURCH_ERP_SKIP_WAITING");
+    expect(source).toContain("self.skipWaiting()");
     expect(source).toContain("self.clients.claim()");
     expect(source).toContain('self.addEventListener("fetch"');
   });

@@ -23,6 +23,11 @@ const themeBootstrapScript = `
 const installPromptBootstrapScript = `
   (() => {
     window.__churchErpDeferredInstallPrompt = null;
+    if ("serviceWorker" in navigator) {
+      window.__churchErpServiceWorkerRegistrationPromise = navigator.serviceWorker
+        .register("/sw.js")
+        .catch(() => null);
+    }
     window.addEventListener("beforeinstallprompt", (event) => {
       event.preventDefault();
       window.__churchErpDeferredInstallPrompt = event;

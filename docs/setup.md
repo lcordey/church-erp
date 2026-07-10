@@ -17,7 +17,8 @@ As of this revision:
 - the private `song-pdfs` Supabase Storage bucket is configured for optional PDF scores
 - MusicXML score rendering uses `opensheetmusicdisplay` in the browser
 - responsive desktop and phone access has been validated locally
-- authenticated users may see a minimal browser-provided PWA install banner
+- Android users may see a browser-provided PWA install banner, and installed
+  sessions can prompt when a new service worker version is ready
 - local HTTPS and WSL2-to-Windows port forwarding scripts are available
 - Vitest covers the current business rules and API contracts
 - Playwright is still planned
