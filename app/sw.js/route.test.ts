@@ -18,5 +18,6 @@ describe("service worker route", () => {
     expect(source).toContain("self.skipWaiting()");
     expect(source).toContain("self.clients.claim()");
     expect(source).toContain('self.addEventListener("fetch"');
+    expect(source).toContain("event.respondWith(fetch(event.request))");
   });
 });

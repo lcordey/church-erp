@@ -319,6 +319,11 @@ the same local network.
 6. Run `pnpm dev:phone`.
 7. Open the displayed network URL, for example `https://192.168.1.25:3000`, on the phone.
 
+Chrome Android only exposes the in-app PWA install prompt on a secure origin.
+For local phone testing, use the HTTPS URL from `pnpm dev:phone`; opening the
+same server over `http://192.168...` prevents the site install button from
+appearing.
+
 The terminal must remain open while testing. Stop Next.js with `Ctrl+C`.
 
 ### Trusting the local certificate

@@ -12,7 +12,19 @@ describe("web app manifest", () => {
       src: "/icons/churcherp-192.png",
       sizes: "192x192",
       type: "image/png",
+      purpose: "any",
+    });
+    expect(webManifest.icons).toContainEqual({
+      src: "/icons/churcherp-192.png",
+      sizes: "192x192",
+      type: "image/png",
       purpose: "maskable",
+    });
+    expect(webManifest.icons).toContainEqual({
+      src: "/icons/churcherp-512.png",
+      sizes: "512x512",
+      type: "image/png",
+      purpose: "any",
     });
     expect(webManifest.icons).toContainEqual({
       src: "/icons/churcherp-512.png",

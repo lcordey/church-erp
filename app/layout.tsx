@@ -46,6 +46,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
+      { url: "/icons/churcherp.svg", type: "image/svg+xml" },
       { url: "/icons/churcherp-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/churcherp-512.png", sizes: "512x512", type: "image/png" },
     ],
