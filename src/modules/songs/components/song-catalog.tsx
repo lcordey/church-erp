@@ -144,6 +144,7 @@ export function SongCatalog({
   const loadedCount = catalog.songs.length;
   const shouldBlockStaleCatalog = hasStaleCatalog;
   const isCatalogLoading = isInitialLoading || isFetching || shouldBlockStaleCatalog;
+  const shouldShowPagination = catalog.hasMore && !isCatalogLoading;
   const hasActiveCollectionFilter = isCatalogFilterActive(
     selectedCollections,
     availableCollections,
@@ -492,7 +493,7 @@ export function SongCatalog({
         </div>
       ) : null}
 
-      {catalog.hasMore ? (
+      {shouldShowPagination ? (
         <div className="catalog-pagination">
           <button
             disabled={isCatalogLoading}
