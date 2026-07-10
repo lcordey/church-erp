@@ -15,11 +15,12 @@ type WindowWithInstallPrompt = Window & {
   __churchErpServiceWorkerRegistrationPromise?: Promise<ServiceWorkerRegistration | null>;
 };
 
-type BannerMode = "install" | "manual-install" | "update";
+type BannerMode = "install" | "update";
 
-const legacyDismissKey = "churcherp:pwa-install-banner-dismissed";
-const installDismissKey = "churcherp:pwa-install-banner-dismissed-at";
-const installDismissDurationMs = 7 * 24 * 60 * 60 * 1000;
+const legacyDismissKeys = [
+  "churcherp:pwa-install-banner-dismissed",
+  "churcherp:pwa-install-banner-dismissed-at",
+];
 
 function getDeferredPrompt() {
   return (
@@ -38,51 +39,16 @@ function isStandalone() {
   );
 }
 
-export function isInstallDismissalActive(
-  dismissedAtValue: string | null,
-  now = Date.now(),
-) {
-  if (dismissedAtValue === null) {
-    return false;
-  }
-
-  const dismissedAt = Number(dismissedAtValue);
-
-  return (
-    Number.isFinite(dismissedAt) &&
-    dismissedAt > 0 &&
-    now - dismissedAt < installDismissDurationMs
-  );
-}
-
-function hasDismissedInstallBanner() {
+function clearPersistentInstallDismissals() {
   if (typeof window === "undefined") {
-    return false;
+    return;
   }
 
   try {
-    window.localStorage.removeItem(legacyDismissKey);
-
-    return isInstallDismissalActive(
-      window.localStorage.getItem(installDismissKey),
-    );
+    legacyDismissKeys.forEach((key) => window.localStorage.removeItem(key));
   } catch {
-    return false;
+    // Storage can be unavailable in private modes; installation still works.
   }
-}
-
-function dismissInstallBanner() {
-  try {
-    window.localStorage.setItem(installDismissKey, String(Date.now()));
-  } catch {}
-}
-
-function isLikelyAndroidBrowser() {
-  if (typeof navigator === "undefined") {
-    return false;
-  }
-
-  return /Android/i.test(navigator.userAgent);
 }
 
 function registerServiceWorker() {
@@ -102,31 +68,24 @@ export function PwaInstallBanner() {
   const shouldReloadForUpdate = useRef(false);
   const [promptEvent, setPromptEvent] =
     useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstallDismissed, setIsInstallDismissed] = useState(
-    hasDismissedInstallBanner,
-  );
-  const [showsManualInstall, setShowsManualInstall] = useState(false);
+  const [isInstallDismissed, setIsInstallDismissed] = useState(false);
   const [waitingRegistration, setWaitingRegistration] =
     useState<ServiceWorkerRegistration | null>(null);
   const [isUpdateDismissed, setIsUpdateDismissed] = useState(false);
   const [isApplyingUpdate, setIsApplyingUpdate] = useState(false);
 
   useEffect(() => {
+    clearPersistentInstallDismissals();
+
     const rememberPrompt = () => {
-      const deferredPrompt = getDeferredPrompt();
-
-      setPromptEvent(deferredPrompt);
-
-      if (deferredPrompt !== null) {
-        setShowsManualInstall(false);
-      }
+      setPromptEvent(getDeferredPrompt());
+      setIsInstallDismissed(false);
     };
 
     const clearPrompt = () => {
       (window as WindowWithInstallPrompt).__churchErpDeferredInstallPrompt =
         null;
       setPromptEvent(null);
-      setShowsManualInstall(false);
     };
 
     rememberPrompt();
@@ -138,20 +97,6 @@ export function PwaInstallBanner() {
       window.removeEventListener("appinstalled", clearPrompt);
     };
   }, []);
-
-  useEffect(() => {
-    if (isInstallDismissed || isStandalone()) {
-      return;
-    }
-
-    const fallbackTimer = window.setTimeout(() => {
-      if (getDeferredPrompt() === null && isLikelyAndroidBrowser()) {
-        setShowsManualInstall(true);
-      }
-    }, 1800);
-
-    return () => window.clearTimeout(fallbackTimer);
-  }, [isInstallDismissed]);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) {
@@ -258,9 +203,7 @@ export function PwaInstallBanner() {
       ? "update"
       : !isInstallDismissed && !isStandalone() && promptEvent !== null
         ? "install"
-        : !isInstallDismissed && !isStandalone() && showsManualInstall
-          ? "manual-install"
-          : null;
+        : null;
 
   if (mode === null) {
     return null;
@@ -280,7 +223,6 @@ export function PwaInstallBanner() {
       setPromptEvent(null);
 
       if (choice.outcome === "dismissed") {
-        dismissInstallBanner();
         setIsInstallDismissed(true);
       }
     } catch {
@@ -289,9 +231,6 @@ export function PwaInstallBanner() {
   };
 
   const dismissInstall = () => {
-    dismissInstallBanner();
-    setPromptEvent(null);
-    setShowsManualInstall(false);
     setIsInstallDismissed(true);
   };
 
@@ -329,28 +268,22 @@ export function PwaInstallBanner() {
         <p>
           {mode === "update"
             ? "Appliquez-la maintenant pour récupérer les derniers correctifs."
-            : mode === "manual-install"
-              ? "Ajoutez l’application à l’écran d’accueil depuis le menu du navigateur Android."
-              : "Accédez plus vite au répertoire depuis l’écran d’accueil."}
+            : "Utilisez le bouton du site pour ajouter l’application PWA à votre écran d’accueil."}
         </p>
       </div>
       <div className="pwa-install-banner__actions">
-        {mode === "manual-install" ? null : (
-          <button
-            className="pwa-install-banner__button pwa-install-banner__button--primary"
-            disabled={isApplyingUpdate}
-            onClick={() =>
-              mode === "update" ? applyUpdate() : void install()
-            }
-            type="button"
-          >
-            {mode === "update"
-              ? isApplyingUpdate
-                ? "Mise à jour…"
-                : "Mettre à jour"
-              : "Installer"}
-          </button>
-        )}
+        <button
+          className="pwa-install-banner__button pwa-install-banner__button--primary"
+          disabled={isApplyingUpdate}
+          onClick={() => (mode === "update" ? applyUpdate() : void install())}
+          type="button"
+        >
+          {mode === "update"
+            ? isApplyingUpdate
+              ? "Mise à jour…"
+              : "Mettre à jour"
+            : "Installer"}
+        </button>
         <button
           className="pwa-install-banner__button"
           onClick={
@@ -360,7 +293,7 @@ export function PwaInstallBanner() {
           }
           type="button"
         >
-          {mode === "manual-install" ? "Compris" : "Plus tard"}
+          Plus tard
         </button>
       </div>
     </section>

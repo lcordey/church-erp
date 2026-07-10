@@ -62,8 +62,8 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 ### Mobile
 - interface responsive pour telephone
 - test local dans le navigateur d'un telephone
-- proposition d'installation PWA sur Android quand le navigateur fournit le
-  prompt natif, avec rappel temporaire si l'utilisateur reporte
+- bouton d'installation PWA affiche dans le site quand le navigateur Android
+  confirme que l'application est installable
 - notification au lancement de l'application installee quand une nouvelle
   version PWA est disponible
 
