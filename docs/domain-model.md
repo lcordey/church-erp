@@ -13,6 +13,19 @@ It defines:
 
 The goal is to stabilize the model before writing migrations.
 
+## Identity, events and notification extensions
+
+The delivered identity and event slice adds `users`, fixed `groups`,
+`user_group_memberships`, revocable `auth_sessions`, `events`, and
+`event_assignments`. Their detailed invariants are maintained in the dedicated
+identity and events feature documents.
+
+`push_subscriptions` stores one browser push endpoint and its public encryption
+material per subscribed device. Each row belongs to one user; the endpoint is
+globally unique and may be reassociated when the same device is enabled under a
+different account. Deleting a user cascades to their subscriptions. Expired or
+revoked provider endpoints are deleted after a `404` or `410` delivery result.
+
 ## Modeling Principles
 
 - Business entities are modeled in English in the code and database.
@@ -352,6 +365,30 @@ The PDF storage migration adds:
 
 The application serves PDFs through backend routes so browser clients do not
 receive raw storage paths or service credentials.
+
+## Identity entities
+
+- `users` stores the normalized login identifier, display name, scrypt hash,
+  active/disabled status, mandatory-password-change state, and login lock state.
+- `groups` contains the immutable system codes `worship` and `admin`.
+- `user_group_memberships` models the many-to-many account membership.
+- `auth_sessions` stores a SHA-256 token hash, user reference, and expiry. Raw
+  tokens exist only in HttpOnly cookies.
+
+Account deletion is not part of the current lifecycle. Disabling a user keeps
+historical event assignments readable and revokes their sessions.
+
+## Entity: `events`
+
+Stores `title`, `starts_at`, optional `ends_at`, optional `notes`, and an
+optional `setlist_id`. The setlist foreign key uses `ON DELETE SET NULL`; an
+event remains valid when its setlist is removed.
+
+## Entity: `event_assignments`
+
+Associates an event with a user and an optional free-text role. `(event_id,
+user_id)` is unique. Event deletion cascades to assignments while user deletion
+is restricted so service history cannot disappear accidentally.
 
 ## Entity: `setlists`
 

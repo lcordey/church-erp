@@ -10,6 +10,8 @@ export default async function NewAdminSongPage() {
   if (!actor) {
     redirect("/login?redirectTo=/admin/chants/nouveau");
   }
+  if (actor.mustChangePassword) redirect("/password-change?redirectTo=/admin/chants/nouveau");
+  if (!actor.permissions.includes("song.manage")) redirect("/worship");
 
   const taxonomies = await listAdminSongTaxonomies();
 

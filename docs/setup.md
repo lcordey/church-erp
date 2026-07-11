@@ -46,6 +46,7 @@ pnpm https:setup
 pnpm phone:network
 pnpm dev:phone
 pnpm test:smoke
+pnpm push:generate-vapid
 pnpm songs:sync-jemaf
 pnpm songs:render-seed
 pnpm songs:import-base-chants
@@ -103,12 +104,35 @@ Server-side PDF storage access uses:
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
-Temporary MVP login uses:
-- `CHURCHERP_LOGIN_PASSWORD`
-- `AUTH_SESSION_SECRET`
+Persistent users, groups, and database-backed sessions replace the temporary
+shared login. Anonymous users keep public chord and setlist access but cannot
+read scores or events.
 
-Every authenticated MVP-1 user is treated as an administrator. Anonymous users
-can read song chords but cannot access PDF or MusicXML score routes.
+A local database reset creates two temporary accounts:
+- `louange / louange` in the Louange group
+- `admin / CDatalm` in the Louange and Admin groups
+
+Both accounts must replace their password on first login. These credentials are
+stored only in the local identity seed and are never applied by migrations.
+
+### Notifications push
+
+Générez une seule paire de clés VAPID par environnement :
+
+```bash
+pnpm push:generate-vapid
+```
+
+Copiez les deux clés affichées dans l’environnement serveur avec
+`WEB_PUSH_VAPID_SUBJECT` (une URL HTTPS ou une adresse `mailto:` de contact),
+`WEB_PUSH_VAPID_PUBLIC_KEY` et `WEB_PUSH_VAPID_PRIVATE_KEY`. Ne commitez jamais
+la clé privée. Les notifications nécessitent HTTPS sur téléphone ; `localhost`
+reste considéré comme un contexte sécurisé pour le développement sur ordinateur.
+
+For a production database, bootstrap the first administrator once with
+`pnpm identity:bootstrap-admin` after temporarily setting
+`CHURCHERP_BOOTSTRAP_USERNAME`, `CHURCHERP_BOOTSTRAP_DISPLAY_NAME`, and
+`CHURCHERP_BOOTSTRAP_PASSWORD`. Remove those variables immediately afterward.
 
 Local scripts such as `pnpm dev:phone` and `pnpm test:smoke` load `.env.local`
 explicitly so that an exported shell `DATABASE_URL` for a remote Supabase
@@ -194,6 +218,10 @@ Start the application for desktop-only development:
 pnpm dev
 ```
 
+Development uses `.next-dev` while production builds keep `.next`. The smoke
+server uses `.next-smoke`. Keeping these caches separate prevents a concurrent
+`pnpm build` from leaving a running development server with stale CSS assets.
+
 Like `pnpm dev:phone`, this command loads `.env.local` explicitly before
 starting Next.js so that an exported shell `DATABASE_URL` or `SUPABASE_URL`
 cannot accidentally point the app at a different environment.
@@ -223,6 +251,7 @@ Use `pnpm db:stop` when the stack is no longer needed.
 - `supabase/migrations` contains the SQL migration history applied by Supabase.
 - `supabase/generated/jemaf-catalog.json` stores the JEMAF snapshot used for local resets.
 - `supabase/seed.sql` contains repeatable local demo data generated from the JEMAF snapshot plus the hand-written local songs in `LeMont`.
+- `supabase/seeds/identity.sql` contains local-only temporary accounts and group memberships.
 - Supabase Storage contains a private `song-pdfs` bucket for PDF score files; PostgreSQL stores only the object path and metadata.
 - `drizzle.config.ts` generates Supabase-compatible timestamped migrations.
 - In Vercel/serverless production, use the Supabase transaction pooler connection string for `DATABASE_URL`; the Postgres client disables prepared statements for pooler compatibility.

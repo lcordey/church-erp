@@ -13,6 +13,8 @@ export default async function AdminTaxonomiesPage() {
   if (!actor) {
     redirect("/login?redirectTo=/admin/referentiels");
   }
+  if (actor.mustChangePassword) redirect("/password-change?redirectTo=/admin/referentiels");
+  if (!actor.permissions.includes("taxonomy.manage")) redirect("/worship");
 
   const taxonomies = await listAdminSongTaxonomies();
 
@@ -20,8 +22,8 @@ export default async function AdminTaxonomiesPage() {
     <main className="admin-page taxonomy-page">
       <div className="admin-shell">
         <AppTopBar
-          backHref="/worship"
-          backLabel="Retour au répertoire"
+          backHref="/admin"
+          backLabel="Retour à l’administration"
           mode="admin"
         />
         <div className="admin-hero">

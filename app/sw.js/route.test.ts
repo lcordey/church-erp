@@ -19,5 +19,9 @@ describe("service worker route", () => {
     expect(source).toContain("self.clients.claim()");
     expect(source).toContain('self.addEventListener("fetch"');
     expect(source).toContain("event.respondWith(fetch(event.request))");
+    expect(source).toContain('self.addEventListener("push"');
+    expect(source).toContain("showNotification");
+    expect(source).toContain('self.addEventListener("notificationclick"');
+    expect(source).toContain("openWindow");
   });
 });

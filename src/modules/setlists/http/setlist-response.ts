@@ -1,7 +1,4 @@
-import {
-  authenticationRequiredResponse,
-  AuthenticationRequiredError,
-} from "@/src/infrastructure/auth/require-admin";
+import { authorizationBoundaryResponse } from "@/src/infrastructure/auth/require-admin";
 
 import { SetlistSongsNotPublishedError } from "../services/setlist-management";
 import type { SetlistValidationErrors } from "../validation/setlist-input";
@@ -32,9 +29,8 @@ export function setlistNotFoundResponse() {
 }
 
 export function setlistErrorResponse(error: unknown) {
-  if (error instanceof AuthenticationRequiredError) {
-    return authenticationRequiredResponse();
-  }
+  const authorizationResponse = authorizationBoundaryResponse(error);
+  if (authorizationResponse) return authorizationResponse;
 
   if (error instanceof SetlistSongsNotPublishedError) {
     return invalidSetlistResponse({

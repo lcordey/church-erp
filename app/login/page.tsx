@@ -18,17 +18,26 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <p className="eyebrow">Accès équipe</p>
         <h1>Connexion</h1>
         <p className="app-panel__lead">
-          Connecte-toi pour modifier les chants et les setlists, ainsi que pour
-          consulter les partitions PDF et MusicXML.
+          Connecte-toi avec ton compte pour retrouver les partitions, les
+          setlists et tes prochains services.
         </p>
 
         <form action="/api/auth/login" className="login-form" method="post">
           <input name="redirectTo" type="hidden" value={redirectTo ?? "/worship"} />
           <label>
+            <span>Identifiant</span>
+            <input
+              autoCapitalize="none"
+              autoComplete="username"
+              autoFocus
+              name="username"
+              required
+            />
+          </label>
+          <label>
             <span>Mot de passe</span>
             <input
               autoComplete="current-password"
-              autoFocus
               name="password"
               required
               type="password"
@@ -36,7 +45,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </label>
           {error ? (
             <p className="form-message form-message--error">
-              Mot de passe incorrect.
+              Identifiant ou mot de passe incorrect.
             </p>
           ) : null}
           <button className="admin-button admin-button--primary" type="submit">

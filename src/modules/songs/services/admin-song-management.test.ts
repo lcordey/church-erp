@@ -12,7 +12,7 @@ vi.mock("@/src/infrastructure/storage/song-pdf-storage", () => ({
 }));
 
 vi.mock("@/src/infrastructure/auth/require-admin", () => ({
-  requireAdminAccess: () => ({ accessMode: "mvp-admin" }),
+  requirePermission: () => ({ id: "user-id" }),
 }));
 
 import type { AdminSongRepository } from "../repositories/admin-song-repository";

@@ -1,55 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{
-    outcome: "accepted" | "dismissed";
-    platform: string;
-  }>;
-};
-
-type WindowWithInstallPrompt = Window & {
-  __churchErpDeferredInstallPrompt?: BeforeInstallPromptEvent | null;
-  __churchErpServiceWorkerRegistrationPromise?: Promise<ServiceWorkerRegistration | null>;
-};
+import {
+  clearInstallBannerDismissal,
+  clearLegacyInstallDismissals,
+  dismissInstallBannerForOneDay,
+  getDeferredInstallPrompt,
+  installBannerDismissalDurationMs,
+  installPromptConsumedEvent,
+  installPromptReadyEvent,
+  isPwaStandalone,
+  promptPwaInstallation,
+  readInstallBannerDismissedUntil,
+  type BeforeInstallPromptEvent,
+  type WindowWithInstallPrompt,
+} from "./pwa-install";
 
 type BannerMode = "install" | "update";
-
-const legacyDismissKeys = [
-  "churcherp:pwa-install-banner-dismissed",
-  "churcherp:pwa-install-banner-dismissed-at",
-];
-
-function getDeferredPrompt() {
-  return (
-    (window as WindowWithInstallPrompt).__churchErpDeferredInstallPrompt ?? null
-  );
-}
-
-function isStandalone() {
-  if (typeof window === "undefined" || typeof navigator === "undefined") {
-    return true;
-  }
-
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true
-  );
-}
-
-function clearPersistentInstallDismissals() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    legacyDismissKeys.forEach((key) => window.localStorage.removeItem(key));
-  } catch {
-    // Storage can be unavailable in private modes; installation still works.
-  }
-}
 
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) {
@@ -66,6 +33,9 @@ function registerServiceWorker() {
 
 export function PwaInstallBanner() {
   const shouldReloadForUpdate = useRef(false);
+  const installDismissalTimeout = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [promptEvent, setPromptEvent] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallDismissed, setIsInstallDismissed] = useState(false);
@@ -75,11 +45,27 @@ export function PwaInstallBanner() {
   const [isApplyingUpdate, setIsApplyingUpdate] = useState(false);
 
   useEffect(() => {
-    clearPersistentInstallDismissals();
+    clearLegacyInstallDismissals();
+
+    const applyDismissal = () => {
+      if (installDismissalTimeout.current !== null) {
+        clearTimeout(installDismissalTimeout.current);
+      }
+
+      const dismissedUntil = readInstallBannerDismissedUntil();
+      setIsInstallDismissed(dismissedUntil !== null);
+
+      if (dismissedUntil !== null) {
+        installDismissalTimeout.current = setTimeout(() => {
+          clearInstallBannerDismissal();
+          setIsInstallDismissed(false);
+        }, Math.max(0, dismissedUntil - Date.now()));
+      }
+    };
 
     const rememberPrompt = () => {
-      setPromptEvent(getDeferredPrompt());
-      setIsInstallDismissed(false);
+      setPromptEvent(getDeferredInstallPrompt());
+      applyDismissal();
     };
 
     const clearPrompt = () => {
@@ -88,13 +74,24 @@ export function PwaInstallBanner() {
       setPromptEvent(null);
     };
 
+    const markInstalled = () => {
+      clearPrompt();
+      clearInstallBannerDismissal();
+      setIsInstallDismissed(false);
+    };
+
     rememberPrompt();
-    window.addEventListener("churcherpinstallpromptready", rememberPrompt);
-    window.addEventListener("appinstalled", clearPrompt);
+    window.addEventListener(installPromptReadyEvent, rememberPrompt);
+    window.addEventListener(installPromptConsumedEvent, clearPrompt);
+    window.addEventListener("appinstalled", markInstalled);
 
     return () => {
-      window.removeEventListener("churcherpinstallpromptready", rememberPrompt);
-      window.removeEventListener("appinstalled", clearPrompt);
+      if (installDismissalTimeout.current !== null) {
+        clearTimeout(installDismissalTimeout.current);
+      }
+      window.removeEventListener(installPromptReadyEvent, rememberPrompt);
+      window.removeEventListener(installPromptConsumedEvent, clearPrompt);
+      window.removeEventListener("appinstalled", markInstalled);
     };
   }, []);
 
@@ -201,7 +198,7 @@ export function PwaInstallBanner() {
   const mode: BannerMode | null =
     waitingRegistration !== null && !isUpdateDismissed
       ? "update"
-      : !isInstallDismissed && !isStandalone() && promptEvent !== null
+      : !isInstallDismissed && !isPwaStandalone() && promptEvent !== null
         ? "install"
         : null;
 
@@ -215,14 +212,8 @@ export function PwaInstallBanner() {
     }
 
     try {
-      await promptEvent.prompt();
-      const choice = await promptEvent.userChoice;
-
-      (window as WindowWithInstallPrompt).__churchErpDeferredInstallPrompt =
-        null;
-      setPromptEvent(null);
-
-      if (choice.outcome === "dismissed") {
+      const outcome = await promptPwaInstallation();
+      if (outcome === "dismissed") {
         setIsInstallDismissed(true);
       }
     } catch {
@@ -232,6 +223,14 @@ export function PwaInstallBanner() {
 
   const dismissInstall = () => {
     setIsInstallDismissed(true);
+    const dismissedUntil = dismissInstallBannerForOneDay();
+    if (installDismissalTimeout.current !== null) {
+      clearTimeout(installDismissalTimeout.current);
+    }
+    installDismissalTimeout.current = setTimeout(() => {
+      clearInstallBannerDismissal();
+      setIsInstallDismissed(false);
+    }, Math.min(installBannerDismissalDurationMs, dismissedUntil - Date.now()));
   };
 
   const applyUpdate = () => {

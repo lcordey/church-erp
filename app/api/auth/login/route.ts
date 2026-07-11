@@ -1,32 +1,43 @@
+import { authSessionCookie } from "@/src/infrastructure/auth/session";
 import {
-  authSessionCookieName,
-  authSessionMaxAge,
-  createAuthSessionToken,
-  verifyLoginPassword,
-} from "@/src/infrastructure/auth/session";
+  authenticateUser,
+  InvalidCredentialsError,
+} from "@/src/modules/identity/services/authentication";
+import { validateLoginInput } from "@/src/modules/identity/validation/identity-input";
 import { getSafeRedirectPath } from "@/src/shared/navigation/login-redirect";
 
 export async function POST(request: Request) {
   const formData = await request.formData();
-  const password = String(formData.get("password") ?? "");
+  const input = validateLoginInput(formData);
   const redirectTo = getSafeRedirectPath(
     String(formData.get("redirectTo") ?? "/worship"),
   );
 
-  if (!verifyLoginPassword(password)) {
+  if (!input.success) {
     return new Response(null, {
       status: 303,
-      headers: {
-        location: `/login?error=1&redirectTo=${encodeURIComponent(redirectTo)}`,
-      },
+      headers: { location: `/login?error=1&redirectTo=${encodeURIComponent(redirectTo)}` },
     });
   }
 
-  return new Response(null, {
-    status: 303,
-    headers: {
-      location: redirectTo,
-      "set-cookie": `${authSessionCookieName}=${createAuthSessionToken()}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${authSessionMaxAge()}`,
-    },
-  });
+  try {
+    const { actor, token } = await authenticateUser(input.data);
+    return new Response(null, {
+      status: 303,
+      headers: {
+        location: actor.mustChangePassword
+          ? `/password-change?redirectTo=${encodeURIComponent(redirectTo)}`
+          : redirectTo,
+        "set-cookie": authSessionCookie(token),
+      },
+    });
+  } catch (error) {
+    if (error instanceof InvalidCredentialsError) {
+      return new Response(null, {
+        status: 303,
+        headers: { location: `/login?error=1&redirectTo=${encodeURIComponent(redirectTo)}` },
+      });
+    }
+    throw error;
+  }
 }

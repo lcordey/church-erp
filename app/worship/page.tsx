@@ -44,7 +44,9 @@ export default async function WorshipPage({ searchParams }: WorshipPageProps) {
       initialThemeIds={themes?.split(",").filter(Boolean)}
       initialLabelIds={labels?.split(",").filter(Boolean)}
       initialCatalog={emptyCatalog}
-      isAuthenticated={actor !== null}
+      isAuthenticated={Boolean(
+        actor && !actor.mustChangePassword && actor.permissions.includes("song.manage"),
+      )}
       loadCatalogOnMount
     />
   );

@@ -8,6 +8,7 @@ const appVersion =
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.178.22"],
+  distDir: process.env.NEXT_DIST_DIR ?? ".next",
   env: {
     NEXT_PUBLIC_APP_VERSION: appVersion,
   },

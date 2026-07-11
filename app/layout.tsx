@@ -76,7 +76,7 @@ export default async function RootLayout({
         <AppThemeProvider>
           <MusicNotationProvider>
             <SongRenderPreferencesProvider>
-              <AppShell isAuthenticated={actor !== null}>{children}</AppShell>
+              <AppShell actor={actor}>{children}</AppShell>
             </SongRenderPreferencesProvider>
           </MusicNotationProvider>
         </AppThemeProvider>

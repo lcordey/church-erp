@@ -25,6 +25,32 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+self.addEventListener("push", (event) => {
+  let message = {};
+  try {
+    message = event.data?.json() ?? {};
+  } catch {
+    message = { body: event.data?.text() };
+  }
+  event.waitUntil(self.registration.showNotification(message.title ?? "Church ERP", {
+    body: message.body ?? "Une nouvelle information est disponible.",
+    icon: "/icons/churcherp-192.png",
+    badge: "/icons/churcherp-192.png",
+    tag: message.tag,
+    data: { url: message.url ?? "/events" },
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = new URL(event.notification.data?.url ?? "/events", self.location.origin).href;
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+    const matchingClient = clients.find((client) => client.url === targetUrl);
+    if (matchingClient) return matchingClient.focus();
+    return self.clients.openWindow(targetUrl);
+  }));
+});
+
 self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
     event.respondWith(fetch(event.request));

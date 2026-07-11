@@ -18,6 +18,8 @@ export default async function AdminSongPage({ params }: AdminSongPageProps) {
   if (!actor) {
     redirect(`/login?redirectTo=${encodeURIComponent(`/admin/chants/${id}`)}`);
   }
+  if (actor.mustChangePassword) redirect(`/password-change?redirectTo=${encodeURIComponent(`/admin/chants/${id}`)}`);
+  if (!actor.permissions.includes("song.manage")) redirect("/worship");
 
   const [song, taxonomies] = await Promise.all([
     getAdminSong(id),

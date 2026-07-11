@@ -1,7 +1,4 @@
-import {
-  authenticationRequiredResponse,
-  AuthenticationRequiredError,
-} from "@/src/infrastructure/auth/require-admin";
+import { authorizationBoundaryResponse } from "@/src/infrastructure/auth/require-admin";
 
 import {
   InvalidSongTaxonomySelectionError,
@@ -43,9 +40,8 @@ export function songNotFoundResponse() {
 }
 
 export function adminSongErrorResponse(error: unknown) {
-  if (error instanceof AuthenticationRequiredError) {
-    return authenticationRequiredResponse();
-  }
+  const authorizationResponse = authorizationBoundaryResponse(error);
+  if (authorizationResponse) return authorizationResponse;
 
   if (error instanceof PublishedSongDeletionError) {
     return Response.json(

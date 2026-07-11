@@ -68,4 +68,5 @@ echo
 echo "Laisse ce terminal ouvert. Ctrl+C arrête le serveur Next.js."
 echo
 
+export NEXT_DIST_DIR="${NEXT_DIST_DIR:-.next-dev}"
 exec pnpm exec next dev "${next_arguments[@]}"

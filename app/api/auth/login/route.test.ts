@@ -1,69 +1,71 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { createAuthSessionToken, verifyLoginPassword } = vi.hoisted(() => ({
-  createAuthSessionToken: vi.fn(() => "session-token"),
-  verifyLoginPassword: vi.fn(() => true),
+const { authenticateUser, MockInvalidCredentialsError } = vi.hoisted(() => ({
+  authenticateUser: vi.fn(),
+  MockInvalidCredentialsError: class extends Error {},
+}));
+
+vi.mock("@/src/modules/identity/services/authentication", () => ({
+  authenticateUser,
+  InvalidCredentialsError: MockInvalidCredentialsError,
 }));
 
 vi.mock("@/src/infrastructure/auth/session", () => ({
-  authSessionCookieName: "churcherp_session",
-  authSessionMaxAge: () => 3600,
-  createAuthSessionToken,
-  verifyLoginPassword,
+  authSessionCookie: (token: string) =>
+    `churcherp_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600`,
 }));
 
 import { POST } from "./route";
 
 function createLoginRequest(redirectTo: string) {
   const body = new FormData();
+  body.set("username", "louange");
   body.set("password", "secret");
   body.set("redirectTo", redirectTo);
-
-  return new Request("http://localhost/api/auth/login", {
-    body,
-    method: "POST",
-  });
+  return new Request("http://localhost/api/auth/login", { body, method: "POST" });
 }
 
 describe("POST /api/auth/login", () => {
   beforeEach(() => {
-    createAuthSessionToken.mockClear();
-    verifyLoginPassword.mockReset();
-    verifyLoginPassword.mockReturnValue(true);
+    authenticateUser.mockReset();
+    authenticateUser.mockResolvedValue({
+      actor: {
+        id: "user-id",
+        username: "louange",
+        displayName: "Louange",
+        groupCodes: ["worship"],
+        permissions: ["song.manage"],
+        mustChangePassword: false,
+      },
+      token: "session-token",
+    });
   });
 
   it("returns to the protected destination after login", async () => {
-    const response = await POST(
-      createLoginRequest("/chants/chant-publie?mode=edition"),
-    );
-
+    const response = await POST(createLoginRequest("/chants/chant-publie?mode=edition"));
     expect(response.status).toBe(303);
-    expect(response.headers.get("location")).toBe(
-      "/chants/chant-publie?mode=edition",
-    );
-    expect(response.headers.get("set-cookie")).toContain(
-      "churcherp_session=session-token",
-    );
+    expect(response.headers.get("location")).toBe("/chants/chant-publie?mode=edition");
+    expect(response.headers.get("set-cookie")).toContain("churcherp_session=session-token");
   });
 
   it("rejects an external redirect destination", async () => {
-    const response = await POST(
-      createLoginRequest("//example.com/unauthorized"),
-    );
-
+    const response = await POST(createLoginRequest("//example.com/unauthorized"));
     expect(response.headers.get("location")).toBe("/worship");
   });
 
-  it("keeps the destination after an invalid password", async () => {
-    verifyLoginPassword.mockReturnValue(false);
+  it("redirects temporary-password users to the password change", async () => {
+    authenticateUser.mockResolvedValueOnce({
+      actor: { mustChangePassword: true },
+      token: "session-token",
+    });
+    const response = await POST(createLoginRequest("/events"));
+    expect(response.headers.get("location")).toBe("/password-change?redirectTo=%2Fevents");
+  });
 
-    const response = await POST(
-      createLoginRequest("/setlist/setlist-id"),
-    );
-
+  it("keeps the destination after invalid credentials", async () => {
+    authenticateUser.mockRejectedValueOnce(new MockInvalidCredentialsError());
+    const response = await POST(createLoginRequest("/setlist/setlist-id"));
     expect(response.status).toBe(303);
-    expect(response.headers.get("location")).toBe(
-      "/login?error=1&redirectTo=%2Fsetlist%2Fsetlist-id",
-    );
+    expect(response.headers.get("location")).toBe("/login?error=1&redirectTo=%2Fsetlist%2Fsetlist-id");
   });
 });

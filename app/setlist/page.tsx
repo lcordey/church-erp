@@ -11,7 +11,9 @@ export default async function SetlistPage() {
   return (
     <SetlistIndex
       initialSetlists={setlists}
-      isAuthenticated={actor !== null}
+      isAuthenticated={Boolean(
+        actor && !actor.mustChangePassword && actor.permissions.includes("setlist.manage"),
+      )}
     />
   );
 }

@@ -1,4 +1,4 @@
-import { requireAdminAccess } from "@/src/infrastructure/auth/require-admin";
+import { requirePermission } from "@/src/infrastructure/auth/require-admin";
 import {
   deleteSongPdf,
   getSongPdfStoragePath,
@@ -38,7 +38,7 @@ const maxSongMusicXmlSizeBytes = 5 * 1024 * 1024;
 export async function listAdminSongs(
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSongListItem[]> {
-  await requireAdminAccess();
+  await requirePermission("song.manage");
   return repository.listAll();
 }
 
@@ -46,7 +46,7 @@ export async function getAdminSong(
   id: string,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong | null> {
-  await requireAdminAccess();
+  await requirePermission("song.manage");
   return repository.findById(id);
 }
 
@@ -54,7 +54,7 @@ export async function createDraftSong(
   input: AdminSongInput,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong> {
-  await requireAdminAccess();
+  await requirePermission("song.manage");
   return repository.create(input);
 }
 
@@ -63,7 +63,7 @@ export async function updateAdminSong(
   input: AdminSongInput,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong | null> {
-  await requireAdminAccess();
+  await requirePermission("song.manage");
   const song = await repository.findById(id);
 
   if (!song) {
@@ -177,7 +177,7 @@ export async function attachSongPdf(
   file: File,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong | null> {
-  await requireAdminAccess();
+  await requirePermission("song.manage");
   const song = await repository.findById(id);
 
   if (!song) {
@@ -202,7 +202,7 @@ export async function deleteAttachedSongPdf(
   id: string,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong | null> {
-  await requireAdminAccess();
+  await requirePermission("song.manage");
   const song = await repository.findById(id);
 
   if (!song) {
@@ -223,7 +223,7 @@ export async function attachSongMusicXml(
   file: File,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong | null> {
-  await requireAdminAccess();
+  await requirePermission("song.manage");
   const song = await repository.findById(id);
 
   if (!song) {
@@ -248,7 +248,7 @@ export async function deleteAttachedSongMusicXml(
   id: string,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong | null> {
-  await requireAdminAccess();
+  await requirePermission("song.manage");
   const song = await repository.findById(id);
 
   if (!song) {
@@ -263,7 +263,7 @@ export async function generateAdminSongChordProFromMusicXml(
   algorithm: MusicXmlChordProGenerationAlgorithm = "default",
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<GeneratedChordProResult | null> {
-  await requireAdminAccess();
+  await requirePermission("song.manage");
   const song = await repository.findById(id);
 
   if (!song) {
@@ -297,7 +297,7 @@ export async function deleteDraftSong(
   id: string,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<boolean> {
-  await requireAdminAccess();
+  await requirePermission("song.manage");
   const song = await repository.findById(id);
 
   if (!song) {
@@ -315,7 +315,7 @@ export async function publishSong(
   id: string,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong | null> {
-  await requireAdminAccess();
+  await requirePermission("song.manage");
   const song = await repository.findById(id);
 
   if (!song) {
@@ -333,6 +333,6 @@ export async function unpublishSong(
   id: string,
   repository: AdminSongRepository = createAdminSongRepository(),
 ): Promise<AdminSong | null> {
-  await requireAdminAccess();
+  await requirePermission("song.manage");
   return repository.updateStatus(id, "draft");
 }

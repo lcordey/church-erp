@@ -324,7 +324,7 @@ export function SetlistIndex({
             role="dialog"
           >
             <div
-              className="app-dialog"
+              className="app-dialog app-dialog--compact setlist-create-modal"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="app-dialog__header">
@@ -354,11 +354,17 @@ export function SetlistIndex({
               >
                 <label htmlFor="setlist-title">Titre</label>
                 <input
+                  autoFocus
                   id="setlist-title"
+                  maxLength={160}
                   onChange={(event) => setTitle(event.target.value)}
                   placeholder="Dimanche matin"
+                  required
                   value={title}
                 />
+                <p className="setlist-create-dialog__hint">
+                  Ce nom sera visible dans la liste et pendant la lecture.
+                </p>
                 {message ? <p className="form-message">{message}</p> : null}
                 <div className="setlist-create-dialog__actions">
                   <button

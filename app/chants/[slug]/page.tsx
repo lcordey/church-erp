@@ -26,13 +26,18 @@ export default async function SongPage({ params, searchParams }: SongPageProps) 
   const actorPromise = getCurrentActor();
   const songPromise = getPublicSongBySlug(slug);
   const actor = await actorPromise;
-  const isAuthenticated = actor !== null;
+  const canManageSongs = Boolean(
+    actor && !actor.mustChangePassword && actor.permissions.includes("song.manage"),
+  );
+  const canAccessScores = Boolean(
+    actor && !actor.mustChangePassword && actor.permissions.includes("score.read"),
+  );
   const backHref =
     typeof returnTo === "string" && returnTo.startsWith("/worship")
       ? returnTo
       : "/worship";
 
-  if (mode === "edition" && !isAuthenticated) {
+  if (mode === "edition" && !canManageSongs) {
     const editionUrl = new URL(`/chants/${slug}`, "http://localhost");
     editionUrl.searchParams.set("mode", "edition");
 
@@ -49,7 +54,7 @@ export default async function SongPage({ params, searchParams }: SongPageProps) 
     notFound();
   }
 
-  const [adminSong, availableTaxonomies] = isAuthenticated && mode === "edition"
+  const [adminSong, availableTaxonomies] = canManageSongs && mode === "edition"
     ? await Promise.all([
         getAdminSong(song.id),
         listAdminSongTaxonomies(),
@@ -61,8 +66,8 @@ export default async function SongPage({ params, searchParams }: SongPageProps) 
       adminSong={adminSong}
       availableTaxonomies={availableTaxonomies}
       backHref={backHref}
-      canAccessScores={isAuthenticated}
-      isAuthenticated={isAuthenticated}
+      canAccessScores={canAccessScores}
+      isAuthenticated={canManageSongs}
       initialMode={mode === "edition" ? "edition" : "selection"}
       song={song}
     />

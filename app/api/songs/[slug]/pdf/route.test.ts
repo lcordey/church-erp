@@ -10,6 +10,17 @@ const { downloadSongPdf, getPublicSongPdfBySlug } = vi.hoisted(() => ({
   getPublicSongPdfBySlug: vi.fn(),
 }));
 
+vi.mock("@/src/infrastructure/auth/require-admin", () => ({
+  requireRequestPermission: vi.fn(async (request: Request) => {
+    if (!request.headers.get("cookie")) throw new Error("authentication-required");
+    return { id: "user-id" };
+  }),
+  authorizationBoundaryResponse: (error: unknown) =>
+    error instanceof Error && error.message === "authentication-required"
+      ? Response.json({ error: { code: "AUTHENTICATION_REQUIRED" } }, { status: 401 })
+      : null,
+}));
+
 vi.mock("@/src/infrastructure/storage/song-pdf-storage", async () => {
   const actual = await vi.importActual<
     typeof import("@/src/infrastructure/storage/song-pdf-storage")

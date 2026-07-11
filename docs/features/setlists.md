@@ -19,15 +19,15 @@ de les modifier, puis de les jouer en mode lecture.
 ## Regles metier
 
 - la liste des setlists et le mode lecture sont accessibles sans connexion
-- la creation, la modification et la suppression d'une setlist exigent une session authentifiee
-- une tentative d'ouverture de l'editeur sans session redirige vers la connexion puis revient sur la setlist demandee
+- la creation, la modification et la suppression d'une setlist exigent `setlist.manage`
+- une tentative d'ouverture de l'editeur sans cette permission redirige vers la connexion ou la liste publique
 
 - une setlist reference les chants via `songs.id`
 - seuls les chants publies peuvent etre ajoutes
 - une setlist peut etre vide pendant sa preparation
 - l'ordre des chants est stocke dans `setlist_items.position`
 - les ecritures passent par les routes backend et le service setlists
-- MVP-1 traite encore tous les utilisateurs reels comme administrateurs
+- le groupe Louange porte `setlist.manage`; le groupe Admin seul ne peut pas modifier une setlist
 
 ## Structure backend
 

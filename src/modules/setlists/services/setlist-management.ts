@@ -1,4 +1,4 @@
-import { requireAdminAccess } from "@/src/infrastructure/auth/require-admin";
+import { requirePermission } from "@/src/infrastructure/auth/require-admin";
 
 import {
   createSetlistRepository,
@@ -48,7 +48,7 @@ export async function createSetlist(
   input: SetlistInput,
   repository: SetlistRepository = createSetlistRepository(),
 ): Promise<SetlistDetail> {
-  await requireAdminAccess();
+  await requirePermission("setlist.manage");
   const normalizedInput = normalizeInput(input);
   await assertPublishedSongs(normalizedInput.songIds, repository);
 
@@ -60,7 +60,7 @@ export async function updateSetlist(
   input: SetlistInput,
   repository: SetlistRepository = createSetlistRepository(),
 ): Promise<SetlistDetail | null> {
-  await requireAdminAccess();
+  await requirePermission("setlist.manage");
   const normalizedInput = normalizeInput(input);
   await assertPublishedSongs(normalizedInput.songIds, repository);
 
@@ -71,6 +71,6 @@ export async function deleteSetlist(
   id: string,
   repository: SetlistRepository = createSetlistRepository(),
 ): Promise<boolean> {
-  await requireAdminAccess();
+  await requirePermission("setlist.manage");
   return repository.delete(id);
 }

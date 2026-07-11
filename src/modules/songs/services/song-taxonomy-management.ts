@@ -1,4 +1,4 @@
-import { requireAdminAccess } from "@/src/infrastructure/auth/require-admin";
+import { requirePermission } from "@/src/infrastructure/auth/require-admin";
 
 import {
   createSongTaxonomyRepository,
@@ -45,7 +45,7 @@ export function parseSongTaxonomyKind(value: string): SongTaxonomyKind | null {
 export async function listAdminSongTaxonomies(
   repository: SongTaxonomyRepository = createSongTaxonomyRepository(),
 ): Promise<SongTaxonomies> {
-  await requireAdminAccess();
+  await requirePermission("taxonomy.read");
   return repository.listAll();
 }
 
@@ -54,7 +54,7 @@ export async function createSongTaxonomyItem(
   name: unknown,
   repository: SongTaxonomyRepository = createSongTaxonomyRepository(),
 ): Promise<SongTaxonomyItem> {
-  await requireAdminAccess();
+  await requirePermission("taxonomy.manage");
   return repository.create(kind, normalizeName(name));
 }
 
@@ -63,6 +63,6 @@ export async function deleteSongTaxonomyItem(
   id: string,
   repository: SongTaxonomyRepository = createSongTaxonomyRepository(),
 ): Promise<boolean> {
-  await requireAdminAccess();
+  await requirePermission("taxonomy.manage");
   return repository.delete(kind, id);
 }

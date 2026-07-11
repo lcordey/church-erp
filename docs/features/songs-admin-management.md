@@ -27,7 +27,7 @@ publier automatiquement et supprimer des chants depuis leur ecran d'edition.
 
 ## Regles metier
 
-- les actions d'administration sont des ecritures cote serveur meme si le MVP-1 traite actuellement tous les utilisateurs comme admins
+- les écritures sur les chants exigent `song.manage`; les référentiels exigent séparément `taxonomy.manage`
 - un chant doit posseder les champs requis avant publication
 - enregistrer un chant editable publie automatiquement sa version courante
 - un chant publie doit d'abord etre retire du catalogue avant suppression ; l'interface peut enchainer ce retrait puis la suppression dans la meme action

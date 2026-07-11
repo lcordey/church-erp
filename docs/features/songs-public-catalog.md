@@ -32,7 +32,7 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 - l'acces public est strictement en lecture seule
 - les visiteurs non connectes peuvent consulter uniquement les paroles et accords
 - les routes PDF et MusicXML exigent une session authentifiee cote serveur
-- tous les utilisateurs authentifies sont administrateurs pendant MVP-1
+- les partitions exigent `score.read`; la gestion des chants exige `song.manage`
 - la recherche MVP-1 couvre le titre, le code de recueil, le numero brut et le numero zero-pad
 - la recherche par titre ignore les accents entre formes accentuees et non accentuees d'un meme titre
 - le filtre par recueil propose les collections presentes dans le seed courant, y compris les recueils JEMAF importes et `LeMont`

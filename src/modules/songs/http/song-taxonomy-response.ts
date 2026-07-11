@@ -1,15 +1,11 @@
-import {
-  authenticationRequiredResponse,
-  AuthenticationRequiredError,
-} from "@/src/infrastructure/auth/require-admin";
+import { authorizationBoundaryResponse } from "@/src/infrastructure/auth/require-admin";
 
 import { SongTaxonomyNameConflictError } from "../repositories/song-taxonomy-repository";
 import { InvalidSongTaxonomyNameError } from "../services/song-taxonomy-management";
 
 export function songTaxonomyErrorResponse(error: unknown) {
-  if (error instanceof AuthenticationRequiredError) {
-    return authenticationRequiredResponse();
-  }
+  const authorizationResponse = authorizationBoundaryResponse(error);
+  if (authorizationResponse) return authorizationResponse;
 
   if (error instanceof InvalidSongTaxonomyNameError) {
     return Response.json(

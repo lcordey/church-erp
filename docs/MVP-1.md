@@ -17,8 +17,8 @@ Cette phase est volontairement etroite. Ce n'est pas encore l'ERP complet de l'e
 Seule l'equipe louange utilise l'application dans le MVP-1.
 
 Hypothese operationnelle :
-- tous les utilisateurs reels sont traites comme administrateurs
-- il n'y a pas encore besoin de gerer des comptes, groupes ou permissions fines
+- l'equipe louange utilise des comptes persistants pour les outils internes
+- les groupes systeme Louange et Admin distribuent des permissions distinctes et cumulables
 
 Contrainte d'architecture :
 - les actions d'administration doivent tout de meme rester identifiables comme des actions privilegiees pour pouvoir ajouter de vraies restrictions plus tard
@@ -66,6 +66,8 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
   confirme que l'application est installable
 - notification au lancement de l'application installee quand une nouvelle
   version PWA est disponible
+- notifications push opt-in lorsqu'un utilisateur est nouvellement affecte a
+  un evenement, avec ouverture directe de sa fiche
 
 ### Qualite locale
 - migrations de base de donnees
@@ -76,10 +78,10 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 
 ## Hors perimetre explicite
 
-- comptes utilisateurs persistants et recuperation de mot de passe
-- groupes, roles et administration des permissions
+- recuperation autonome de mot de passe et invitations par e-mail
+- groupes et permissions personnalisables
 - autres formats de partitions ou de documents hors PDF et MusicXML
-- evenements et calendrier
+- calendrier mensuel, recurrence et agenda structure
 - invitations a un evenement
 - partage de chants a des participants
 - lectures bibliques attachees a un evenement
@@ -87,18 +89,17 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 - emails et rappels
 - projection media
 - mode hors ligne avance
-- notifications push
 - packaging mobile natif
 
 ## Regles produit du MVP-1
 
 - les visiteurs publics ne peuvent lire que les chants publies
 - les visiteurs non connectes ne peuvent consulter que les accords et paroles
-- les PDF, MusicXML, setlists et actions admin exigent le login MVP
-- chaque utilisateur connecte est temporairement traite comme administrateur
+- les PDF, MusicXML, événements et écritures sur les setlists exigent un compte autorisé
+- les comptes connectes recoivent les permissions cumulees de leurs groupes Louange et Admin
 - les utilisateurs internes peuvent creer et modifier des chants
 - toutes les ecritures passent par des frontieres serveur
-- les cas d'usage publics et admin doivent rester distingues meme si la meme personne peut actuellement tout faire
+- les cas d'usage publics, Louange et Admin restent distingues à chaque frontière serveur
 - l'interface utilisateur est en francais
 - le code reste en anglais
 
@@ -129,6 +130,8 @@ Livre :
 - partition PDF optionnelle stockee dans Supabase Storage et servie par route backend
 - partition MusicXML optionnelle stockee en base et rendue en mode `Partition`
 - creation, edition, suppression et lecture de setlists de chants publies
+- comptes persistants, groupes Louange/Admin et sessions revocables
+- evenements internes avec setlist, notes, affectations et filtre Mes services
 - migrations, seed, tests Vitest et smoke test HTTP
 - acces local depuis un telephone avec HTTPS et support WSL2
 

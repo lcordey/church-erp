@@ -1,4 +1,6 @@
 import { AppThemeToggle } from "@/src/components/app-theme-toggle";
+import { PwaInstallSettings } from "@/src/components/pwa-install-settings";
+import { PushNotificationSettings } from "@/src/components/push-notification-settings";
 import { MusicNotationToggle } from "@/src/modules/songs/components/music-notation-toggle";
 import { SongRenderPreferencesControls } from "@/src/modules/songs/components/song-render-preferences-controls";
 
@@ -45,6 +47,9 @@ export default function SettingsPage() {
           </div>
           <SongRenderPreferencesControls showDescription />
         </div>
+
+        <PushNotificationSettings />
+        <PwaInstallSettings />
       </section>
     </main>
   );

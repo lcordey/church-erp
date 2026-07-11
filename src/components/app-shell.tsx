@@ -8,17 +8,18 @@ import { useState } from "react";
 import { AppHeaderProvider, AppShellHeader } from "./app-header-context";
 import { PwaInstallBanner } from "./pwa-install-banner";
 import { getLoginHref } from "@/src/shared/navigation/login-redirect";
+import type { AuthenticatedActor, Permission } from "@/src/modules/identity/types/identity";
 
 type AppShellProps = {
   children: ReactNode;
-  isAuthenticated: boolean;
+  actor: AuthenticatedActor | null;
 };
 
 type NavigationItem = {
   href: string;
   label: string;
   description: string;
-  requiresAuthentication?: boolean;
+  requiredPermission?: Permission;
 };
 
 const navigationItems: NavigationItem[] = [
@@ -33,10 +34,15 @@ const navigationItems: NavigationItem[] = [
     description: "Préparation des séquences",
   },
   {
-    href: "/admin/referentiels",
+    href: "/events",
+    label: "Événements",
+    description: "Agenda et équipes de service",
+  },
+  {
+    href: "/admin",
     label: "Admin",
-    description: "Thèmes et labels",
-    requiresAuthentication: true,
+    description: "Comptes et référentiels",
+    requiredPermission: "user.manage",
   },
   {
     href: "/settings",
@@ -63,14 +69,18 @@ function isActivePath(pathname: string, href: string) {
     return pathname === "/setlist" || pathname.startsWith("/setlist/");
   }
 
-  if (href === "/admin/referentiels") {
-    return pathname.startsWith("/admin/referentiels");
+  if (href === "/events") {
+    return pathname === "/events" || pathname.startsWith("/events/");
+  }
+
+  if (href === "/admin") {
+    return pathname === "/admin" || pathname.startsWith("/admin/");
   }
 
   return pathname === href;
 }
 
-export function AppShell({ children, isAuthenticated }: AppShellProps) {
+export function AppShell({ children, actor }: AppShellProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -97,7 +107,11 @@ export function AppShell({ children, isAuthenticated }: AppShellProps) {
 
           <nav aria-label="Navigation principale" className="app-sidebar__nav">
             {navigationItems
-              .filter((item) => !item.requiresAuthentication || isAuthenticated)
+              .filter(
+                (item) =>
+                  !item.requiredPermission ||
+                  actor?.permissions.includes(item.requiredPermission),
+              )
               .map((item) => {
                 const isActive = isActivePath(pathname, item.href);
 
@@ -117,8 +131,11 @@ export function AppShell({ children, isAuthenticated }: AppShellProps) {
           </nav>
 
           <div className="app-sidebar__session">
-            {isAuthenticated ? (
+            {actor ? (
               <form action="/api/auth/logout" method="post">
+                {actor.mustChangePassword ? (
+                  <Link href="/password-change">Changer le mot de passe</Link>
+                ) : null}
                 <button type="submit">Se déconnecter</button>
               </form>
             ) : (

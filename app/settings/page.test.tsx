@@ -13,6 +13,11 @@ describe("settings page", () => {
     expect(markup.indexOf("<h2>Thème</h2>")).toBeLessThan(
       markup.indexOf("<h2>Lecture des chants</h2>"),
     );
-    expect(markup).not.toContain("<h2>Application</h2>");
+    expect(markup.indexOf("<h2>Application</h2>")).toBeGreaterThan(
+      markup.indexOf("<h2>Lecture des chants</h2>"),
+    );
+    expect(markup).toContain("Installer l’application");
+    expect(markup).toContain("Notifications de service");
+    expect(markup).toContain("Activer les notifications");
   });
 });

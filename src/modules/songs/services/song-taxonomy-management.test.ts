@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/src/infrastructure/auth/require-admin", () => ({
-  requireAdminAccess: () => ({ accessMode: "mvp-admin" }),
+  requirePermission: () => ({ id: "user-id" }),
 }));
 
 import type { SongTaxonomyRepository } from "../repositories/song-taxonomy-repository";

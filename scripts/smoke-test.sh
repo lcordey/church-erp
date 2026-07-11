@@ -7,16 +7,20 @@ base_url="http://127.0.0.1:${port}"
 server_log="$(mktemp)"
 smoke_slug="smoke-test-admin-song"
 smoke_setlist_title="Setlist smoke test"
+smoke_event_title="Événement smoke test"
 
 cleanup_smoke_song() {
   DATABASE_URL="${DATABASE_URL:-postgresql://postgres:postgres@127.0.0.1:15432/postgres}" \
     SMOKE_SLUG="${smoke_slug}" \
     SMOKE_SETLIST_TITLE="${smoke_setlist_title}" \
+    SMOKE_EVENT_TITLE="${smoke_event_title}" \
     node --input-type=module -e "
       import postgres from 'postgres';
       const sql = postgres(process.env.DATABASE_URL, { max: 1 });
+      await sql\`delete from events where title = \${process.env.SMOKE_EVENT_TITLE}\`;
       await sql\`delete from setlists where title = \${process.env.SMOKE_SETLIST_TITLE}\`;
       await sql\`delete from songs where slug = \${process.env.SMOKE_SLUG}\`;
+      await sql\`delete from users where username = 'smoke-admin'\`;
       await sql.end();
     " >/dev/null 2>&1 || true
 }
@@ -42,25 +46,6 @@ set -a
 source .env.local
 set +a
 
-auth_session_token="$(
-  node --input-type=module -e "
-    import { createHmac } from 'node:crypto';
-
-    const payload = Buffer.from(JSON.stringify({
-      accessMode: 'mvp-admin',
-      expiresAt: Date.now() + 60 * 60 * 1000,
-    })).toString('base64url');
-    const secret = process.env.AUTH_SESSION_SECRET
-      ?? process.env.CHURCHERP_LOGIN_PASSWORD
-      ?? 'church-erp-local-development-session';
-    const signature = createHmac('sha256', secret)
-      .update(payload)
-      .digest('base64url');
-
-    process.stdout.write(payload + '.' + signature);
-  "
-)"
-
 curl() {
   command curl \
     --header "Cookie: churcherp_session=${auth_session_token}" \
@@ -70,8 +55,27 @@ curl() {
 pnpm db:start >/dev/null
 cleanup_smoke_song
 
+auth_session_token="$(
+  node --input-type=module -e "
+    import { createHash, randomBytes } from 'node:crypto';
+    import postgres from 'postgres';
+    const sql = postgres(process.env.DATABASE_URL, { max: 1 });
+    const token = randomBytes(32).toString('base64url');
+    const tokenHash = createHash('sha256').update(token).digest('base64url');
+    const [user] = await sql\`
+      insert into users (username, display_name, password_hash, must_change_password)
+      values ('smoke-admin', 'Smoke Admin', 'smoke-test-only', false)
+      returning id
+    \`;
+    await sql\`insert into user_group_memberships (user_id, group_code) values (\${user.id}, 'worship'), (\${user.id}, 'admin')\`;
+    await sql\`insert into auth_sessions (user_id, token_hash, expires_at) values (\${user.id}, \${tokenHash}, now() + interval '1 hour')\`;
+    await sql.end();
+    process.stdout.write(token);
+  "
+)"
+
 echo "Démarrage du serveur de test sur le port ${port}..."
-pnpm exec next dev --hostname 127.0.0.1 --port "${port}" >"${server_log}" 2>&1 &
+NEXT_DIST_DIR=.next-smoke pnpm exec next dev --hostname 127.0.0.1 --port "${port}" >"${server_log}" 2>&1 &
 server_pid=$!
 
 for _ in {1..30}; do
@@ -181,6 +185,47 @@ if [[ "${setlist_play_page}" != *"${smoke_setlist_title}"* ]]; then
   echo "Échec : la page lecture de setlist n'est pas rendue."
   exit 1
 fi
+
+smoke_user_id="$(
+  node --input-type=module -e "
+    import postgres from 'postgres';
+    const sql = postgres(process.env.DATABASE_URL, { max: 1 });
+    const [user] = await sql\`select id from users where username = 'smoke-admin'\`;
+    await sql.end();
+    process.stdout.write(user.id);
+  "
+)"
+
+event_create_response="$(
+  curl --fail --silent \
+    --request POST \
+    --header "content-type: application/json" \
+    --data "{
+      \"title\":\"${smoke_event_title}\",
+      \"startsAt\":\"2026-07-12T08:30:00+02:00\",
+      \"endsAt\":\"2026-07-12T10:00:00+02:00\",
+      \"notes\":\"Validation du parcours événement\",
+      \"setlistId\":\"${smoke_setlist_id}\",
+      \"assignments\":[{\"userId\":\"${smoke_user_id}\",\"role\":\"Piano\"}]
+    }" \
+    "${base_url}/api/events"
+)"
+smoke_event_id="$(
+  printf "%s" "${event_create_response}" |
+    node --input-type=module -e "
+      let body = '';
+      for await (const chunk of process.stdin) body += chunk;
+      process.stdout.write(JSON.parse(body).data.id);
+    "
+)"
+
+event_detail="$(curl --fail --silent "${base_url}/api/events/${smoke_event_id}")"
+if [[ "${event_detail}" != *'"role":"Piano"'* ]]; then
+  echo "Échec : l'affectation de l'événement n'est pas disponible."
+  exit 1
+fi
+
+curl --fail --silent --request DELETE "${base_url}/api/events/${smoke_event_id}" >/dev/null
 
 setlist_delete_status="$(
   curl --silent --output /dev/null --write-out "%{http_code}" \
@@ -305,6 +350,7 @@ echo "- page d'accueil rendue"
 echo "- page d'administration rendue"
 echo "- page setlist rendue"
 echo "- setlist créée, éditée, jouée puis supprimée"
+echo "- événement créé avec setlist et affectation puis supprimé"
 echo "- brouillon admin créé, invisible et modifié"
 echo "- publication puis retrait validés"
 echo "- suppression du brouillon validée"

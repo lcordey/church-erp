@@ -1,7 +1,6 @@
 import {
-  authenticationRequiredResponse,
-  AuthenticationRequiredError,
-  requireAuthenticatedRequest,
+  authorizationBoundaryResponse,
+  requireRequestPermission,
 } from "@/src/infrastructure/auth/require-admin";
 import { getPublicSongMusicXmlBySlug } from "@/src/modules/songs/services/public-song-catalog";
 
@@ -32,12 +31,10 @@ function contentDisposition(
 
 export async function GET(request: Request, { params }: RouteContext) {
   try {
-    requireAuthenticatedRequest(request);
+    await requireRequestPermission(request, "score.read");
   } catch (error) {
-    if (error instanceof AuthenticationRequiredError) {
-      return authenticationRequiredResponse();
-    }
-
+    const response = authorizationBoundaryResponse(error);
+    if (response) return response;
     throw error;
   }
 

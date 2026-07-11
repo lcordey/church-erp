@@ -97,12 +97,12 @@ Recommended internal structure once implemented:
 - `validation/`
 - `types/`
 
-### celebrations
-Reserved for later phases. Owns worship events:
+### events
+Implemented as the internal worship planning module. Owns:
 - celebration date
 - title
 - context
-- lifecycle of a service or worship gathering
+- optional setlist, notes, and service assignments
 
 ### volunteers
 Reserved for later phases:
@@ -112,14 +112,11 @@ Reserved for later phases:
 - availability
 
 ### identity
-Reserved for later phases:
+Implemented for the first restricted-access phase:
 - users
 - groups
-- roles
-- permissions
-- sessions
-
-For MVP-1, the architecture keeps room for identity but does not require real user management yet.
+- fixed group-to-permission mapping
+- opaque, revocable sessions
 
 ### communication
 Reserved for later phases:
@@ -129,9 +126,8 @@ Reserved for later phases:
 
 ## Authorization Strategy
 
-MVP-1 starts in a permissive operating mode:
-- there is no full user/group model yet
-- all actual users are effectively admins
+The application now separates anonymous, Louange, and Admin capabilities. Every
+service mutation checks an explicit permission at the server boundary.
 
 But the architecture must preserve future enforcement:
 - admin-only actions must be separated from public reads in API design and service naming
@@ -193,6 +189,12 @@ MVP-1 keeps the scope narrow:
 - local phone testing on the same network
 - minimal PWA installability and update prompting without offline-first behavior
 - push notifications
+
+Web Push is implemented as a separate `notifications` vertical module. Browser
+subscriptions are persisted through authenticated route handlers, while event
+management calls the delivery service only after a successful transaction.
+Provider failures are isolated from event persistence and expired endpoints are
+cleaned up opportunistically.
 
 ## Delivery Strategy
 

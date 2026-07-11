@@ -10,12 +10,12 @@ import {
   updateSetlist,
 } from "./setlist-management";
 
-const { requireAdminAccess } = vi.hoisted(() => ({
-  requireAdminAccess: vi.fn(() => ({ accessMode: "mvp-admin" })),
+const { requirePermission } = vi.hoisted(() => ({
+  requirePermission: vi.fn(() => ({ id: "user-id" })),
 }));
 
 vi.mock("@/src/infrastructure/auth/require-admin", () => ({
-  requireAdminAccess,
+  requirePermission,
 }));
 
 const publishedSongId = "11111111-1111-4111-8111-111111111111";
@@ -76,17 +76,17 @@ function createRepository(publishedSongIds: string[]): SetlistRepository {
 
 describe("setlist management", () => {
   it("allows public setlist reads without requesting admin access", async () => {
-    requireAdminAccess.mockClear();
+    requirePermission.mockClear();
     const repository = createRepository([publishedSongId]);
 
     await listSetlists(repository);
     await getSetlist("33333333-3333-4333-8333-333333333333", repository);
 
-    expect(requireAdminAccess).not.toHaveBeenCalled();
+    expect(requirePermission).not.toHaveBeenCalled();
   });
 
   it("creates a setlist with published songs in order", async () => {
-    requireAdminAccess.mockClear();
+    requirePermission.mockClear();
     const setlist = await createSetlist(
       {
         title: " Dimanche matin ",
@@ -101,7 +101,7 @@ describe("setlist management", () => {
       publishedSongId,
     ]);
     expect(setlist.items.map((item) => item.position)).toEqual([0, 1]);
-    expect(requireAdminAccess).toHaveBeenCalledOnce();
+    expect(requirePermission).toHaveBeenCalledWith("setlist.manage");
   });
 
   it("rejects songs that are not published", async () => {

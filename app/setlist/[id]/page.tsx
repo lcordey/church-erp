@@ -18,6 +18,8 @@ export default async function SetlistEditPage({ params }: SetlistEditPageProps) 
   if (!actor) {
     redirect(getLoginHref(`/setlist/${id}`));
   }
+  if (actor.mustChangePassword) redirect(`/password-change?redirectTo=${encodeURIComponent(`/setlist/${id}`)}`);
+  if (!actor.permissions.includes("setlist.manage")) redirect("/setlist");
 
   const setlist = await getSetlist(id);
 

@@ -1,12 +1,19 @@
 import { cookies } from "next/headers";
 import { cache } from "react";
 
+import { hasPermission } from "@/src/modules/identity/permissions";
+import { loadActorFromSessionToken } from "@/src/modules/identity/services/authentication";
+import type {
+  AuthenticatedActor,
+  Permission,
+} from "@/src/modules/identity/types/identity";
+
 import {
   authSessionCookieName,
-  readAuthSessionFromCookieHeader,
-  readAuthSessionToken,
-  type AuthenticatedActor,
+  readAuthSessionTokenFromCookieHeader,
 } from "./session";
+
+export type { AuthenticatedActor } from "@/src/modules/identity/types/identity";
 
 export class AuthenticationRequiredError extends Error {
   constructor() {
@@ -14,45 +21,88 @@ export class AuthenticationRequiredError extends Error {
   }
 }
 
+export class AuthorizationForbiddenError extends Error {
+  constructor() {
+    super("Permission is required.");
+  }
+}
+
+export class PasswordChangeRequiredError extends Error {
+  constructor() {
+    super("Password change is required.");
+  }
+}
+
 export const getCurrentActor = cache(async (): Promise<AuthenticatedActor | null> => {
   const cookieStore = await cookies();
-
-  return readAuthSessionToken(cookieStore.get(authSessionCookieName)?.value);
+  return loadActorFromSessionToken(cookieStore.get(authSessionCookieName)?.value);
 });
 
-export async function requireAdminAccess(): Promise<AuthenticatedActor> {
-  const actor = await getCurrentActor();
-
-  if (!actor) {
-    throw new AuthenticationRequiredError();
-  }
-
-  // MVP-1 treats every authenticated real user as an administrator.
+function assertUsableActor(actor: AuthenticatedActor | null) {
+  if (!actor) throw new AuthenticationRequiredError();
+  if (actor.mustChangePassword) throw new PasswordChangeRequiredError();
   return actor;
 }
 
-export function getActorFromRequest(request: Request): AuthenticatedActor | null {
-  return readAuthSessionFromCookieHeader(request.headers.get("cookie"));
+export async function requireAuthenticatedActor() {
+  return assertUsableActor(await getCurrentActor());
 }
 
-export function requireAuthenticatedRequest(request: Request): AuthenticatedActor {
-  const actor = getActorFromRequest(request);
-
-  if (!actor) {
-    throw new AuthenticationRequiredError();
+export async function requirePermission(permission: Permission) {
+  const actor = await requireAuthenticatedActor();
+  if (!hasPermission(actor.permissions, permission)) {
+    throw new AuthorizationForbiddenError();
   }
+  return actor;
+}
 
+export async function getActorFromRequest(request: Request) {
+  return loadActorFromSessionToken(
+    readAuthSessionTokenFromCookieHeader(request.headers.get("cookie")),
+  );
+}
+
+export async function requireAuthenticatedRequest(request: Request) {
+  return assertUsableActor(await getActorFromRequest(request));
+}
+
+export async function requireRequestPermission(request: Request, permission: Permission) {
+  const actor = await requireAuthenticatedRequest(request);
+  if (!hasPermission(actor.permissions, permission)) {
+    throw new AuthorizationForbiddenError();
+  }
   return actor;
 }
 
 export function authenticationRequiredResponse() {
   return Response.json(
-    {
-      error: {
-        code: "AUTHENTICATION_REQUIRED",
-        message: "Connexion requise.",
-      },
-    },
+    { error: { code: "AUTHENTICATION_REQUIRED", message: "Connexion requise." } },
     { status: 401 },
   );
+}
+
+export function authorizationForbiddenResponse() {
+  return Response.json(
+    { error: { code: "FORBIDDEN", message: "Tu n’as pas l’autorisation nécessaire." } },
+    { status: 403 },
+  );
+}
+
+export function passwordChangeRequiredResponse() {
+  return Response.json(
+    {
+      error: {
+        code: "PASSWORD_CHANGE_REQUIRED",
+        message: "Change ton mot de passe avant de continuer.",
+      },
+    },
+    { status: 403 },
+  );
+}
+
+export function authorizationBoundaryResponse(error: unknown): Response | null {
+  if (error instanceof AuthenticationRequiredError) return authenticationRequiredResponse();
+  if (error instanceof PasswordChangeRequiredError) return passwordChangeRequiredResponse();
+  if (error instanceof AuthorizationForbiddenError) return authorizationForbiddenResponse();
+  return null;
 }

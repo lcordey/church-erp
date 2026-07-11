@@ -25,16 +25,25 @@ Likely features:
 - richer source history and support for multiple active sources of the same type
 - dedicated source management UI beyond the current song editor fields
 
+## Delivered planning and identity foundation
+
+The first event and identity slice now includes persistent accounts, fixed
+Louange/Admin groups, revocable sessions, event notes, optional setlists, and
+service assignments with personal filtering.
+
+The first Web Push slice is also delivered: device opt-in and immediate alerts
+for newly created event assignments. Scheduled reminders, change alerts and
+per-category notification preferences remain deferred.
+
 ## MVP-3 Candidates
 
 Priority direction:
 - introduce event planning without building the whole planning domain too early
 
 Likely features:
-- celebrations or events
-- calendar-oriented views
-- sharing setlists in the context of an event
-- event notes
+- calendar-oriented views beyond the delivered chronological list
+- recurring events
+- richer ordered event agenda items
 - optional scripture readings linked to an event
 
 ## MVP-4 Candidates
@@ -46,7 +55,7 @@ Likely features:
 - invitations to an event
 - participant-facing event access
 - controlled sharing of songs and documents
-- first real identity and access restrictions
+- invitations, recovery, and outbound account activation
 
 ## MVP-5 Candidates
 

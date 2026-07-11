@@ -11,4 +11,5 @@ set -a
 source .env.local
 set +a
 
+export NEXT_DIST_DIR="${NEXT_DIST_DIR:-.next-dev}"
 exec pnpm exec next dev
