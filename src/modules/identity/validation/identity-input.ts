@@ -114,7 +114,13 @@ export function validateChangePasswordInput(
   const errors: Record<string, string> = {};
   const currentPassword = typeof values.currentPassword === "string" ? values.currentPassword : "";
   const newPassword = validatePassword(values.newPassword, "newPassword", errors);
+  const confirmNewPassword = typeof values.confirmNewPassword === "string"
+    ? values.confirmNewPassword
+    : "";
   if (!currentPassword) errors.currentPassword = "Saisis ton mot de passe actuel.";
+  if (confirmNewPassword !== newPassword) {
+    errors.confirmNewPassword = "Les deux nouveaux mots de passe ne correspondent pas.";
+  }
   if (currentPassword && currentPassword === newPassword) {
     errors.newPassword = "Choisis un mot de passe différent du mot de passe actuel.";
   }
@@ -131,6 +137,12 @@ export function validateTemporaryPasswordInput(input: unknown) {
     "temporaryPassword",
     errors,
   );
+  const confirmTemporaryPassword = typeof values.confirmTemporaryPassword === "string"
+    ? values.confirmTemporaryPassword
+    : "";
+  if (confirmTemporaryPassword !== temporaryPassword) {
+    errors.confirmTemporaryPassword = "Les deux mots de passe temporaires ne correspondent pas.";
+  }
   return Object.keys(errors).length
     ? ({ success: false, errors } as const)
     : ({ success: true, data: { temporaryPassword } } as const);

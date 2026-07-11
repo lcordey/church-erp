@@ -24,9 +24,14 @@ export default async function PasswordChangePage({ searchParams }: PasswordChang
         <form action="/api/auth/password" className="login-form" method="post">
           <input name="redirectTo" type="hidden" value={redirectTo} />
           <label><span>Mot de passe actuel</span><input autoComplete="current-password" name="currentPassword" required type="password" /></label>
-          <label><span>Nouveau mot de passe</span><input autoComplete="new-password" minLength={8} name="newPassword" required type="password" /></label>
+          <label><span>Nouveau mot de passe</span><input autoComplete="new-password" maxLength={128} minLength={8} name="newPassword" required type="password" /></label>
+          <label><span>Confirmer le nouveau mot de passe</span><input autoComplete="new-password" maxLength={128} minLength={8} name="confirmNewPassword" required type="password" /></label>
           {params.error ? <p className="form-message form-message--error">
-            {params.error === "current" ? "Le mot de passe actuel est incorrect." : "Le nouveau mot de passe doit contenir entre 8 et 128 caractères."}
+            {params.error === "current"
+              ? "Le mot de passe actuel est incorrect."
+              : params.error === "confirmation"
+                ? "Les deux nouveaux mots de passe ne correspondent pas."
+                : "Le nouveau mot de passe doit contenir entre 8 et 128 caractères."}
           </p> : null}
           <button className="admin-button admin-button--primary" type="submit">Enregistrer</button>
         </form>

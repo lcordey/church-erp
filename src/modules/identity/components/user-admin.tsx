@@ -13,6 +13,11 @@ type FormState = {
   status: "active" | "disabled";
   groupCodes: GroupCode[];
 };
+type PasswordResetState = {
+  user: AdminUserSummary;
+  temporaryPassword: string;
+  confirmTemporaryPassword: string;
+};
 
 const emptyForm: FormState = {
   username: "",
@@ -31,6 +36,7 @@ export function UserAdmin({ actorId, initialUsers }: UserAdminProps) {
   const [users, setUsers] = useState(initialUsers);
   const [form, setForm] = useState<FormState | null>(null);
   const [message, setMessage] = useState("");
+  const [passwordReset, setPasswordReset] = useState<PasswordResetState | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function toggleGroup(groupCode: GroupCode) {
@@ -71,19 +77,23 @@ export function UserAdmin({ actorId, initialUsers }: UserAdminProps) {
     setForm(null);
   }
 
-  async function resetPassword(user: AdminUserSummary) {
-    const temporaryPassword = window.prompt(`Nouveau mot de passe temporaire pour ${user.displayName} (8 caractères minimum) :`);
-    if (!temporaryPassword) return;
-    const response = await fetch(`/api/admin/users/${user.id}/password-reset`, {
+  async function resetPassword() {
+    if (!passwordReset) return;
+    setMessage("");
+    const response = await fetch(`/api/admin/users/${passwordReset.user.id}/password-reset`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ temporaryPassword }),
+      body: JSON.stringify({
+        temporaryPassword: passwordReset.temporaryPassword,
+        confirmTemporaryPassword: passwordReset.confirmTemporaryPassword,
+      }),
     });
     if (!response.ok) {
       setMessage(errorMessage(await response.json().catch(() => null)));
       return;
     }
-    setUsers((current) => current.map((item) => item.id === user.id ? { ...item, mustChangePassword: true } : item));
+    setUsers((current) => current.map((item) => item.id === passwordReset.user.id ? { ...item, mustChangePassword: true } : item));
+    setPasswordReset(null);
     setMessage("Le mot de passe temporaire a été enregistré.");
   }
 
@@ -104,7 +114,7 @@ export function UserAdmin({ actorId, initialUsers }: UserAdminProps) {
             </div>
             <div className="identity-user-card__actions">
               <button className="admin-button" onClick={() => setForm({ ...user, temporaryPassword: "" })} type="button">Modifier</button>
-              <button className="admin-button" disabled={user.id === actorId || isPending} onClick={() => startTransition(() => { void resetPassword(user); })} type="button">Réinitialiser le mot de passe</button>
+              <button className="admin-button" disabled={user.id === actorId || isPending} onClick={() => { setMessage(""); setPasswordReset({ user, temporaryPassword: "", confirmTemporaryPassword: "" }); }} type="button">Réinitialiser le mot de passe</button>
             </div>
           </article>
         ))}
@@ -120,6 +130,21 @@ export function UserAdmin({ actorId, initialUsers }: UserAdminProps) {
             {form.id ? <label className="checkbox-row"><input checked={form.status === "active"} disabled={form.id === actorId} onChange={(event) => setForm({ ...form, status: event.target.checked ? "active" : "disabled" })} type="checkbox" /><span>Compte actif</span></label> : null}
             {message ? <p className="form-message form-message--error">{message}</p> : null}
             <div className="admin-form__actions"><button className="admin-button" onClick={() => setForm(null)} type="button">Annuler</button><button className="admin-button admin-button--primary" disabled={isPending} type="submit">Enregistrer</button></div>
+          </form>
+        </div>
+      ) : null}
+      {passwordReset ? (
+        <div aria-modal="true" className="app-dialog-backdrop" role="dialog">
+          <form className="app-dialog identity-user-form" onSubmit={(event) => { event.preventDefault(); startTransition(() => { void resetPassword(); }); }}>
+            <div className="app-dialog__header">
+              <div><p className="eyebrow">Sécurité</p><h2>Réinitialiser le mot de passe</h2></div>
+              <button aria-label="Fermer" className="icon-button" onClick={() => setPasswordReset(null)} type="button">×</button>
+            </div>
+            <p>Définissez un mot de passe temporaire pour {passwordReset.user.displayName}. La personne devra le remplacer à sa prochaine connexion.</p>
+            <label><span>Mot de passe temporaire</span><input autoComplete="new-password" maxLength={128} minLength={8} onChange={(event) => setPasswordReset({ ...passwordReset, temporaryPassword: event.target.value })} required type="password" value={passwordReset.temporaryPassword} /></label>
+            <label><span>Confirmer le mot de passe temporaire</span><input autoComplete="new-password" maxLength={128} minLength={8} onChange={(event) => setPasswordReset({ ...passwordReset, confirmTemporaryPassword: event.target.value })} required type="password" value={passwordReset.confirmTemporaryPassword} /></label>
+            {message ? <p className="form-message form-message--error">{message}</p> : null}
+            <div className="admin-form__actions"><button className="admin-button" onClick={() => setPasswordReset(null)} type="button">Annuler</button><button className="admin-button admin-button--primary" disabled={isPending} type="submit">Réinitialiser</button></div>
           </form>
         </div>
       ) : null}

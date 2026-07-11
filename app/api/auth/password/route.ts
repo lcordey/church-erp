@@ -15,10 +15,12 @@ export async function POST(request: Request) {
   const input = validateChangePasswordInput({
     currentPassword: formData.get("currentPassword"),
     newPassword: formData.get("newPassword"),
+    confirmNewPassword: formData.get("confirmNewPassword"),
   });
   if (!input.success) {
+    const error = input.errors.confirmNewPassword ? "confirmation" : "validation";
     return Response.redirect(
-      new URL(`/password-change?error=validation&redirectTo=${encodeURIComponent(redirectTo)}`, request.url),
+      new URL(`/password-change?error=${error}&redirectTo=${encodeURIComponent(redirectTo)}`, request.url),
       303,
     );
   }
