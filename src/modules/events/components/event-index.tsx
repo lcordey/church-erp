@@ -70,15 +70,15 @@ function EventCard({ canManage, event }: { canManage: boolean; event: EventSumma
   return (
     <article className={`song-card event-card${event.isCurrentUserAssigned ? " event-card--assigned" : ""}${isMenuOpen ? " song-card--menu-open event-card--menu-open" : ""}`}>
       <Link className="song-card__open event-card__open" href={`/events/${event.id}`}>
-        <span className="event-card__date">{formatter.format(new Date(event.startsAt))}</span>
         <span className="song-card__content event-card__content">
           <span className="song-card__title event-card__title">{event.title}</span>
           <span className="song-card__metadata event-card__metadata">
-            {event.assignmentCount} {event.assignmentCount > 1 ? "personnes" : "personne"} de service{event.setlist ? ` · ${event.setlist.title}` : ""}
+            <span className="event-card__date">{formatter.format(new Date(event.startsAt))}</span>
+            <span>{event.assignmentCount} {event.assignmentCount > 1 ? "personnes" : "personne"} de service{event.setlist ? ` · ${event.setlist.title}` : ""}</span>
+            {event.isCurrentUserAssigned ? <em className="event-card__badge">Je suis de service</em> : null}
           </span>
         </span>
-        {event.isCurrentUserAssigned ? <em className="event-card__badge">Je suis de service</em> : null}
-        {canManage ? <span className="event-card__action-space" aria-hidden="true" /> : null}
+        {canManage ? <span className="song-card__action-space event-card__action-space" aria-hidden="true" /> : null}
       </Link>
       {canManage ? (
         <div className="song-card__menu event-card__menu" ref={menuRef}>

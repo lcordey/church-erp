@@ -5037,7 +5037,8 @@ a {
 }
 
 .event-list {
-  display: grid;
+  display: flex;
+  flex-direction: column;
 }
 
 .event-card {
@@ -5046,46 +5047,33 @@ a {
 }
 
 .event-card__open {
-  grid-template-columns: minmax(150px, .34fr) minmax(0, 1fr) auto auto;
-  gap: 12px 22px;
-}
-
-.event-card__content {
-  gap: 8px;
-}
-
-.event-card__title {
-  display: block;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .event-card__metadata {
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
 }
 
 .event-card__date {
-  grid-row: 1;
-  color: var(--muted);
-  font-size: .82rem;
-  line-height: 1.5;
   text-transform: capitalize;
 }
 
-.event-card__badge {
-  grid-column: 3;
-  border-radius: 999px;
-  padding: 7px 10px;
-  color: var(--accent);
-  background: var(--accent-tint);
-  font-size: .72rem;
+.event-card__metadata > span + span::before,
+.event-card__badge::before {
+  content: "·";
+  margin-right: 10px;
+  color: var(--muted);
   font-style: normal;
-  font-weight: 800;
-  white-space: nowrap;
+  font-weight: 500;
 }
 
-.event-card__action-space {
-  grid-column: 4;
-  width: 42px;
-  height: 42px;
+.event-card__badge {
+  color: var(--accent);
+  font-style: normal;
+  font-weight: 800;
 }
 
 .event-card__menu {
@@ -5093,11 +5081,17 @@ a {
 }
 
 .event-card--assigned .event-card__open {
-  background: linear-gradient(135deg, var(--surface-raised-strong), var(--accent-tint));
+  color: inherit;
 }
 
-.event-card--assigned:hover .event-card__open {
-  background: linear-gradient(135deg, var(--surface-hover), var(--accent-tint));
+.event-card--assigned .event-card__open::before {
+  position: absolute;
+  top: 22px;
+  bottom: 22px;
+  left: 0;
+  width: 3px;
+  background: var(--accent);
+  content: "";
 }
 
 .event-section .empty-state {
@@ -5290,18 +5284,6 @@ a {
 
   .event-card__open {
     grid-template-columns: 1fr auto;
-  }
-
-  .event-card__date,
-  .event-card__badge {
-    grid-column: 1;
-    grid-row: auto;
-    justify-self: start;
-  }
-
-  .event-card__action-space {
-    grid-column: 2;
-    grid-row: 1 / span 3;
   }
 
   .event-detail__header {
