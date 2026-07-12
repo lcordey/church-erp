@@ -87,6 +87,11 @@ export function EventEditor({ canManage, canOpenSetlist = false, canViewAssignme
     [assignments, endsAt, notes, setlistId, startsAt, title],
   );
   const isDirty = currentSnapshot !== savedSnapshot;
+  const { navigateToViewMode, pendingViewMode, transitionStatus } = useViewModeNavigation({
+    activeMode: isEditing ? "edition" : "selection",
+    detail: "L’événement est en cours de rechargement.",
+    subject: "de l’événement",
+  });
 
   const save = useCallback(async () => {
     setMessage("");
@@ -108,24 +113,19 @@ export function EventEditor({ canManage, canOpenSetlist = false, canViewAssignme
         return false;
       }
 
+      const savedEventId = payload.data.id;
       setSavedSnapshot(currentSnapshot);
-      router.replace(`/events/${payload.data.id}`);
+      navigateToViewMode("selection", () => router.replace(`/events/${savedEventId}`));
       return true;
     } finally {
       setIsSaving(false);
     }
-  }, [assignments, currentSnapshot, endsAt, event, notes, router, setlistId, startsAt, title]);
+  }, [assignments, currentSnapshot, endsAt, event, navigateToViewMode, notes, router, setlistId, startsAt, title]);
 
   const { confirmNavigation, dialog } = useUnsavedChangesGuard({
     isDirty,
     onSave: save,
   });
-  const { navigateToViewMode, pendingViewMode, transitionStatus } = useViewModeNavigation({
-    activeMode: isEditing ? "edition" : "selection",
-    detail: "L’événement est en cours de rechargement.",
-    subject: "de l’événement",
-  });
-
   async function remove() {
     if (!event || !window.confirm(`Supprimer définitivement « ${event.title} » ?`)) return;
     const response = await fetch(`/api/events/${event.id}`, { method: "DELETE" });
@@ -139,5 +139,5 @@ export function EventEditor({ canManage, canOpenSetlist = false, canViewAssignme
 
   const headerActions = <button className={isDirty ? "admin-button admin-button--primary admin-button--dirty" : "admin-button"} disabled={isSaving} onClick={() => { void save(); }} type="button"><span className="button-label">{isSaving ? <span aria-hidden="true" className="button-spinner button-spinner--on-accent" /> : null}<span>{isSaving ? "Enregistrement…" : isDirty ? "Enregistrer •" : "Enregistrer"}</span></span></button>;
 
-  return <main className="event-page"><div className="event-shell"><AppTopBar activeViewMode={event ? "edition" : undefined} actions={headerActions} backHref="/events" backIconOnly backLabel="Retour aux événements" mode="admin" onViewModeChange={event ? (mode) => { if (mode === "selection") void confirmNavigation(() => navigateToViewMode(mode, () => router.push(`/events/${event.id}`))); } : undefined} pendingViewMode={pendingViewMode} showViewModeToggle={Boolean(event)} /><form className="event-form" onSubmit={(formEvent) => { formEvent.preventDefault(); void save(); }}><div><p className="eyebrow">Agenda</p><h1>{event ? "Modifier l’événement" : "Nouvel événement"}</h1></div><label><span>Titre</span><input maxLength={160} onChange={(input) => setTitle(input.target.value)} required value={title} /></label><div className="event-form__dates"><DateTimePicker defaultTime="10:00" label="Début" onChange={setStartsAt} required value={startsAt} /><DateTimePicker defaultTime="10:00" label="Fin (optionnelle)" onChange={setEndsAt} value={endsAt} /></div><fieldset className="event-description-editor"><legend>Description (facultative)</legend><p>Utilisez <code>**gras**</code>, <code>*italique*</code>, les listes <code>- élément</code> et les liens <code>[texte](https://…)</code>.</p><div className="event-description-editor__tabs"><button aria-pressed={!isDescriptionPreview} className="admin-button admin-button--quiet" onClick={() => setIsDescriptionPreview(false)} type="button">Écrire</button><button aria-pressed={isDescriptionPreview} className="admin-button admin-button--quiet" onClick={() => setIsDescriptionPreview(true)} type="button">Prévisualiser</button></div>{isDescriptionPreview ? <div className="event-description-editor__preview"><EventDescription content={notes || "Aucune description."} /></div> : <textarea maxLength={5000} onChange={(input) => setNotes(input.target.value)} rows={9} value={notes} />}</fieldset><label><span>Setlist</span><select onChange={(input) => setSetlistId(input.target.value)} value={setlistId}><option value="">Aucune setlist</option>{setlists.map((setlist) => <option key={setlist.id} value={setlist.id}>{setlist.title}</option>)}</select></label><fieldset className="event-assignees"><legend>Équipe de service</legend>{assignments.map((assignment, index) => <div className="event-assignee" key={assignment.userId}><label className="checkbox-row"><input checked={assignment.active} onChange={(input) => setAssignments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, active: input.target.checked } : item))} type="checkbox" /><span>{assignment.displayName} <small>@{assignment.username}</small></span></label>{assignment.active ? <input aria-label={`Rôle de ${assignment.displayName}`} maxLength={120} onChange={(input) => setAssignments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, role: input.target.value } : item))} placeholder="Rôle (optionnel)" value={assignment.role} /> : null}</div>)}</fieldset>{message ? <p className="form-message form-message--error">{message}</p> : null}<div className="admin-form__actions">{event ? <button className="admin-button admin-button--danger" disabled={isSaving} onClick={() => { void remove(); }} type="button">Supprimer</button> : null}</div></form></div>{dialog}{transitionStatus}<PageTransitionStatus detail="Les informations de l’événement sont en cours d’enregistrement." isVisible={isSaving} label="Enregistrement de l’événement…" /></main>;
+  return <main className="event-page"><div className="event-shell"><AppTopBar activeViewMode={event ? "edition" : undefined} actions={headerActions} backHref="/events" backIconOnly backLabel="Retour aux événements" mode="admin" onViewModeChange={event ? (mode) => { if (mode === "selection") void confirmNavigation(() => navigateToViewMode(mode, () => router.push(`/events/${event.id}`))); } : undefined} pendingViewMode={pendingViewMode} showViewModeToggle={Boolean(event)} /><form className="event-form" onSubmit={(formEvent) => { formEvent.preventDefault(); void save(); }}><div><p className="eyebrow">Agenda</p><h1>{event ? "Modifier l’événement" : "Nouvel événement"}</h1></div><label><span>Titre</span><input maxLength={160} onChange={(input) => setTitle(input.target.value)} required value={title} /></label><div className="event-form__dates"><DateTimePicker defaultTime="10:00" label="Début" onChange={setStartsAt} required value={startsAt} /><DateTimePicker defaultTime="10:00" label="Fin (optionnelle)" onChange={setEndsAt} value={endsAt} /></div><fieldset className="event-description-editor"><legend>Description (facultative)</legend><p>Utilisez <code># titre</code>, <code>## sous-titre</code>, <code>**gras**</code>, <code>*italique*</code>, les listes <code>- élément</code> et les liens <code>[texte](https://…)</code>.</p><div className="event-description-editor__tabs"><button aria-pressed={!isDescriptionPreview} className="admin-button admin-button--quiet" onClick={() => setIsDescriptionPreview(false)} type="button">Écrire</button><button aria-pressed={isDescriptionPreview} className="admin-button admin-button--quiet" onClick={() => setIsDescriptionPreview(true)} type="button">Prévisualiser</button></div>{isDescriptionPreview ? <div className="event-description-editor__preview"><EventDescription content={notes || "Aucune description."} /></div> : <textarea maxLength={5000} onChange={(input) => setNotes(input.target.value)} rows={9} value={notes} />}</fieldset><label><span>Setlist</span><select onChange={(input) => setSetlistId(input.target.value)} value={setlistId}><option value="">Aucune setlist</option>{setlists.map((setlist) => <option key={setlist.id} value={setlist.id}>{setlist.title}</option>)}</select></label><fieldset className="event-assignees"><legend>Équipe de service</legend>{assignments.map((assignment, index) => <div className="event-assignee" key={assignment.userId}><label className="checkbox-row"><input checked={assignment.active} onChange={(input) => setAssignments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, active: input.target.checked } : item))} type="checkbox" /><span>{assignment.displayName} <small>@{assignment.username}</small></span></label>{assignment.active ? <input aria-label={`Rôle de ${assignment.displayName}`} maxLength={120} onChange={(input) => setAssignments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, role: input.target.value } : item))} placeholder="Rôle (optionnel)" value={assignment.role} /> : null}</div>)}</fieldset>{message ? <p className="form-message form-message--error">{message}</p> : null}<div className="admin-form__actions">{event ? <button className="admin-button admin-button--danger" disabled={isSaving} onClick={() => { void remove(); }} type="button">Supprimer</button> : null}</div></form></div>{dialog}{transitionStatus}<PageTransitionStatus detail="Les informations de l’événement sont en cours d’enregistrement." isVisible={isSaving} label="Enregistrement de l’événement…" /></main>;
 }

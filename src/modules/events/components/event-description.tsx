@@ -32,10 +32,10 @@ export function EventDescription({ content }: { content: string }) {
   };
 
   for (const line of lines) {
-    const heading = line.match(/^(#{2,3})\s+(.+)$/);
+    const heading = line.match(/^(#{1,3})\s+(.+)$/);
     if (heading) {
       flushParagraph(); flushList();
-      const Tag = heading[1].length === 2 ? "h3" : "h4";
+      const Tag = heading[1].length === 1 ? "h2" : heading[1].length === 2 ? "h3" : "h4";
       blocks.push(<Tag key={`h-${blocks.length}`}>{renderInline(heading[2])}</Tag>);
     } else if (line.startsWith("- ")) {
       flushParagraph();

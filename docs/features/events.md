@@ -27,7 +27,7 @@ linked setlist requires `setlist.manage`; mutations require `event.manage`.
   agenda. In the event team, the connected person is identified by that icon
   and their name is emphasized.
 - Event descriptions support a deliberately small, safe Markdown subset:
-  emphasis, inline code, links, headings and bullet lists. The editor starts
+  emphasis, inline code, links, `#`/`##`/`###` headings and bullet lists. The editor starts
   new events with a practical template and offers a live preview.
 
 Calendar grids, recurrence, notifications, availability, reusable service roles,

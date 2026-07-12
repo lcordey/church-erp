@@ -5391,7 +5391,7 @@ a {
 .event-description > :first-child { margin-top: 0; }
 .event-description > :last-child { margin-bottom: 0; }
 .event-description p { margin: 0 0 1em; }
-.event-description h3, .event-description h4 { margin: 1.4em 0 .45em; font-family: var(--display); }
+.event-description h2, .event-description h3, .event-description h4 { margin: 1.4em 0 .45em; font-family: var(--display); }
 .event-description ul { margin: 0 0 1em; padding-left: 1.35em; }
 .event-description a { color: var(--accent); text-underline-offset: 2px; }
 .event-description code, .event-description-editor code { padding: .12em .3em; border-radius: 4px; background: var(--surface-hover); font-family: var(--mono); font-size: .9em; }
