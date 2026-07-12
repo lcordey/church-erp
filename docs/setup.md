@@ -105,8 +105,8 @@ Server-side PDF storage access uses:
 - `SUPABASE_SERVICE_ROLE_KEY`
 
 Persistent users, groups, and database-backed sessions replace the temporary
-shared login. Anonymous users keep public chord and setlist access but cannot
-read scores or events.
+shared login. Anonymous users keep public chord, setlist, and event read access
+but cannot read scores or use internal actions.
 
 A local database reset creates two temporary accounts:
 - `louange / louange` in the Louange group

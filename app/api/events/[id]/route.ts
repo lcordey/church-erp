@@ -1,11 +1,17 @@
+import { getActorFromRequest } from "@/src/infrastructure/auth/require-admin";
 import { eventErrorResponse, eventNotFoundResponse, invalidEventResponse } from "@/src/modules/events/http/event-response";
 import { deleteEvent, getEvent, updateEvent } from "@/src/modules/events/services/event-management";
 import { validateEventInput } from "@/src/modules/events/validation/event-input";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-export async function GET(_request: Request, { params }: RouteContext) {
-  try { const event = await getEvent((await params).id); return event ? Response.json({ data: event }) : eventNotFoundResponse(); }
+export async function GET(request: Request, { params }: RouteContext) {
+  try {
+    const actor = await getActorFromRequest(request);
+    const usableActor = actor?.mustChangePassword ? null : actor;
+    const event = await getEvent((await params).id, usableActor?.id ?? null);
+    return event ? Response.json({ data: event }) : eventNotFoundResponse();
+  }
   catch (error) { return eventErrorResponse(error); }
 }
 export async function PUT(request: Request, { params }: RouteContext) {

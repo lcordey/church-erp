@@ -2,11 +2,11 @@
 
 ## Product rules
 
-- Anonymous visitors keep the existing public song and setlist experience.
+- Anonymous visitors keep the existing public song, setlist, and event read experience.
 - Accounts use a case-insensitive login identifier and a separate display name.
 - Every account belongs to at least one fixed system group.
 - `worship` can read scores and manage songs, setlists, and events.
-- `admin` can read events and manage accounts and song taxonomies.
+- `admin` can manage accounts and song taxonomies.
 - Permissions from several groups are cumulative; Admin does not imply Louange.
 - Administrators cannot disable themselves, remove their own Admin membership, or remove the last active administrator.
 

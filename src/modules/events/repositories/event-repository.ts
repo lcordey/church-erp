@@ -6,8 +6,8 @@ import { eventAssignments, events, setlists, users } from "@/src/infrastructure/
 import type { EventDetail, EventInput, EventScope, EventSummary } from "../types/event";
 
 export interface EventRepository {
-  list(actorId: string, scope: EventScope): Promise<EventSummary[]>;
-  findById(id: string, actorId: string): Promise<EventDetail | null>;
+  list(actorId: string | null, scope: EventScope): Promise<EventSummary[]>;
+  findById(id: string, actorId: string | null): Promise<EventDetail | null>;
   create(input: EventInput, actorId: string): Promise<EventDetail>;
   update(id: string, input: EventInput, actorId: string): Promise<EventDetail | null>;
   delete(id: string): Promise<boolean>;
@@ -36,7 +36,7 @@ export function createEventRepository(): EventRepository {
       .orderBy(asc(users.displayName));
   }
 
-  async function list(actorId: string, scope: EventScope) {
+  async function list(actorId: string | null, scope: EventScope) {
     const rows = await database
       .select({ event: events, setlistId: setlists.id, setlistTitle: setlists.title })
       .from(events)
@@ -53,13 +53,13 @@ export function createEventRepository(): EventRepository {
           endsAt: row.event.endsAt,
           setlist: row.setlistId && row.setlistTitle ? { id: row.setlistId, title: row.setlistTitle } : null,
           assignmentCount: assigned.length,
-          isCurrentUserAssigned: assigned.some((item) => item.userId === actorId),
+          isCurrentUserAssigned: actorId ? assigned.some((item) => item.userId === actorId) : false,
         };
       })
       .filter((event) => scope === "all" || event.isCurrentUserAssigned);
   }
 
-  async function findById(id: string, actorId: string): Promise<EventDetail | null> {
+  async function findById(id: string, actorId: string | null): Promise<EventDetail | null> {
     const rows = await database
       .select({ event: events, setlistId: setlists.id, setlistTitle: setlists.title })
       .from(events)
@@ -77,7 +77,7 @@ export function createEventRepository(): EventRepository {
       notes: row.event.notes,
       setlist: row.setlistId && row.setlistTitle ? { id: row.setlistId, title: row.setlistTitle } : null,
       assignmentCount: assignments.length,
-      isCurrentUserAssigned: assignments.some((item) => item.userId === actorId),
+      isCurrentUserAssigned: actorId ? assignments.some((item) => item.userId === actorId) : false,
       assignments: assignments.map((assignment) => ({
         id: assignment.id,
         userId: assignment.userId,

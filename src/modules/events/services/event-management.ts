@@ -25,18 +25,18 @@ async function assertRelations(
 
 export async function listEvents(
   scope: EventScope,
+  actorId: string | null = null,
   repository: EventRepository = createEventRepository(),
 ) {
-  const actor = await requirePermission("event.read");
-  return repository.list(actor.id, scope);
+  return repository.list(actorId, scope);
 }
 
 export async function getEvent(
   id: string,
+  actorId: string | null = null,
   repository: EventRepository = createEventRepository(),
 ) {
-  const actor = await requirePermission("event.read");
-  return repository.findById(id, actor.id);
+  return repository.findById(id, actorId);
 }
 
 export async function createEvent(

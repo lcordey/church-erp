@@ -23,7 +23,7 @@ function EventCard({ event }: { event: EventSummary }) {
   );
 }
 
-export function EventIndex({ canManage, currentTime, initialEvents }: { canManage: boolean; currentTime: number; initialEvents: EventSummary[] }) {
+export function EventIndex({ canFilterMine, canManage, currentTime, initialEvents }: { canFilterMine: boolean; canManage: boolean; currentTime: number; initialEvents: EventSummary[] }) {
   const [scope, setScope] = useState<"all" | "mine">("all");
   const visible = useMemo(() => scope === "mine" ? initialEvents.filter((event) => event.isCurrentUserAssigned) : initialEvents, [initialEvents, scope]);
   const upcoming = visible.filter((event) => new Date(event.startsAt).getTime() >= currentTime).sort((a, b) => +new Date(a.startsAt) - +new Date(b.startsAt));
@@ -31,7 +31,7 @@ export function EventIndex({ canManage, currentTime, initialEvents }: { canManag
   return (
     <main className="event-page"><div className="event-shell">
       <AppTopBar actions={canManage ? <Link className="admin-button admin-button--primary" href="/events/nouveau">Ajouter</Link> : undefined} mode="public" />
-      <div className="event-hero"><div><p className="eyebrow">Agenda</p><h1>Événements</h1></div><div className="event-scope" role="group" aria-label="Filtrer les événements"><button aria-pressed={scope === "all"} onClick={() => setScope("all")} type="button">Tous</button><button aria-pressed={scope === "mine"} onClick={() => setScope("mine")} type="button">Mes services</button></div></div>
+      <div className="event-hero"><div><p className="eyebrow">Agenda</p><h1>Événements</h1></div>{canFilterMine ? <div className="event-scope" role="group" aria-label="Filtrer les événements"><button aria-pressed={scope === "all"} onClick={() => setScope("all")} type="button">Tous</button><button aria-pressed={scope === "mine"} onClick={() => setScope("mine")} type="button">Mes services</button></div> : null}</div>
       <section className="event-section"><h2>À venir</h2>{upcoming.length ? <div className="event-list">{upcoming.map((event) => <EventCard event={event} key={event.id} />)}</div> : <div className="empty-state"><p>Aucun événement à venir.</p></div>}</section>
       {past.length ? <section className="event-section event-section--past"><h2>Passés</h2><div className="event-list">{past.map((event) => <EventCard event={event} key={event.id} />)}</div></section> : null}
     </div></main>

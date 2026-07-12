@@ -95,7 +95,8 @@ Le MVP-1 est reussi s'il prouve que le projet peut :
 
 - les visiteurs publics ne peuvent lire que les chants publies
 - les visiteurs non connectes ne peuvent consulter que les accords et paroles
-- les PDF, MusicXML, événements et écritures sur les setlists exigent un compte autorisé
+- les PDF, MusicXML et écritures sur les setlists exigent un compte autorisé
+- les événements sont lisibles publiquement, avec des actions supplémentaires selon les permissions du compte connecté
 - les comptes connectes recoivent les permissions cumulees de leurs groupes Louange et Admin
 - les utilisateurs internes peuvent creer et modifier des chants
 - toutes les ecritures passent par des frontieres serveur

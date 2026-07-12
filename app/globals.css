@@ -5111,6 +5111,122 @@ a {
   box-shadow: 0 18px 46px rgb(var(--shadow-rgb) / 10%);
 }
 
+.event-detail {
+  display: grid;
+  gap: 28px;
+}
+
+.event-detail__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.event-detail__badge {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 8px 11px;
+  color: var(--accent);
+  background: var(--accent-tint);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.event-detail__menu {
+  position: relative;
+  top: auto;
+  right: auto;
+  transform: none;
+}
+
+.event-detail__menu .song-card__edit {
+  position: static;
+  transform: none;
+}
+
+.event-detail__menu .song-card__edit svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+.event-detail__meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+}
+
+.event-detail__meta > div {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--surface-hover);
+}
+
+.event-detail__meta dt {
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.event-detail__meta dd {
+  margin: 0;
+  font-weight: 750;
+  line-height: 1.35;
+  text-transform: capitalize;
+}
+
+.event-detail__meta .admin-button {
+  width: fit-content;
+  max-width: 100%;
+  text-transform: none;
+}
+
+.event-detail__notes {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.event-detail__empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.event-detail__assignments {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.event-detail__assignments li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-soft);
+  padding: 0 0 10px;
+}
+
+.event-detail__assignments strong {
+  font-weight: 800;
+}
+
+.event-detail__assignments span,
+.event-detail__assignments em {
+  color: var(--muted);
+  font-size: .84rem;
+  font-style: normal;
+}
+
 .event-form {
   display: grid;
   gap: 20px;
@@ -5171,6 +5287,16 @@ a {
     grid-column: 1;
     grid-row: auto;
     justify-self: start;
+  }
+
+  .event-detail__header,
+  .event-detail__assignments li {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .event-detail__meta {
+    grid-template-columns: 1fr;
   }
 }
 
