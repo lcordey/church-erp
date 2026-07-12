@@ -74,7 +74,7 @@ function EventCard({ canManage, event }: { canManage: boolean; event: EventSumma
           <span className="song-card__title event-card__title">{event.title}</span>
           <span className="song-card__metadata event-card__metadata">
             <span className="event-card__date">{formatter.format(new Date(event.startsAt))}</span>
-            <span>{event.assignmentCount} {event.assignmentCount > 1 ? "personnes" : "personne"} de service{event.setlist ? ` · ${event.setlist.title}` : ""}</span>
+            {event.setlist ? <span>{event.setlist.title}</span> : null}
             {event.isCurrentUserAssigned ? <em className="event-card__badge">Je suis de service</em> : null}
           </span>
         </span>

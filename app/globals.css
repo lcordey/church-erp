@@ -5080,20 +5080,6 @@ a {
   right: 8px;
 }
 
-.event-card--assigned .event-card__open {
-  color: inherit;
-}
-
-.event-card--assigned .event-card__open::before {
-  position: absolute;
-  top: 22px;
-  bottom: 22px;
-  left: 0;
-  width: 3px;
-  background: var(--accent);
-  content: "";
-}
-
 .event-section .empty-state {
   min-height: 180px;
   display: grid;
