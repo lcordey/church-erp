@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildCalendarDays } from "./date-time-picker";
+import { buildCalendarDays, formatTimeInput } from "./date-time-picker";
 
 describe("event calendar", () => {
   it("builds complete Monday-first calendar weeks", () => {
@@ -14,5 +14,13 @@ describe("event calendar", () => {
       inCurrentMonth: true,
     });
     expect(days[41].dateKey).toBe("2026-08-09");
+  });
+});
+
+describe("event time input", () => {
+  it("formats times in 24-hour notation", () => {
+    expect(formatTimeInput("9")).toBe("9");
+    expect(formatTimeInput("0930")).toBe("09:30");
+    expect(formatTimeInput("23:59")).toBe("23:59");
   });
 });

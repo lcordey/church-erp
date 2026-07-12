@@ -48,6 +48,11 @@ export function buildCalendarDays(year: number, month: number): CalendarDay[] {
   });
 }
 
+export function formatTimeInput(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 4);
+  return digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits;
+}
+
 function selectedParts(value: string) {
   const [date = "", time = ""] = value.split("T");
   const [year, month] = date.split("-").map(Number);
@@ -183,8 +188,13 @@ export function DateTimePicker({
               <span>Heure</span>
               <input
                 disabled={!selected.date}
-                onChange={(event) => onChange(`${selected.date}T${event.target.value}`)}
-                type="time"
+                inputMode="numeric"
+                maxLength={5}
+                onChange={(event) => onChange(`${selected.date}T${formatTimeInput(event.target.value)}`)}
+                pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]"
+                placeholder="HH:MM"
+                title="Saisir une heure entre 00:00 et 23:59"
+                type="text"
                 value={selected.time || defaultTime}
               />
             </label>

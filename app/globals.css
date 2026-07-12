@@ -5028,6 +5028,25 @@ a {
   margin-top: 34px;
 }
 
+.event-past-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 46px;
+  color: var(--muted);
+  font: 800 .72rem/1 var(--sans);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.event-past-divider::before,
+.event-past-divider::after {
+  height: 1px;
+  flex: 1;
+  background: var(--border-medium);
+  content: "";
+}
+
 .event-section h2,
 .event-detail h2 {
   margin: 0 0 14px;
@@ -5491,7 +5510,7 @@ a {
   text-transform: uppercase;
 }
 
-.date-time-picker__time-row input[type="time"] {
+.date-time-picker__time-row input {
   min-height: 40px;
   border: 1px solid var(--line);
   border-radius: 9px;

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
 
@@ -137,7 +137,7 @@ export function EventIndex({ canFilterMine, canManage, currentTime, initialEvent
     <main className="event-page"><div className="event-shell">
       <AppTopBar actions={canManage ? <Link aria-label="Créer un événement" className="icon-button icon-button--primary" href="/events/nouveau" title="Créer un événement"><PlusIcon /><span className="sr-only">Créer un événement</span></Link> : undefined} mode="public" />
       <div className="event-hero"><div><p className="eyebrow">Agenda</p><h1>Événements</h1></div>{canFilterMine ? <div className="event-scope" role="group" aria-label="Filtrer les événements"><button aria-pressed={scope === "all"} onClick={() => setScope("all")} type="button">Tous</button><button aria-pressed={scope === "mine"} onClick={() => setScope("mine")} type="button">Mes services</button></div> : null}</div>
-      {eventGroups.length ? eventGroups.map((group) => <section className="event-section" key={group.dateKey}><h2>{group.label}</h2><div className="event-list">{group.events.map((event) => <EventCard canManage={canManage} event={event} key={event.id} />)}</div></section>) : <section className="event-section"><div className="empty-state"><p>Aucun événement.</p></div></section>}
+      {eventGroups.length ? eventGroups.map((group, index) => <Fragment key={group.dateKey}>{group.isPast && !eventGroups[index - 1]?.isPast ? <div className="event-past-divider"><span>Événements passés</span></div> : null}<section className="event-section"><h2>{group.label}</h2><div className="event-list">{group.events.map((event) => <EventCard canManage={canManage} event={event} key={event.id} />)}</div></section></Fragment>) : <section className="event-section"><div className="empty-state"><p>Aucun événement.</p></div></section>}
     </div></main>
   );
 }
@@ -156,21 +156,22 @@ function groupEventsByDate(events: EventSummary[], currentTime: number) {
     groups.set(key, groupEvents);
   }
 
-  const toDateGroup = (key: string, groupEvents: EventSummary[]) => ({
+  const toDateGroup = (key: string, groupEvents: EventSummary[], isPast: boolean) => ({
     dateKey: key,
     events: groupEvents.sort(
       (a, b) => +new Date(a.startsAt) - +new Date(b.startsAt),
     ),
+    isPast,
     label: dayFormatter.format(new Date(groupEvents[0].startsAt)),
   });
 
   return [
     ...[...upcomingGroups.entries()]
       .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, groupEvents]) => toDateGroup(key, groupEvents)),
+      .map(([key, groupEvents]) => toDateGroup(key, groupEvents, false)),
     ...[...pastGroups.entries()]
       .sort(([left], [right]) => right.localeCompare(left))
-      .map(([key, groupEvents]) => toDateGroup(key, groupEvents)),
+      .map(([key, groupEvents]) => toDateGroup(key, groupEvents, true)),
   ];
 }
 
