@@ -13,6 +13,7 @@ type AppTopBarProps = {
   backIconOnly?: boolean;
   actions?: ReactNode;
   onViewModeChange?: (mode: "selection" | "edition") => void;
+  pendingViewMode?: "selection" | "edition" | null;
   showViewModeToggle?: boolean;
 };
 
@@ -24,6 +25,7 @@ export function AppTopBar({
   backIconOnly,
   actions,
   onViewModeChange,
+  pendingViewMode = null,
   showViewModeToggle = Boolean(onViewModeChange),
 }: AppTopBarProps) {
   const headerActions = useMemo(
@@ -35,11 +37,12 @@ export function AppTopBar({
             activeMode={activeViewMode}
             mode={mode}
             onModeChange={onViewModeChange}
+            pendingMode={pendingViewMode}
           />
         ) : null}
       </>
     ),
-    [actions, activeViewMode, mode, onViewModeChange, showViewModeToggle],
+    [actions, activeViewMode, mode, onViewModeChange, pendingViewMode, showViewModeToggle],
   );
 
   const headerConfig = useMemo(

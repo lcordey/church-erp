@@ -8,6 +8,7 @@ type ViewModeToggleProps = {
   mode: "public" | "admin";
   activeMode?: "selection" | "edition";
   onModeChange?: (mode: "selection" | "edition") => void;
+  pendingMode?: "selection" | "edition" | null;
 };
 
 function EyeIcon() {
@@ -32,9 +33,11 @@ export function ViewModeToggle({
   mode,
   activeMode,
   onModeChange,
+  pendingMode = null,
 }: ViewModeToggleProps) {
   const router = useRouter();
   const currentMode = activeMode ?? (mode === "admin" ? "edition" : "selection");
+  const isPending = pendingMode !== null;
 
   useEffect(() => {
     router.prefetch("/worship");
@@ -46,6 +49,7 @@ export function ViewModeToggle({
       <nav className="view-mode-toggle" aria-label="Mode d’affichage">
         <button
           aria-pressed={currentMode === "selection"}
+          disabled={isPending}
           onClick={() => {
             if (currentMode === "selection") {
               return;
@@ -56,11 +60,12 @@ export function ViewModeToggle({
           title="Mode lecture"
           type="button"
         >
-          <EyeIcon />
+          {pendingMode === "selection" ? <span aria-hidden="true" className="button-spinner" /> : <EyeIcon />}
           <span>Lecture</span>
         </button>
         <button
           aria-pressed={currentMode === "edition"}
+          disabled={isPending}
           onClick={() => {
             if (currentMode === "edition") {
               return;
@@ -71,7 +76,7 @@ export function ViewModeToggle({
           title="Mode édition"
           type="button"
         >
-          <EditIcon />
+          {pendingMode === "edition" ? <span aria-hidden="true" className="button-spinner" /> : <EditIcon />}
           <span>Édition</span>
         </button>
       </nav>

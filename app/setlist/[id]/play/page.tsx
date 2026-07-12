@@ -24,6 +24,9 @@ export default async function SetlistPlayPage({ params }: SetlistPlayPageProps) 
       canAccessScores={Boolean(
         actor && !actor.mustChangePassword && actor.permissions.includes("score.read"),
       )}
+      canManage={Boolean(
+        actor && !actor.mustChangePassword && actor.permissions.includes("setlist.manage"),
+      )}
       setlist={setlist}
     />
   );

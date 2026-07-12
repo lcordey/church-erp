@@ -11,6 +11,7 @@ import { ReorderItemActions } from "@/src/components/reorder-item-actions";
 import { formatSongCollectionAndAuthor } from "@/src/modules/songs/components/song-list-labels";
 import type { PublicSongSummary } from "@/src/modules/songs/types/public-song";
 import { useUnsavedChangesGuard } from "@/src/shared/hooks/use-unsaved-changes-guard";
+import { useViewModeNavigation } from "@/src/shared/hooks/use-view-mode-navigation";
 
 import type { SetlistDetail } from "../types/setlist";
 
@@ -275,6 +276,10 @@ export function SetlistEditor({
     isDirty,
     onSave: saveSetlist,
   });
+  const { navigateToViewMode, pendingViewMode, transitionStatus } = useViewModeNavigation({
+    detail: "La setlist est en cours de rechargement.",
+    subject: "de la setlist",
+  });
 
   const headerActions = useMemo(
     () => (
@@ -317,13 +322,15 @@ export function SetlistEditor({
           activeViewMode="edition"
           actions={headerActions}
           backHref="/setlist"
+          backIconOnly
           backLabel="Retour"
           mode="public"
           onViewModeChange={(mode) => {
             if (mode === "selection") {
-              void confirmNavigation(() => router.push(`/setlist/${initialSetlist.id}`));
+              void confirmNavigation(() => navigateToViewMode(mode, () => router.push(`/setlist/${initialSetlist.id}`)));
             }
           }}
+          pendingViewMode={pendingViewMode}
         />
 
         <section className="setlist-editor">
@@ -438,6 +445,7 @@ export function SetlistEditor({
         </section>
       </div>
       {dialog}
+      {transitionStatus}
       <PageTransitionStatus
         detail="L’ordre et les informations sont en cours d’enregistrement."
         isVisible={isSaving}

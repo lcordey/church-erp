@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/src/components/app-top-bar";
 import { SongDetailView } from "@/src/modules/songs/components/song-detail-view";
 import { SongNavigationActions } from "@/src/modules/songs/components/song-navigation-actions";
+import { useViewModeNavigation } from "@/src/shared/hooks/use-view-mode-navigation";
 
 import type { SetlistDetail } from "../types/setlist";
 
@@ -23,6 +24,10 @@ export function SetlistPlayer({
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
+  const { navigateToViewMode, pendingViewMode, transitionStatus } = useViewModeNavigation({
+    detail: "La setlist est en cours de rechargement.",
+    subject: "de la setlist",
+  });
   const currentItem = setlist.items[currentIndex];
 
   const goTo = useCallback(
@@ -67,19 +72,22 @@ export function SetlistPlayer({
         <div className="song-page__shell">
           <AppTopBar
             backHref="/setlist"
+            backIconOnly
             backLabel="Retour aux setlists"
             mode="public"
             activeViewMode="selection"
             onViewModeChange={canManage ? (mode) => {
               if (mode === "edition") {
-                router.push(`/setlist/${setlist.id}?mode=edition`);
+                navigateToViewMode(mode, () => router.push(`/setlist/${setlist.id}?mode=edition`));
               }
             } : undefined}
+            pendingViewMode={pendingViewMode}
           />
           <div className="empty-state">
             <p>Cette setlist ne contient pas encore de chant.</p>
           </div>
         </div>
+        {transitionStatus}
       </main>
     );
   }
@@ -107,13 +115,15 @@ export function SetlistPlayer({
           activeViewMode="selection"
           actions={headerActions}
           backHref="/setlist"
+          backIconOnly
           backLabel={setlist.title}
           mode="public"
           onViewModeChange={canManage ? (mode) => {
             if (mode === "edition") {
-              router.push(`/setlist/${setlist.id}?mode=edition`);
+              navigateToViewMode(mode, () => router.push(`/setlist/${setlist.id}?mode=edition`));
             }
           } : undefined}
+          pendingViewMode={pendingViewMode}
         />
         <SongDetailView
           canAccessScores={canAccessScores}
@@ -123,6 +133,7 @@ export function SetlistPlayer({
           song={currentItem.song}
         />
       </div>
+      {transitionStatus}
     </main>
   );
 }
