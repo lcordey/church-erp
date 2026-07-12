@@ -8,22 +8,28 @@ import { SongDetailView } from "@/src/modules/songs/components/song-detail-view"
 import { SongNavigationActions } from "@/src/modules/songs/components/song-navigation-actions";
 import { useViewModeNavigation } from "@/src/shared/hooks/use-view-mode-navigation";
 
-import type { SetlistDetail } from "../types/setlist";
+import type { SetlistDetail, SetlistItemNotes, SetlistTeamNote } from "../types/setlist";
+import { SetlistSongNotes } from "./setlist-song-notes";
 
 type SetlistPlayerProps = {
   canAccessScores: boolean;
   canManage?: boolean;
+  initialNotes?: SetlistItemNotes[];
   setlist: SetlistDetail;
 };
 
 export function SetlistPlayer({
   canAccessScores,
   canManage = false,
+  initialNotes = [],
   setlist,
 }: SetlistPlayerProps) {
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [notesByItemId, setNotesByItemId] = useState(
+    () => new Map(initialNotes.map((notes) => [notes.setlistItemId, notes])),
+  );
   const { navigateToViewMode, pendingViewMode, transitionStatus } = useViewModeNavigation({
     detail: "La setlist est en cours de rechargement.",
     subject: "de la setlist",
@@ -130,6 +136,38 @@ export function SetlistPlayer({
           eyebrow={`${setlist.title} · ${currentIndex + 1}/${setlist.items.length}`}
           key={`${currentItem.song.id}-${currentIndex}`}
           loginRedirectTo={`/setlist/${setlist.id}`}
+          notesPanel={canManage ? (
+            <SetlistSongNotes
+              key={currentItem.id}
+              notes={notesByItemId.get(currentItem.id)}
+              onPersonalNoteSaved={(personalNote) => {
+                setNotesByItemId((current) => {
+                  const next = new Map(current);
+                  const previous = next.get(currentItem.id);
+                  next.set(currentItem.id, {
+                    setlistItemId: currentItem.id,
+                    teamNote: previous?.teamNote ?? null,
+                    personalNote,
+                  });
+                  return next;
+                });
+              }}
+              onTeamNoteSaved={(teamNote: SetlistTeamNote | null) => {
+                setNotesByItemId((current) => {
+                  const next = new Map(current);
+                  const previous = next.get(currentItem.id);
+                  next.set(currentItem.id, {
+                    setlistItemId: currentItem.id,
+                    teamNote,
+                    personalNote: previous?.personalNote ?? null,
+                  });
+                  return next;
+                });
+              }}
+              setlistId={setlist.id}
+              setlistItemId={currentItem.id}
+            />
+          ) : undefined}
           song={currentItem.song}
         />
       </div>

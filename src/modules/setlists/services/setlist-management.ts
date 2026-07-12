@@ -4,11 +4,23 @@ import {
   createSetlistRepository,
   type SetlistRepository,
 } from "../repositories/setlist-repository";
-import type { SetlistDetail, SetlistInput, SetlistSummary } from "../types/setlist";
+import type {
+  SetlistDetail,
+  SetlistInput,
+  SetlistItemNotes,
+  SetlistSummary,
+  SetlistTeamNote,
+} from "../types/setlist";
 
 export class SetlistSongsNotPublishedError extends Error {
   constructor() {
     super("Setlists can only include published songs.");
+  }
+}
+
+export class SetlistItemNotFoundError extends Error {
+  constructor() {
+    super("Setlist item was not found.");
   }
 }
 
@@ -73,4 +85,49 @@ export async function deleteSetlist(
 ): Promise<boolean> {
   await requirePermission("setlist.manage");
   return repository.delete(id);
+}
+
+export async function getSetlistItemNotes(
+  setlistId: string,
+  repository: SetlistRepository = createSetlistRepository(),
+): Promise<SetlistItemNotes[]> {
+  const actor = await requirePermission("setlist.manage");
+  return repository.listItemNotes(setlistId, actor.id);
+}
+
+export async function updateSetlistItemTeamNote(
+  setlistId: string,
+  setlistItemId: string,
+  content: string,
+  repository: SetlistRepository = createSetlistRepository(),
+): Promise<SetlistTeamNote | null> {
+  const actor = await requirePermission("setlist.manage");
+  const result = await repository.updateTeamNote(
+    setlistId,
+    setlistItemId,
+    content.trim(),
+    actor.id,
+    actor.displayName,
+  );
+
+  if (result === undefined) throw new SetlistItemNotFoundError();
+  return result;
+}
+
+export async function updateSetlistItemPersonalNote(
+  setlistId: string,
+  setlistItemId: string,
+  content: string,
+  repository: SetlistRepository = createSetlistRepository(),
+): Promise<string | null> {
+  const actor = await requirePermission("setlist.manage");
+  const result = await repository.updatePersonalNote(
+    setlistId,
+    setlistItemId,
+    content.trim(),
+    actor.id,
+  );
+
+  if (result === undefined) throw new SetlistItemNotFoundError();
+  return result;
 }

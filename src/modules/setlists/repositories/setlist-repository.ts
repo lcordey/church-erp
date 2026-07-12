@@ -4,13 +4,22 @@ import { alias } from "drizzle-orm/pg-core";
 import { getDatabase } from "@/src/infrastructure/database/client";
 import {
   setlistItems,
+  setlistItemPersonalNotes,
+  setlistItemTeamNotes,
   setlists,
   songs,
   songSources,
+  users,
 } from "@/src/infrastructure/database/schema";
 import type { PublicSongDetail, SongMusicXmlSource, SongPdfSource } from "@/src/modules/songs/types/public-song";
 
-import type { SetlistDetail, SetlistInput, SetlistSummary } from "../types/setlist";
+import type {
+  SetlistDetail,
+  SetlistInput,
+  SetlistItemNotes,
+  SetlistSummary,
+  SetlistTeamNote,
+} from "../types/setlist";
 
 export interface SetlistRepository {
   listAll(): Promise<SetlistSummary[]>;
@@ -19,6 +28,20 @@ export interface SetlistRepository {
   update(id: string, input: SetlistInput): Promise<SetlistDetail | null>;
   delete(id: string): Promise<boolean>;
   listPublishedSongIds(songIds: string[]): Promise<Set<string>>;
+  listItemNotes(setlistId: string, userId: string): Promise<SetlistItemNotes[]>;
+  updateTeamNote(
+    setlistId: string,
+    setlistItemId: string,
+    content: string,
+    userId: string,
+    userDisplayName: string,
+  ): Promise<SetlistTeamNote | null | undefined>;
+  updatePersonalNote(
+    setlistId: string,
+    setlistItemId: string,
+    content: string,
+    userId: string,
+  ): Promise<string | null | undefined>;
 }
 
 const publishedSongCondition = eq(songs.status, "published");
@@ -314,16 +337,58 @@ export function createSetlistRepository(): SetlistRepository {
           return false;
         }
 
-        await transaction.delete(setlistItems).where(eq(setlistItems.setlistId, id));
+        const existingItems = await transaction
+          .select({ id: setlistItems.id, songId: setlistItems.songId })
+          .from(setlistItems)
+          .where(eq(setlistItems.setlistId, id))
+          .orderBy(asc(setlistItems.position));
+        const existingBySongId = new Map<string, string[]>();
 
-        if (input.songIds.length > 0) {
-          await transaction.insert(setlistItems).values(
-            input.songIds.map((songId, position) => ({
-              setlistId: id,
-              songId,
-              position,
-            })),
-          );
+        for (const item of existingItems) {
+          const items = existingBySongId.get(item.songId) ?? [];
+          items.push(item.id);
+          existingBySongId.set(item.songId, items);
+        }
+
+        const retainedItemIds = new Set<string>();
+        const itemUpdates: Array<{ id: string; position: number }> = [];
+        const itemInserts: Array<{ setlistId: string; songId: string; position: number }> = [];
+
+        input.songIds.forEach((songId, position) => {
+          const existingItemId = existingBySongId.get(songId)?.shift();
+
+          if (existingItemId) {
+            retainedItemIds.add(existingItemId);
+            itemUpdates.push({ id: existingItemId, position });
+          } else {
+            itemInserts.push({ setlistId: id, songId, position });
+          }
+        });
+
+        const removedItemIds = existingItems
+          .map((item) => item.id)
+          .filter((itemId) => !retainedItemIds.has(itemId));
+
+        if (itemUpdates.length > 0) {
+          await transaction
+            .update(setlistItems)
+            .set({ position: sql`${setlistItems.position} + ${existingItems.length + input.songIds.length}` })
+            .where(eq(setlistItems.setlistId, id));
+
+          for (const item of itemUpdates) {
+            await transaction
+              .update(setlistItems)
+              .set({ position: item.position })
+              .where(eq(setlistItems.id, item.id));
+          }
+        }
+
+        if (removedItemIds.length > 0) {
+          await transaction.delete(setlistItems).where(inArray(setlistItems.id, removedItemIds));
+        }
+
+        if (itemInserts.length > 0) {
+          await transaction.insert(setlistItems).values(itemInserts);
         }
 
         return true;
@@ -357,6 +422,96 @@ export function createSetlistRepository(): SetlistRepository {
         );
 
       return new Set(rows.map((row) => row.id));
+    },
+
+    async listItemNotes(setlistId, userId) {
+      const rows = await database
+        .select({
+          setlistItemId: setlistItems.id,
+          teamContent: setlistItemTeamNotes.content,
+          teamUpdatedAt: setlistItemTeamNotes.updatedAt,
+          teamUpdatedByDisplayName: users.displayName,
+          personalContent: setlistItemPersonalNotes.content,
+        })
+        .from(setlistItems)
+        .leftJoin(
+          setlistItemTeamNotes,
+          eq(setlistItemTeamNotes.setlistItemId, setlistItems.id),
+        )
+        .leftJoin(users, eq(setlistItemTeamNotes.updatedByUserId, users.id))
+        .leftJoin(
+          setlistItemPersonalNotes,
+          and(
+            eq(setlistItemPersonalNotes.setlistItemId, setlistItems.id),
+            eq(setlistItemPersonalNotes.userId, userId),
+          ),
+        )
+        .where(eq(setlistItems.setlistId, setlistId));
+
+      return rows.map((row) => ({
+        setlistItemId: row.setlistItemId,
+        teamNote: row.teamContent && row.teamUpdatedAt && row.teamUpdatedByDisplayName
+          ? {
+              content: row.teamContent,
+              updatedAt: row.teamUpdatedAt,
+              updatedByDisplayName: row.teamUpdatedByDisplayName,
+            }
+          : null,
+        personalNote: row.personalContent,
+      }));
+    },
+
+    async updateTeamNote(setlistId, setlistItemId, content, userId, userDisplayName) {
+      const [item] = await database
+        .select({ id: setlistItems.id })
+        .from(setlistItems)
+        .where(and(eq(setlistItems.id, setlistItemId), eq(setlistItems.setlistId, setlistId)))
+        .limit(1);
+
+      if (!item) return undefined;
+
+      if (!content) {
+        await database.delete(setlistItemTeamNotes).where(eq(setlistItemTeamNotes.setlistItemId, setlistItemId));
+        return null;
+      }
+
+      const updatedAt = new Date();
+      await database
+        .insert(setlistItemTeamNotes)
+        .values({ content, setlistItemId, updatedAt, updatedByUserId: userId })
+        .onConflictDoUpdate({
+          target: setlistItemTeamNotes.setlistItemId,
+          set: { content, updatedAt, updatedByUserId: userId },
+        });
+
+      return { content, updatedAt, updatedByDisplayName: userDisplayName };
+    },
+
+    async updatePersonalNote(setlistId, setlistItemId, content, userId) {
+      const [item] = await database
+        .select({ id: setlistItems.id })
+        .from(setlistItems)
+        .where(and(eq(setlistItems.id, setlistItemId), eq(setlistItems.setlistId, setlistId)))
+        .limit(1);
+
+      if (!item) return undefined;
+
+      if (!content) {
+        await database
+          .delete(setlistItemPersonalNotes)
+          .where(and(eq(setlistItemPersonalNotes.setlistItemId, setlistItemId), eq(setlistItemPersonalNotes.userId, userId)));
+        return null;
+      }
+
+      await database
+        .insert(setlistItemPersonalNotes)
+        .values({ content, setlistItemId, userId, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: [setlistItemPersonalNotes.setlistItemId, setlistItemPersonalNotes.userId],
+          set: { content, updatedAt: new Date() },
+        });
+
+      return content;
     },
   };
 }

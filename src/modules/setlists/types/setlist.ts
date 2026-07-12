@@ -22,3 +22,15 @@ export type SetlistInput = {
   title: string;
   songIds: string[];
 };
+
+export type SetlistTeamNote = {
+  content: string;
+  updatedAt: Date;
+  updatedByDisplayName: string;
+};
+
+export type SetlistItemNotes = {
+  setlistItemId: string;
+  teamNote: SetlistTeamNote | null;
+  personalNote: string | null;
+};

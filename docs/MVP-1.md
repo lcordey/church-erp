@@ -131,6 +131,7 @@ Livre :
 - partition PDF optionnelle stockee dans Supabase Storage et servie par route backend
 - partition MusicXML optionnelle stockee en base et rendue en mode `Partition`
 - creation, edition, suppression et lecture de setlists de chants publies
+- notes d'equipe et notes personnelles par occurrence de chant dans le lecteur de setlist
 - comptes persistants, groupes Louange/Admin et sessions revocables
 - evenements internes avec setlist, notes, affectations et filtre Mes services
 - migrations, seed, tests Vitest et smoke test HTTP

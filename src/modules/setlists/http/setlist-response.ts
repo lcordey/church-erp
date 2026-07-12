@@ -1,6 +1,9 @@
 import { authorizationBoundaryResponse } from "@/src/infrastructure/auth/require-admin";
 
-import { SetlistSongsNotPublishedError } from "../services/setlist-management";
+import {
+  SetlistItemNotFoundError,
+  SetlistSongsNotPublishedError,
+} from "../services/setlist-management";
 import type { SetlistValidationErrors } from "../validation/setlist-input";
 
 export function invalidSetlistResponse(fields: SetlistValidationErrors) {
@@ -28,6 +31,13 @@ export function setlistNotFoundResponse() {
   );
 }
 
+export function invalidSetlistNoteResponse(message: string) {
+  return Response.json(
+    { error: { code: "INVALID_SETLIST_NOTE", message } },
+    { status: 400 },
+  );
+}
+
 export function setlistErrorResponse(error: unknown) {
   const authorizationResponse = authorizationBoundaryResponse(error);
   if (authorizationResponse) return authorizationResponse;
@@ -37,6 +47,8 @@ export function setlistErrorResponse(error: unknown) {
       songIds: "Une setlist ne peut contenir que des chants publiés.",
     });
   }
+
+  if (error instanceof SetlistItemNotFoundError) return setlistNotFoundResponse();
 
   console.error(error);
 

@@ -107,6 +107,15 @@ function InfoIcon() {
   );
 }
 
+function NotesIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M6 4h12v16H6z" />
+      <path d="M9 9h6M9 13h6M9 17h4" />
+    </svg>
+  );
+}
+
 function DownloadIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -149,6 +158,7 @@ type SongDetailViewProps = {
   canAccessScores?: boolean;
   eyebrow?: string;
   loginRedirectTo?: string;
+  notesPanel?: ReactNode;
 };
 
 type FocusPinchGesture = {
@@ -191,6 +201,7 @@ export function SongDetailView({
   actions,
   canAccessScores = false,
   loginRedirectTo,
+  notesPanel,
 }: SongDetailViewProps) {
   const containerRef = useRef<HTMLElement>(null);
   const {
@@ -248,6 +259,7 @@ export function SongDetailView({
   );
   const [areSettingsVisible, setAreSettingsVisible] = useState(false);
   const [areDetailsVisible, setAreDetailsVisible] = useState(false);
+  const [areNotesVisible, setAreNotesVisible] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [musicXmlZoom, setMusicXmlZoom] = useState(1);
   const [pdfZoom, setPdfZoom] = useState(1);
@@ -266,6 +278,7 @@ export function SongDetailView({
       if (!isActive) {
         setAreDetailsVisible(false);
         setAreSettingsVisible(false);
+        setAreNotesVisible(false);
       }
     }
 
@@ -439,6 +452,7 @@ export function SongDetailView({
 
     setAreDetailsVisible(false);
     setAreSettingsVisible(false);
+    setAreNotesVisible(false);
     await containerRef.current.requestFullscreen();
   }
 
@@ -617,6 +631,18 @@ export function SongDetailView({
                 <SettingsIcon />
               </button>
             ) : null}
+            {notesPanel ? (
+              <button
+                aria-expanded={areNotesVisible}
+                aria-label={areNotesVisible ? "Masquer les notes" : "Afficher les notes"}
+                className="icon-button song-document-viewer__icon-button"
+                onClick={() => setAreNotesVisible((current) => !current)}
+                title={areNotesVisible ? "Masquer les notes" : "Afficher les notes"}
+                type="button"
+              >
+                <NotesIcon />
+              </button>
+            ) : null}
             <button
               aria-label="Activer le mode focus"
               className="icon-button song-document-viewer__icon-button"
@@ -700,6 +726,14 @@ export function SongDetailView({
               {"isEditable" in song && !song.isEditable ? (
                 <small>Source officielle</small>
               ) : null}
+            </aside>
+          ) : null}
+          {areNotesVisible && notesPanel ? (
+            <aside
+              aria-label="Notes du chant dans la setlist"
+              className="song-document-viewer__notes"
+            >
+              {notesPanel}
             </aside>
           ) : null}
         </header>

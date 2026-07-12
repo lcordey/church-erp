@@ -249,6 +249,58 @@ export const setlistItems = pgTable(
   ],
 );
 
+export const setlistItemTeamNotes = pgTable(
+  "setlist_item_team_notes",
+  {
+    setlistItemId: uuid("setlist_item_id")
+      .primaryKey()
+      .references(() => setlistItems.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    updatedByUserId: uuid("updated_by_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("setlist_item_team_notes_updated_by_user_id_index").on(
+      table.updatedByUserId,
+    ),
+    check(
+      "setlist_item_team_notes_content_not_blank",
+      sql`btrim(${table.content}) <> ''`,
+    ),
+  ],
+);
+
+export const setlistItemPersonalNotes = pgTable(
+  "setlist_item_personal_notes",
+  {
+    setlistItemId: uuid("setlist_item_id")
+      .notNull()
+      .references(() => setlistItems.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("setlist_item_personal_notes_item_user_unique").on(
+      table.setlistItemId,
+      table.userId,
+    ),
+    index("setlist_item_personal_notes_user_id_index").on(table.userId),
+    check(
+      "setlist_item_personal_notes_content_not_blank",
+      sql`btrim(${table.content}) <> ''`,
+    ),
+  ],
+);
+
 export const users = pgTable(
   "users",
   {
@@ -424,6 +476,8 @@ export type Setlist = typeof setlists.$inferSelect;
 export type NewSetlist = typeof setlists.$inferInsert;
 export type SetlistItem = typeof setlistItems.$inferSelect;
 export type NewSetlistItem = typeof setlistItems.$inferInsert;
+export type SetlistItemTeamNote = typeof setlistItemTeamNotes.$inferSelect;
+export type SetlistItemPersonalNote = typeof setlistItemPersonalNotes.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Group = typeof groups.$inferSelect;

@@ -71,6 +71,15 @@ function createRepository(publishedSongIds: string[]): SetlistRepository {
     async listPublishedSongIds(songIds) {
       return new Set(songIds.filter((songId) => publishedSongIds.includes(songId)));
     },
+    async listItemNotes() {
+      return [];
+    },
+    async updateTeamNote() {
+      return null;
+    },
+    async updatePersonalNote() {
+      return null;
+    },
   };
 }
 

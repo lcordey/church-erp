@@ -55,6 +55,9 @@ de les modifier, puis de les jouer en mode lecture.
 - lors du passage au chant suivant ou precedent, la source affichee est revalidee; si la source precedente n'existe pas sur le nouveau chant, le lecteur bascule automatiquement vers la meilleure source disponible selon la priorite globale
 - le mode lecture peut basculer en plein ecran focus pour n'afficher que le contenu du chant et une sortie minimaliste
 - les cartes de setlists ouvrent directement la lecture sans fleche ou indicateur d'ouverture dedie
+- dans le lecteur uniquement, chaque occurrence de chant peut contenir une note d'equipe et une note personnelle ; ces notes ne sont jamais affichees dans le repertoire
+- les notes exigent `setlist.manage`; la note d'equipe est partagee entre les membres Louange et la note personnelle reste privee a son auteur
+- le reordonnancement conserve les notes de chaque occurrence existante; retirer une occurrence supprime ses notes
 
 ## Tests
 

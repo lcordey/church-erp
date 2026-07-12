@@ -1977,6 +1977,79 @@ a {
   box-shadow: 0 16px 34px rgb(var(--shadow-rgb) / 24%);
 }
 
+.song-document-viewer__notes {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 12px;
+  z-index: 8;
+  width: min(520px, calc(100vw - 24px));
+  max-height: min(70vh, 680px);
+  overflow: auto;
+  border: 1px solid var(--accent-border);
+  border-radius: 16px;
+  color: var(--ink);
+  background: var(--surface-panel-start);
+  box-shadow: 0 16px 34px rgb(var(--shadow-rgb) / 24%);
+}
+
+.setlist-song-notes {
+  display: grid;
+  gap: 0;
+}
+
+.setlist-song-notes__section {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.setlist-song-notes__section + .setlist-song-notes__section {
+  border-top: 1px solid var(--border-soft);
+}
+
+.setlist-song-notes__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.setlist-song-notes__heading h3,
+.setlist-song-notes__heading p,
+.setlist-song-notes__heading small,
+.setlist-song-notes__message {
+  margin: 0;
+}
+
+.setlist-song-notes__heading h3 {
+  font-size: 0.94rem;
+}
+
+.setlist-song-notes__heading p,
+.setlist-song-notes__heading small,
+.setlist-song-notes__message {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.setlist-song-notes__heading small {
+  max-width: 190px;
+  text-align: right;
+}
+
+.setlist-song-notes textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.setlist-song-notes__section .admin-button {
+  justify-self: start;
+}
+
+.setlist-song-notes__message {
+  padding: 0 16px 16px;
+}
+
 .song-document-viewer__details > strong {
   display: block;
   margin-bottom: 14px;
@@ -2037,6 +2110,10 @@ a {
 
 .song-detail-view:fullscreen .song-document-viewer__toolbar,
 .song-detail-view:fullscreen .song-document-viewer__details {
+  display: none;
+}
+
+.song-detail-view:fullscreen .song-document-viewer__notes {
   display: none;
 }
 
