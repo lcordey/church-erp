@@ -7,9 +7,18 @@ import { AppTopBar } from "@/src/components/app-top-bar";
 
 import type { EventSummary } from "../types/event";
 
-const formatter = new Intl.DateTimeFormat("fr-FR", {
-  timeZone: "Europe/Paris", weekday: "long", day: "numeric", month: "long",
-  year: "numeric", hour: "2-digit", minute: "2-digit",
+const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
+  timeZone: "Europe/Paris",
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+
+const timeFormatter = new Intl.DateTimeFormat("fr-FR", {
+  timeZone: "Europe/Paris",
+  hour: "2-digit",
+  minute: "2-digit",
 });
 
 function PlusIcon() {
@@ -40,6 +49,7 @@ function stopEvent(event: {
 function EventCard({ canManage, event }: { canManage: boolean; event: EventSummary }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const hasMetadata = Boolean(event.setlist || event.isCurrentUserAssigned);
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -72,13 +82,17 @@ function EventCard({ canManage, event }: { canManage: boolean; event: EventSumma
   return (
     <article className={`song-card event-card${event.isCurrentUserAssigned ? " event-card--assigned" : ""}${isMenuOpen ? " song-card--menu-open event-card--menu-open" : ""}`}>
       <Link className="song-card__open event-card__open" href={`/events/${event.id}`}>
+        <time className="event-card__time" dateTime={new Date(event.startsAt).toISOString()}>
+          {timeFormatter.format(new Date(event.startsAt))}
+        </time>
         <span className="song-card__content event-card__content">
           <span className="song-card__title event-card__title">{event.title}</span>
-          <span className="song-card__metadata event-card__metadata">
-            <span className="event-card__date">{formatter.format(new Date(event.startsAt))}</span>
-            {event.setlist ? <span>{event.setlist.title}</span> : null}
-            {event.isCurrentUserAssigned ? <em className="event-card__badge">Je suis de service</em> : null}
-          </span>
+          {hasMetadata ? (
+            <span className="song-card__metadata event-card__metadata">
+              {event.setlist ? <span>{event.setlist.title}</span> : null}
+              {event.isCurrentUserAssigned ? <em className="event-card__badge">Je suis de service</em> : null}
+            </span>
+          ) : null}
         </span>
         {canManage ? <span className="song-card__action-space event-card__action-space" aria-hidden="true" /> : null}
       </Link>
@@ -119,20 +133,49 @@ function EventCard({ canManage, event }: { canManage: boolean; event: EventSumma
 export function EventIndex({ canFilterMine, canManage, currentTime, initialEvents }: { canFilterMine: boolean; canManage: boolean; currentTime: number; initialEvents: EventSummary[] }) {
   const [scope, setScope] = useState<"all" | "mine">("all");
   const visible = useMemo(() => scope === "mine" ? initialEvents.filter((event) => event.isCurrentUserAssigned) : initialEvents, [initialEvents, scope]);
-  const currentDateKey = dateKey(currentTime);
-  const today = visible.filter((event) => dateKey(event.startsAt) === currentDateKey).sort((a, b) => +new Date(a.startsAt) - +new Date(b.startsAt));
-  const upcoming = visible.filter((event) => dateKey(event.startsAt) > currentDateKey).sort((a, b) => +new Date(a.startsAt) - +new Date(b.startsAt));
-  const past = visible.filter((event) => dateKey(event.startsAt) < currentDateKey).sort((a, b) => +new Date(b.startsAt) - +new Date(a.startsAt));
+  const eventGroups = useMemo(() => groupEventsByDate(visible, currentTime), [currentTime, visible]);
+
   return (
     <main className="event-page"><div className="event-shell">
       <AppTopBar actions={canManage ? <Link aria-label="Créer un événement" className="icon-button icon-button--primary" href="/events/nouveau" title="Créer un événement"><PlusIcon /><span className="sr-only">Créer un événement</span></Link> : undefined} mode="public" />
       <div className="event-hero"><div><p className="eyebrow">Agenda</p><h1>Événements</h1></div>{canFilterMine ? <div className="event-scope" role="group" aria-label="Filtrer les événements"><button aria-pressed={scope === "all"} onClick={() => setScope("all")} type="button">Tous</button><button aria-pressed={scope === "mine"} onClick={() => setScope("mine")} type="button">Mes services</button></div> : null}</div>
-      <section className="event-section"><h2>Aujourd’hui</h2>{today.length ? <div className="event-list">{today.map((event) => <EventCard canManage={canManage} event={event} key={event.id} />)}</div> : <div className="empty-state"><p>Aucun événement aujourd’hui.</p></div>}</section>
-      <section className="event-section"><h2>À venir</h2>{upcoming.length ? <div className="event-list">{upcoming.map((event) => <EventCard canManage={canManage} event={event} key={event.id} />)}</div> : <div className="empty-state"><p>Aucun événement à venir.</p></div>}</section>
-      {past.length ? <section className="event-section event-section--past"><h2>Passés</h2><div className="event-list">{past.map((event) => <EventCard canManage={canManage} event={event} key={event.id} />)}</div></section> : null}
+      {eventGroups.length ? eventGroups.map((group) => <section className="event-section" key={group.dateKey}><h2>{group.label}</h2><div className="event-list">{group.events.map((event) => <EventCard canManage={canManage} event={event} key={event.id} />)}</div></section>) : <section className="event-section"><div className="empty-state"><p>Aucun événement.</p></div></section>}
     </div></main>
   );
 }
+
+function groupEventsByDate(events: EventSummary[], currentTime: number) {
+  const currentDateKey = dateKey(currentTime);
+  const upcomingGroups = new Map<string, EventSummary[]>();
+  const pastGroups = new Map<string, EventSummary[]>();
+
+  for (const event of events) {
+    const key = dateKey(event.startsAt);
+    const groups = key >= currentDateKey ? upcomingGroups : pastGroups;
+    const groupEvents = groups.get(key) ?? [];
+
+    groupEvents.push(event);
+    groups.set(key, groupEvents);
+  }
+
+  const toDateGroup = (key: string, groupEvents: EventSummary[]) => ({
+    dateKey: key,
+    events: groupEvents.sort(
+      (a, b) => +new Date(a.startsAt) - +new Date(b.startsAt),
+    ),
+    label: dayFormatter.format(new Date(groupEvents[0].startsAt)),
+  });
+
+  return [
+    ...[...upcomingGroups.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, groupEvents]) => toDateGroup(key, groupEvents)),
+    ...[...pastGroups.entries()]
+      .sort(([left], [right]) => right.localeCompare(left))
+      .map(([key, groupEvents]) => toDateGroup(key, groupEvents)),
+  ];
+}
+
 function dateKey(value: Date | string | number) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Paris",

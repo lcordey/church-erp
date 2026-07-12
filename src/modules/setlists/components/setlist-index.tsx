@@ -84,8 +84,10 @@ function SetlistCard({
       return;
     }
 
-    function handlePointerDown(event: MouseEvent) {
+    function handleDocumentClick(event: MouseEvent) {
       if (!menuRef.current?.contains(event.target as Node)) {
+        event.preventDefault();
+        event.stopPropagation();
         setIsMenuOpen(false);
       }
     }
@@ -96,11 +98,11 @@ function SetlistCard({
       }
     }
 
-    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("click", handleDocumentClick, true);
     document.addEventListener("keydown", handleEscape);
 
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("click", handleDocumentClick, true);
       document.removeEventListener("keydown", handleEscape);
     };
   }, [isMenuOpen]);

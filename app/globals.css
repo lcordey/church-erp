@@ -5056,7 +5056,7 @@ a {
 }
 
 .event-card__open {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(4.5rem, auto) minmax(0, 1fr) auto;
 }
 
 .event-card__metadata {
@@ -5066,7 +5066,16 @@ a {
   gap: 6px 10px;
 }
 
-.event-card__date {
+.event-card__time {
+  align-self: center;
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em;
+}
+
+.event-section h2 {
   text-transform: capitalize;
 }
 
@@ -5278,7 +5287,7 @@ a {
   }
 
   .event-card__open {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(3.8rem, auto) minmax(0, 1fr) auto;
   }
 
   .event-detail__header {
