@@ -23,6 +23,12 @@ linked setlist requires `setlist.manage`; mutations require `event.manage`.
 - The event detail page is read-only by default. Users with `event.manage` see
   an overflow menu with `Modifier l’événement`; users without that permission do
   not see the menu.
+- A person assigned to an event is identified by a small service icon in the
+  agenda. In the event team, the connected person is identified by that icon
+  and their name is emphasized.
+- Event descriptions support a deliberately small, safe Markdown subset:
+  emphasis, inline code, links, headings and bullet lists. The editor starts
+  new events with a practical template and offers a live preview.
 
 Calendar grids, recurrence, notifications, availability, reusable service roles,
 readings, and projected documents remain deferred. A future ordered agenda-item

@@ -40,6 +40,10 @@ function MoreIcon() {
   );
 }
 
+function ServiceIcon() {
+  return <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="5.5" r="2.2" /><path d="M8.5 20v-4.5l-2.5-4.2 1.7-1 2.3 3.2h4l2.3-3.2 1.7 1-2.5 4.2V20" /><path d="M12 9v4.5M12 9l-3.2 2.2M12 9l3.2 2.2" /></svg>;
+}
+
 function stopEvent(event: {
   stopPropagation: () => void;
 }) {
@@ -85,12 +89,7 @@ function EventCard({ canManage, event }: { canManage: boolean; event: EventSumma
           {timeFormatter.format(new Date(event.startsAt))}
         </time>
         <span className="song-card__content event-card__content">
-          <span className="song-card__title event-card__title">{event.title}</span>
-          {event.isCurrentUserAssigned ? (
-            <span className="song-card__metadata event-card__metadata">
-              <em className="event-card__badge">Je suis de service</em>
-            </span>
-          ) : null}
+          <span className="song-card__title event-card__title">{event.title}{event.isCurrentUserAssigned ? <span aria-label="Je suis de service" className="event-card__service-icon" role="img"><ServiceIcon /></span> : null}</span>
         </span>
         {canManage ? <span className="song-card__action-space event-card__action-space" aria-hidden="true" /> : null}
       </Link>
