@@ -59,6 +59,10 @@ function currentSection(pathname: string) {
     return "Setlists";
   }
 
+  if (pathname === "/events" || pathname.startsWith("/events/")) {
+    return "Événement";
+  }
+
   if (pathname === "/settings") {
     return "Réglages";
   }
@@ -81,6 +85,10 @@ function currentSectionHref(pathname: string) {
 
   if (pathname === "/setlist" || pathname.startsWith("/setlist/")) {
     return "/setlist";
+  }
+
+  if (pathname === "/events" || pathname.startsWith("/events/")) {
+    return "/events";
   }
 
   if (pathname === "/settings") {
