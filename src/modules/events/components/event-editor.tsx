@@ -114,6 +114,7 @@ export function EventEditor({ canManage, canOpenSetlist = false, canViewAssignme
     onSave: save,
   });
   const { navigateToViewMode, pendingViewMode, transitionStatus } = useViewModeNavigation({
+    activeMode: isEditing ? "edition" : "selection",
     detail: "L’événement est en cours de rechargement.",
     subject: "de l’événement",
   });
