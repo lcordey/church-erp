@@ -5043,7 +5043,16 @@ a {
 
 .event-card {
   min-height: 132px;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
   color: var(--ink);
+  background: transparent;
+  box-shadow: none;
+}
+
+.event-card--assigned {
+  background: transparent;
 }
 
 .event-card__open {
