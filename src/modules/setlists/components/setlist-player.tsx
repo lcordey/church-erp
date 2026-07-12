@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
 import { SongDetailView } from "@/src/modules/songs/components/song-detail-view";
@@ -10,13 +11,16 @@ import type { SetlistDetail } from "../types/setlist";
 
 type SetlistPlayerProps = {
   canAccessScores: boolean;
+  canManage?: boolean;
   setlist: SetlistDetail;
 };
 
 export function SetlistPlayer({
   canAccessScores,
+  canManage = false,
   setlist,
 }: SetlistPlayerProps) {
+  const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const currentItem = setlist.items[currentIndex];
@@ -65,6 +69,12 @@ export function SetlistPlayer({
             backHref="/setlist"
             backLabel="Retour aux setlists"
             mode="public"
+            activeViewMode="selection"
+            onViewModeChange={canManage ? (mode) => {
+              if (mode === "edition") {
+                router.push(`/setlist/${setlist.id}?mode=edition`);
+              }
+            } : undefined}
           />
           <div className="empty-state">
             <p>Cette setlist ne contient pas encore de chant.</p>
@@ -94,16 +104,22 @@ export function SetlistPlayer({
     >
       <div className="song-page__shell song-page__shell--immersive">
         <AppTopBar
+          activeViewMode="selection"
           actions={headerActions}
           backHref="/setlist"
           backLabel={setlist.title}
           mode="public"
+          onViewModeChange={canManage ? (mode) => {
+            if (mode === "edition") {
+              router.push(`/setlist/${setlist.id}?mode=edition`);
+            }
+          } : undefined}
         />
         <SongDetailView
           canAccessScores={canAccessScores}
           eyebrow={`${setlist.title} · ${currentIndex + 1}/${setlist.items.length}`}
           key={`${currentItem.song.id}-${currentIndex}`}
-          loginRedirectTo={`/setlist/${setlist.id}/play`}
+          loginRedirectTo={`/setlist/${setlist.id}`}
           song={currentItem.song}
         />
       </div>

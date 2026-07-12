@@ -278,56 +278,52 @@ export function SetlistEditor({
 
   const headerActions = useMemo(
     () => (
-      <>
-        <button
-          className="admin-button admin-button--primary"
-          onClick={() => {
-            void confirmNavigation(() =>
-              router.push(`/setlist/${initialSetlist.id}/play`),
-            );
-          }}
-          type="button"
-        >
-          Jouer
-        </button>
-        <button
-          className={
-            isDirty
-              ? "admin-button admin-button--primary admin-button--dirty"
-              : "admin-button"
-          }
-          disabled={isSaving}
-          onClick={() => {
-            void saveSetlist();
-          }}
-          type="button"
-        >
-          {isSaving
-            ? "Enregistrement…"
-            : isDirty
-              ? "Enregistrer •"
-              : "Enregistrer"}
-        </button>
-      </>
+      <button
+        className={
+          isDirty
+            ? "admin-button admin-button--primary admin-button--dirty"
+            : "admin-button"
+        }
+        disabled={isSaving}
+        onClick={() => {
+          void saveSetlist();
+        }}
+        type="button"
+      >
+        <span className="button-label">
+          {isSaving ? (
+            <span
+              aria-hidden="true"
+              className="button-spinner button-spinner--on-accent"
+            />
+          ) : null}
+          <span>
+            {isSaving
+              ? "Enregistrement…"
+              : isDirty
+                ? "Enregistrer •"
+                : "Enregistrer"}
+          </span>
+        </span>
+      </button>
     ),
-    [
-      confirmNavigation,
-      initialSetlist.id,
-      isDirty,
-      isSaving,
-      router,
-      saveSetlist,
-    ],
+    [isDirty, isSaving, saveSetlist],
   );
 
   return (
     <main className="setlist-page">
       <div className="setlist-shell setlist-shell--editor">
         <AppTopBar
+          activeViewMode="edition"
           actions={headerActions}
           backHref="/setlist"
           backLabel="Retour"
           mode="public"
+          onViewModeChange={(mode) => {
+            if (mode === "selection") {
+              void confirmNavigation(() => router.push(`/setlist/${initialSetlist.id}`));
+            }
+          }}
         />
 
         <section className="setlist-editor">
