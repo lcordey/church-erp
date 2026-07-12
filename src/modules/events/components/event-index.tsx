@@ -68,12 +68,16 @@ function EventCard({ canManage, event }: { canManage: boolean; event: EventSumma
   }, [isMenuOpen]);
 
   return (
-    <article className={`event-card${event.isCurrentUserAssigned ? " event-card--assigned" : ""}${isMenuOpen ? " event-card--menu-open" : ""}`}>
-      <Link className="event-card__open" href={`/events/${event.id}`}>
+    <article className={`song-card event-card${event.isCurrentUserAssigned ? " event-card--assigned" : ""}${isMenuOpen ? " song-card--menu-open event-card--menu-open" : ""}`}>
+      <Link className="song-card__open event-card__open" href={`/events/${event.id}`}>
         <span className="event-card__date">{formatter.format(new Date(event.startsAt))}</span>
-        <strong>{event.title}</strong>
-        <span>{event.assignmentCount} {event.assignmentCount > 1 ? "personnes" : "personne"} de service{event.setlist ? ` · ${event.setlist.title}` : ""}</span>
-        {event.isCurrentUserAssigned ? <em>Je suis de service</em> : null}
+        <span className="song-card__content event-card__content">
+          <span className="song-card__title event-card__title">{event.title}</span>
+          <span className="song-card__metadata event-card__metadata">
+            {event.assignmentCount} {event.assignmentCount > 1 ? "personnes" : "personne"} de service{event.setlist ? ` · ${event.setlist.title}` : ""}
+          </span>
+        </span>
+        {event.isCurrentUserAssigned ? <em className="event-card__badge">Je suis de service</em> : null}
         {canManage ? <span className="event-card__action-space" aria-hidden="true" /> : null}
       </Link>
       {canManage ? (
@@ -113,14 +117,27 @@ function EventCard({ canManage, event }: { canManage: boolean; event: EventSumma
 export function EventIndex({ canFilterMine, canManage, currentTime, initialEvents }: { canFilterMine: boolean; canManage: boolean; currentTime: number; initialEvents: EventSummary[] }) {
   const [scope, setScope] = useState<"all" | "mine">("all");
   const visible = useMemo(() => scope === "mine" ? initialEvents.filter((event) => event.isCurrentUserAssigned) : initialEvents, [initialEvents, scope]);
-  const upcoming = visible.filter((event) => new Date(event.startsAt).getTime() >= currentTime).sort((a, b) => +new Date(a.startsAt) - +new Date(b.startsAt));
-  const past = visible.filter((event) => new Date(event.startsAt).getTime() < currentTime).sort((a, b) => +new Date(b.startsAt) - +new Date(a.startsAt));
+  const currentDateKey = dateKey(currentTime);
+  const today = visible.filter((event) => dateKey(event.startsAt) === currentDateKey).sort((a, b) => +new Date(a.startsAt) - +new Date(b.startsAt));
+  const upcoming = visible.filter((event) => dateKey(event.startsAt) > currentDateKey).sort((a, b) => +new Date(a.startsAt) - +new Date(b.startsAt));
+  const past = visible.filter((event) => dateKey(event.startsAt) < currentDateKey).sort((a, b) => +new Date(b.startsAt) - +new Date(a.startsAt));
   return (
     <main className="event-page"><div className="event-shell">
       <AppTopBar actions={canManage ? <Link aria-label="Créer un événement" className="icon-button icon-button--primary" href="/events/nouveau" title="Créer un événement"><PlusIcon /><span className="sr-only">Créer un événement</span></Link> : undefined} mode="public" />
       <div className="event-hero"><div><p className="eyebrow">Agenda</p><h1>Événements</h1></div>{canFilterMine ? <div className="event-scope" role="group" aria-label="Filtrer les événements"><button aria-pressed={scope === "all"} onClick={() => setScope("all")} type="button">Tous</button><button aria-pressed={scope === "mine"} onClick={() => setScope("mine")} type="button">Mes services</button></div> : null}</div>
+      <section className="event-section"><h2>Aujourd’hui</h2>{today.length ? <div className="event-list">{today.map((event) => <EventCard canManage={canManage} event={event} key={event.id} />)}</div> : <div className="empty-state"><p>Aucun événement aujourd’hui.</p></div>}</section>
       <section className="event-section"><h2>À venir</h2>{upcoming.length ? <div className="event-list">{upcoming.map((event) => <EventCard canManage={canManage} event={event} key={event.id} />)}</div> : <div className="empty-state"><p>Aucun événement à venir.</p></div>}</section>
       {past.length ? <section className="event-section event-section--past"><h2>Passés</h2><div className="event-list">{past.map((event) => <EventCard canManage={canManage} event={event} key={event.id} />)}</div></section> : null}
     </div></main>
   );
+}
+function dateKey(value: Date | string | number) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(value));
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
 }

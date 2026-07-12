@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
 import type { SetlistSummary } from "@/src/modules/setlists/types/setlist";
@@ -19,67 +19,6 @@ const eventDateFormatter = new Intl.DateTimeFormat("fr-FR", {
   timeStyle: "short",
 });
 
-function MoreIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24">
-      <circle cx="5" cy="12" r="1.8" />
-      <circle cx="12" cy="12" r="1.8" />
-      <circle cx="19" cy="12" r="1.8" />
-    </svg>
-  );
-}
-
-function EventActionsMenu({ event }: { event: EventDetail }) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!isMenuOpen) return;
-
-    function handlePointerDown(event: MouseEvent) {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    }
-
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setIsMenuOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("keydown", handleEscape);
-
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isMenuOpen]);
-
-  return (
-    <div className="song-card__menu event-detail__menu" ref={menuRef}>
-      <button
-        aria-expanded={isMenuOpen}
-        aria-haspopup="menu"
-        aria-label={`Actions pour ${event.title}`}
-        className="song-card__edit"
-        onClick={() => setIsMenuOpen((current) => !current)}
-        type="button"
-      >
-        <MoreIcon />
-      </button>
-      {isMenuOpen ? (
-        <div className="song-card__menu-popover" role="menu">
-          <Link href={`/events/${event.id}?mode=edition`} role="menuitem">
-            Modifier l’événement
-          </Link>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 function localDateTimeValue(value: Date | string | null) {
   if (!value) return "";
   const date = new Date(value);
@@ -91,7 +30,7 @@ function localDateTimeValue(value: Date | string | null) {
   return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}`;
 }
 
-export function EventEditor({ canManage, canOpenSetlist = false, event, isEditing = false, setlists, users }: { canManage: boolean; canOpenSetlist?: boolean; event?: EventDetail; isEditing?: boolean; setlists: SetlistSummary[]; users: AssignableUser[] }) {
+export function EventEditor({ canManage, canOpenSetlist = false, canViewAssignments = false, event, isEditing = false, setlists, users }: { canManage: boolean; canOpenSetlist?: boolean; canViewAssignments?: boolean; event?: EventDetail; isEditing?: boolean; setlists: SetlistSummary[]; users: AssignableUser[] }) {
   const router = useRouter();
   const [title, setTitle] = useState(event?.title ?? "");
   const [startsAt, setStartsAt] = useState(event ? localDateTimeValue(event.startsAt) : "");
@@ -134,7 +73,7 @@ export function EventEditor({ canManage, canOpenSetlist = false, event, isEditin
   }
 
   if (event && !isEditing) {
-    return <main className="event-page"><div className="event-shell"><AppTopBar actions={canManage ? <EventActionsMenu event={event} /> : undefined} backHref="/events" backLabel="Retour aux événements" mode="public" /><article className="event-detail"><div className="event-detail__header"><div><p className="eyebrow">Événement</p><h1>{event.title}</h1></div>{event.isCurrentUserAssigned ? <span className="event-detail__badge">Je suis de service</span> : null}</div><dl className="event-detail__meta"><div><dt>Début</dt><dd>{eventDateFormatter.format(new Date(event.startsAt))}</dd></div>{event.endsAt ? <div><dt>Fin</dt><dd>{eventDateFormatter.format(new Date(event.endsAt))}</dd></div> : null}{event.setlist ? <div><dt>Setlist</dt><dd>{canOpenSetlist ? <Link className="admin-button admin-button--primary" href={`/setlist/${event.setlist.id}/play`}>Ouvrir la setlist « {event.setlist.title} »</Link> : event.setlist.title}</dd></div> : null}</dl><section><h2>Description</h2>{event.notes ? <p className="event-detail__notes">{event.notes}</p> : <p className="event-detail__empty">Aucune description renseignée.</p>}</section><section><h2>Équipe de service</h2>{event.assignments.length ? <ul className="event-detail__assignments">{event.assignments.map((assignment) => <li key={assignment.id}><strong>{assignment.displayName}</strong>{assignment.role ? <span>{assignment.role}</span> : null}{assignment.userStatus === "disabled" ? <em>Compte désactivé</em> : null}</li>)}</ul> : <p className="event-detail__empty">Aucune personne affectée.</p>}</section></article></div></main>;
+    return <main className="event-page"><div className="event-shell"><AppTopBar backHref="/events" backLabel="Retour aux événements" mode="public" /><article className="event-detail"><div className="event-detail__header"><div><p className="eyebrow">Événement</p><h1>{event.title}</h1></div>{event.isCurrentUserAssigned ? <span className="event-detail__badge">Je suis de service</span> : null}</div><dl className="event-detail__meta"><div><dt>Début</dt><dd>{eventDateFormatter.format(new Date(event.startsAt))}</dd></div>{event.endsAt ? <div><dt>Fin</dt><dd>{eventDateFormatter.format(new Date(event.endsAt))}</dd></div> : null}{event.setlist ? <div><dt>Setlist</dt><dd>{canOpenSetlist ? <Link className="admin-button admin-button--primary" href={`/setlist/${event.setlist.id}/play`}>Ouvrir la setlist « {event.setlist.title} »</Link> : event.setlist.title}</dd></div> : null}</dl><section><h2>Description</h2>{event.notes ? <p className="event-detail__notes">{event.notes}</p> : <p className="event-detail__empty">Aucune description renseignée.</p>}</section>{canViewAssignments ? <section><h2>Équipe de service</h2>{event.assignments.length ? <ul className="event-detail__assignments">{event.assignments.map((assignment) => <li key={assignment.id}><strong>{assignment.displayName}</strong>{assignment.role ? <span>{assignment.role}</span> : null}{assignment.userStatus === "disabled" ? <em>Compte désactivé</em> : null}</li>)}</ul> : <p className="event-detail__empty">Aucune personne affectée.</p>}</section> : null}</article></div></main>;
   }
 
   return <main className="event-page"><div className="event-shell"><AppTopBar backHref="/events" backLabel="Retour aux événements" mode="admin" /><form className="event-form" onSubmit={(formEvent) => { formEvent.preventDefault(); startTransition(() => { void save(); }); }}><div><p className="eyebrow">Agenda</p><h1>{event ? "Modifier l’événement" : "Nouvel événement"}</h1></div><label><span>Titre</span><input maxLength={160} onChange={(input) => setTitle(input.target.value)} required value={title} /></label><div className="event-form__dates"><DateTimePicker label="Début" onChange={setStartsAt} required value={startsAt} /><DateTimePicker defaultTime="10:00" label="Fin (optionnelle)" onChange={setEndsAt} value={endsAt} /></div><label><span>Notes</span><textarea maxLength={5000} onChange={(input) => setNotes(input.target.value)} rows={6} value={notes} /></label><label><span>Setlist</span><select onChange={(input) => setSetlistId(input.target.value)} value={setlistId}><option value="">Aucune setlist</option>{setlists.map((setlist) => <option key={setlist.id} value={setlist.id}>{setlist.title}</option>)}</select></label><fieldset className="event-assignees"><legend>Équipe de service</legend>{assignments.map((assignment, index) => <div className="event-assignee" key={assignment.userId}><label className="checkbox-row"><input checked={assignment.active} onChange={(input) => setAssignments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, active: input.target.checked } : item))} type="checkbox" /><span>{assignment.displayName} <small>@{assignment.username}</small></span></label>{assignment.active ? <input aria-label={`Rôle de ${assignment.displayName}`} maxLength={120} onChange={(input) => setAssignments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, role: input.target.value } : item))} placeholder="Rôle (optionnel)" value={assignment.role} /> : null}</div>)}</fieldset>{message ? <p className="form-message form-message--error">{message}</p> : null}<div className="admin-form__actions">{event ? <button className="admin-button admin-button--danger" disabled={isPending} onClick={() => startTransition(() => { void remove(); })} type="button">Supprimer</button> : null}<button className="admin-button admin-button--primary" disabled={isPending} type="submit">Enregistrer</button></div></form></div></main>;

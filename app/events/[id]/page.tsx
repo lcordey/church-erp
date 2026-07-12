@@ -15,16 +15,19 @@ export default async function EventPage({ params, searchParams }: { params: Prom
   const event = await getEvent(id, usableActor?.id ?? null);
   if (!event) notFound();
   const canManage = usableActor?.permissions.includes("event.manage") ?? false;
+  const canViewAssignments = Boolean(usableActor?.groupCodes.length);
   const isEditing = mode === "edition";
   if (isEditing && !actor) redirect(`/login?redirectTo=${encodeURIComponent(`/events/${id}?mode=edition`)}`);
   if (isEditing && actor?.mustChangePassword) redirect(`/password-change?redirectTo=${encodeURIComponent(`/events/${id}?mode=edition`)}`);
   if (isEditing && !canManage) redirect(`/events/${id}`);
   const [setlists, users] = canManage ? await Promise.all([listSetlists(), listAssignableUsers()]) : [[], []];
+  const visibleEvent = canViewAssignments || isEditing ? event : { ...event, assignments: [] };
   return (
     <EventEditor
       canManage={canManage}
       canOpenSetlist={usableActor?.permissions.includes("setlist.manage") ?? false}
-      event={event}
+      canViewAssignments={canViewAssignments}
+      event={visibleEvent}
       isEditing={isEditing}
       setlists={setlists}
       users={users}

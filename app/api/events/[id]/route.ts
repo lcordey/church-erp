@@ -10,7 +10,9 @@ export async function GET(request: Request, { params }: RouteContext) {
     const actor = await getActorFromRequest(request);
     const usableActor = actor?.mustChangePassword ? null : actor;
     const event = await getEvent((await params).id, usableActor?.id ?? null);
-    return event ? Response.json({ data: event }) : eventNotFoundResponse();
+    if (!event) return eventNotFoundResponse();
+    const canViewAssignments = Boolean(usableActor?.groupCodes.length);
+    return Response.json({ data: canViewAssignments ? event : { ...event, assignments: [] } });
   }
   catch (error) { return eventErrorResponse(error); }
 }
