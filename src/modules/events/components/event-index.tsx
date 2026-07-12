@@ -49,7 +49,6 @@ function stopEvent(event: {
 function EventCard({ canManage, event }: { canManage: boolean; event: EventSummary }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const hasMetadata = Boolean(event.setlist || event.isCurrentUserAssigned);
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -87,10 +86,9 @@ function EventCard({ canManage, event }: { canManage: boolean; event: EventSumma
         </time>
         <span className="song-card__content event-card__content">
           <span className="song-card__title event-card__title">{event.title}</span>
-          {hasMetadata ? (
+          {event.isCurrentUserAssigned ? (
             <span className="song-card__metadata event-card__metadata">
-              {event.setlist ? <span>{event.setlist.title}</span> : null}
-              {event.isCurrentUserAssigned ? <em className="event-card__badge">Je suis de service</em> : null}
+              <em className="event-card__badge">Je suis de service</em>
             </span>
           ) : null}
         </span>

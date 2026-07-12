@@ -101,8 +101,7 @@ export function EventEditor({ canManage, canOpenSetlist = false, canViewAssignme
       }
 
       setSavedSnapshot(currentSnapshot);
-      router.push(`/events/${payload.data.id}`);
-      router.refresh();
+      router.replace(`/events/${payload.data.id}`);
       return true;
     } finally {
       setIsSaving(false);
