@@ -1550,7 +1550,8 @@ a {
   }
 
   .identity-user-card__actions .admin-button {
-    width: 100%;
+    flex: 1 1 0;
+    width: auto;
   }
 }
 
@@ -5147,6 +5148,7 @@ a {
   .identity-user-card__actions {
     grid-column: 1;
     grid-row: auto;
+    flex-wrap: nowrap;
     justify-content: flex-start;
   }
 
