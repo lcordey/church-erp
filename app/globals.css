@@ -2661,6 +2661,43 @@ a {
   }
 }
 
+.notification-preferences {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 14px 0 0;
+  border: 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.notification-preferences legend {
+  padding: 0;
+  color: var(--ink);
+  font: 800 .78rem/1 var(--sans);
+}
+
+.notification-preferences .checkbox-row { align-items: flex-start; }
+.notification-preferences small { display: block; margin-top: 3px; color: var(--muted); font-weight: 500; }
+
+.push-notification-prompt {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 20;
+  display: grid;
+  max-width: min(420px, calc(100vw - 40px));
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--border-medium);
+  border-radius: 14px;
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 16%);
+}
+
+.push-notification-prompt p { margin: 5px 0 0; color: var(--muted); }
+.push-notification-prompt > div:last-child { display: flex; flex-wrap: wrap; gap: 8px; }
+
 .setlist-list {
   padding-top: 12px;
   padding-bottom: 70px;
@@ -5226,6 +5263,15 @@ a {
   gap: 20px;
 }
 
+.event-detail__date {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: clamp(.95rem, 2vw, 1.1rem);
+  font-weight: 700;
+  line-height: 1.45;
+  text-transform: capitalize;
+}
+
 .event-detail__badge {
   flex: 0 0 auto;
   border-radius: 999px;
@@ -5272,6 +5318,41 @@ a {
   width: fit-content;
   max-width: 100%;
   text-transform: none;
+}
+
+.event-detail__description,
+.event-detail__setlist {
+  border-top: 1px solid var(--border-soft);
+  padding-top: 24px;
+}
+
+.event-detail__setlist-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  width: min(100%, 460px);
+  border: 1px solid var(--border-medium);
+  border-radius: 10px;
+  padding: 13px 15px;
+  color: var(--ink);
+  background: var(--surface-hover);
+  font-size: .92rem;
+  font-weight: 750;
+  text-decoration: none;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.event-detail__setlist-link:hover {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+  transform: translateY(-1px);
+}
+
+.event-detail__setlist-link span:last-child {
+  color: var(--accent);
+  font-size: 1.2rem;
+  line-height: 1;
 }
 
 .event-detail__notes {

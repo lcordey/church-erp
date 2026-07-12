@@ -20,7 +20,7 @@ export async function notifyNewEventAssignments(event: EventDetail, userIds: str
         body: `Tu es de service pour « ${event.title} » le ${eventDateFormatter.format(event.startsAt)}.${roleText}`,
         url: `/events/${event.id}`,
         tag: `event-assignment-${event.id}`,
-      });
+      }, "event-assignment");
     }));
   } catch (error) {
     // The event has already been saved: notification transport must not roll it back.

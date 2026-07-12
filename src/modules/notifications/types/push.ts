@@ -7,7 +7,12 @@ export type PushSubscriptionInput = {
 export type StoredPushSubscription = PushSubscriptionInput & {
   id: string;
   userId: string;
+  preferences: PushNotificationPreferences;
 };
+
+export type PushNotificationType = "event-assignment" | "event-setlist";
+
+export type PushNotificationPreferences = Record<PushNotificationType, boolean>;
 
 export type PushMessage = {
   title: string;

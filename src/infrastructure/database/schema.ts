@@ -395,6 +395,8 @@ export const pushSubscriptions = pgTable(
     p256dh: text("p256dh").notNull(),
     auth: text("auth").notNull(),
     expirationTime: timestamp("expiration_time", { withTimezone: true }),
+    eventAssignmentEnabled: boolean("event_assignment_enabled").default(true).notNull(),
+    eventSetlistEnabled: boolean("event_setlist_enabled").default(true).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

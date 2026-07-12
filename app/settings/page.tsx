@@ -48,7 +48,13 @@ export default function SettingsPage() {
           <SongRenderPreferencesControls showDescription />
         </div>
 
-        <PushNotificationSettings />
+        <section className="settings-section settings-section--stacked">
+          <div>
+            <h2>Notifications</h2>
+            <p>Choisissez les alertes reçues sur cet appareil. Les types sont activés par défaut.</p>
+          </div>
+          <PushNotificationSettings />
+        </section>
         <PwaInstallSettings />
       </section>
     </main>

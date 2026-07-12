@@ -57,10 +57,16 @@ const baseInput: EventInput = {
 };
 
 describe("event assignment notifications", () => {
-  it("notifies every assignment created with an event", async () => {
+  it("notifies every assignment created with an event except its creator", async () => {
     const notify = vi.fn();
     await createEvent(baseInput, repository(), notify);
     expect(notify).toHaveBeenCalledWith(expect.objectContaining({ id: "event-id" }), ["alice"]);
+  });
+
+  it("does not notify the creator when they assign themselves", async () => {
+    const notify = vi.fn();
+    await createEvent({ ...baseInput, assignments: [{ userId: "actor-id", role: "Chant" }] }, repository(), notify);
+    expect(notify).toHaveBeenCalledWith(expect.anything(), []);
   });
 
   it("only notifies users newly added during an update", async () => {

@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { AppHeaderProvider, AppShellHeader } from "./app-header-context";
 import { PwaInstallBanner } from "./pwa-install-banner";
+import { PushNotificationPrompt } from "./push-notification-settings";
 import { getLoginHref } from "@/src/shared/navigation/login-redirect";
 import type { AuthenticatedActor, Permission } from "@/src/modules/identity/types/identity";
 
@@ -165,6 +166,7 @@ export function AppShell({ children, actor }: AppShellProps) {
             onToggleMenu={() => setIsOpen((current) => !current)}
           />
           {children}
+          {actor ? <PushNotificationPrompt /> : null}
           <PwaInstallBanner />
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { requirePermission } from "@/src/infrastructure/auth/require-admin";
 import { notifyNewEventAssignments } from "@/src/modules/notifications/services/event-assignment-notifications";
+import { notifyEventSetlistChange } from "@/src/modules/notifications/services/event-setlist-notifications";
 
 import { createEventRepository, type EventRepository } from "../repositories/event-repository";
 import type { EventInput, EventScope } from "../types/event";
@@ -47,7 +48,7 @@ export async function createEvent(
   const actor = await requirePermission("event.manage");
   await assertRelations(input, repository);
   const event = await repository.create(input, actor.id);
-  await notifyAssignments(event, input.assignments.map((assignment) => assignment.userId));
+  await notifyAssignments(event, input.assignments.map((assignment) => assignment.userId).filter((userId) => userId !== actor.id));
   return event;
 }
 
@@ -56,6 +57,7 @@ export async function updateEvent(
   input: EventInput,
   repository: EventRepository = createEventRepository(),
   notifyAssignments = notifyNewEventAssignments,
+  notifySetlistChange = notifyEventSetlistChange,
 ) {
   const actor = await requirePermission("event.manage");
   const existing = await repository.findById(id, actor.id);
@@ -66,7 +68,12 @@ export async function updateEvent(
   if (event) {
     await notifyAssignments(event, input.assignments
       .map((assignment) => assignment.userId)
-      .filter((userId) => !existingIds.has(userId)));
+      .filter((userId) => !existingIds.has(userId) && userId !== actor.id));
+    if (existing.setlist?.id !== event.setlist?.id) {
+      await notifySetlistChange(event, existing.setlist?.title ?? null, event.assignments
+        .map((assignment) => assignment.userId)
+        .filter((userId) => userId !== actor.id));
+    }
   }
   return event;
 }

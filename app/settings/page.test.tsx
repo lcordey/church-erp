@@ -17,7 +17,9 @@ describe("settings page", () => {
       markup.indexOf("<h2>Lecture des chants</h2>"),
     );
     expect(markup).toContain("Installer l’application");
-    expect(markup).toContain("Notifications de service");
+    expect(markup).toContain("Notifications");
+    expect(markup).toContain("Ajout à un événement");
+    expect(markup).toContain("Setlist d’un événement");
     expect(markup).toContain("Activer les notifications");
   });
 });

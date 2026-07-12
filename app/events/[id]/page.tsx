@@ -25,6 +25,7 @@ export default async function EventPage({ params, searchParams }: { params: Prom
   return (
     <EventEditor
       canManage={canManage}
+      currentUserId={usableActor?.id}
       canOpenSetlist={usableActor?.permissions.includes("setlist.manage") ?? false}
       canViewAssignments={canViewAssignments}
       event={visibleEvent}

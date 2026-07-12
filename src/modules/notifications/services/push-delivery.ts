@@ -1,7 +1,7 @@
 import webPush from "web-push";
 
 import { createPushSubscriptionRepository, type PushSubscriptionRepository } from "../repositories/push-subscription-repository";
-import type { PushMessage } from "../types/push";
+import type { PushMessage, PushNotificationType } from "../types/push";
 
 function vapidDetails() {
   const subject = process.env.WEB_PUSH_VAPID_SUBJECT?.trim();
@@ -13,12 +13,13 @@ function vapidDetails() {
 export async function sendPushToUsers(
   userIds: string[],
   message: PushMessage,
+  notificationType: PushNotificationType,
   repository: PushSubscriptionRepository = createPushSubscriptionRepository(),
 ) {
   const details = vapidDetails();
   if (!details || !userIds.length) return;
   const subscriptions = await repository.listForUsers([...new Set(userIds)]);
-  await Promise.allSettled(subscriptions.map(async (subscription) => {
+  await Promise.allSettled(subscriptions.filter((subscription) => subscription.preferences[notificationType]).map(async (subscription) => {
     try {
       await webPush.sendNotification(subscription, JSON.stringify(message), {
         TTL: 86_400,

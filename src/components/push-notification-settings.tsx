@@ -2,6 +2,16 @@
 
 import { useEffect, useState } from "react";
 
+type NotificationPreferences = {
+  "event-assignment": boolean;
+  "event-setlist": boolean;
+};
+
+const defaultPreferences: NotificationPreferences = {
+  "event-assignment": true,
+  "event-setlist": true,
+};
+
 type NotificationState =
   | "checking"
   | "available"
@@ -31,6 +41,8 @@ async function saveSubscription(subscription: PushSubscription) {
 export function PushNotificationSettings() {
   const [state, setState] = useState<NotificationState>("checking");
   const [publicKey, setPublicKey] = useState("");
+  const [endpoint, setEndpoint] = useState("");
+  const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,8 +59,15 @@ export function PushNotificationSettings() {
       }
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        const preferencesResponse = await fetch(`/api/push/subscriptions?endpoint=${encodeURIComponent(subscription.endpoint)}`);
+        const preferencesPayload = await preferencesResponse.json().catch(() => null) as { data?: { preferences?: NotificationPreferences } | null } | null;
+        if (!preferencesPayload?.data) await saveSubscription(subscription);
+        if (!cancelled && preferencesPayload?.data?.preferences) setPreferences(preferencesPayload.data.preferences);
+      }
       if (!cancelled) {
         setPublicKey(payload.data.publicKey);
+        setEndpoint(subscription?.endpoint ?? "");
         setState(Notification.permission === "denied" ? "denied" : subscription ? "enabled" : "available");
       }
     };
@@ -76,6 +95,7 @@ export function PushNotificationSettings() {
         return;
       }
       if (!response.ok) throw new Error("Subscription rejected");
+      setEndpoint(subscription.endpoint);
       setState("enabled");
     } catch {
       setState("error");
@@ -96,6 +116,7 @@ export function PushNotificationSettings() {
         await subscription.unsubscribe();
       }
       setState("available");
+      setEndpoint("");
     } catch {
       setState("error");
     }
@@ -114,10 +135,21 @@ export function PushNotificationSettings() {
   };
 
   const canEnable = state === "available" || state === "login-required" || state === "error";
+  const updatePreference = async (type: keyof NotificationPreferences, enabled: boolean) => {
+    if (!endpoint) return;
+    const nextPreferences = { ...preferences, [type]: enabled };
+    setPreferences(nextPreferences);
+    const response = await fetch("/api/push/subscriptions", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint, preferences: nextPreferences }),
+    });
+    if (!response.ok) setPreferences(preferences);
+  };
   return (
-    <div className="settings-section settings-section--application">
+    <div className="settings-section settings-section--stacked">
       <div>
-        <h2>Notifications de service</h2>
+        <h3>Sur cet appareil</h3>
         <p aria-live="polite">{descriptions[state]}</p>
       </div>
       <button
@@ -128,6 +160,60 @@ export function PushNotificationSettings() {
       >
         {state === "enabled" ? "Désactiver" : state === "working" ? "Mise à jour…" : "Activer les notifications"}
       </button>
+      <fieldset className="notification-preferences">
+        <legend>Types de notifications</legend>
+        <label className="checkbox-row">
+          <input checked={preferences["event-assignment"]} disabled={state !== "enabled"} onChange={(event) => void updatePreference("event-assignment", event.target.checked)} type="checkbox" />
+          <span><strong>Ajout à un événement</strong><small>Quand tu es ajouté(e) à une équipe de service.</small></span>
+        </label>
+        <label className="checkbox-row">
+          <input checked={preferences["event-setlist"]} disabled={state !== "enabled"} onChange={(event) => void updatePreference("event-setlist", event.target.checked)} type="checkbox" />
+          <span><strong>Setlist d’un événement</strong><small>Quand la setlist d’un de tes services est ajoutée, remplacée ou retirée.</small></span>
+        </label>
+      </fieldset>
     </div>
   );
+}
+
+export function PushNotificationPrompt() {
+  const [publicKey, setPublicKey] = useState("");
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function check() {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return;
+      const response = await fetch("/api/push/config");
+      const payload = await response.json() as { data?: { configured?: boolean; publicKey?: string } };
+      if (!payload.data?.configured || !payload.data.publicKey || Notification.permission === "denied") return;
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        const subscriptionResponse = await fetch(`/api/push/subscriptions?endpoint=${encodeURIComponent(subscription.endpoint)}`);
+        const subscriptionPayload = await subscriptionResponse.json().catch(() => null) as { data?: unknown } | null;
+        if (!subscriptionPayload?.data) await saveSubscription(subscription);
+      }
+      if (!cancelled && !subscription) {
+        setPublicKey(payload.data.publicKey);
+        setVisible(true);
+      }
+    }
+    void check();
+    return () => { cancelled = true; };
+  }, []);
+
+  const enable = async () => {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") { setVisible(false); return; }
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: applicationServerKey(publicKey) });
+    const response = await saveSubscription(subscription);
+    if (response.ok) setVisible(false);
+  };
+
+  if (!visible) return null;
+  return <aside className="push-notification-prompt" role="status">
+    <div><strong>Activer les notifications ?</strong><p>Reçois les nouveaux services et les changements de setlist sur cet appareil.</p></div>
+    <div><button className="admin-button admin-button--primary" onClick={() => void enable()} type="button">Activer</button><button className="admin-button admin-button--quiet" onClick={() => setVisible(false)} type="button">Plus tard</button></div>
+  </aside>;
 }

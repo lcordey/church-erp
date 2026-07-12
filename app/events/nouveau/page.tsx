@@ -11,5 +11,5 @@ export default async function NewEventPage() {
   if (actor.mustChangePassword) redirect("/password-change?redirectTo=/events/nouveau");
   if (!actor.permissions.includes("event.manage")) redirect("/events");
   const [setlists, users] = await Promise.all([listSetlists(), listAssignableUsers()]);
-  return <EventEditor canManage setlists={setlists} users={users} />;
+  return <EventEditor canManage currentUserId={actor.id} setlists={setlists} users={users} />;
 }

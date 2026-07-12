@@ -3,13 +3,15 @@ import { and, eq, inArray } from "drizzle-orm";
 import { getDatabase } from "@/src/infrastructure/database/client";
 import { pushSubscriptions } from "@/src/infrastructure/database/schema";
 
-import type { PushSubscriptionInput, StoredPushSubscription } from "../types/push";
+import type { PushNotificationPreferences, PushSubscriptionInput, StoredPushSubscription } from "../types/push";
 
 export interface PushSubscriptionRepository {
   upsert(userId: string, input: PushSubscriptionInput): Promise<void>;
   deleteForUser(userId: string, endpoint: string): Promise<void>;
   deleteById(id: string): Promise<void>;
   listForUsers(userIds: string[]): Promise<StoredPushSubscription[]>;
+  findForUser(userId: string, endpoint: string): Promise<StoredPushSubscription | null>;
+  updatePreferences(userId: string, endpoint: string, preferences: PushNotificationPreferences): Promise<StoredPushSubscription | null>;
 }
 
 export function createPushSubscriptionRepository(): PushSubscriptionRepository {
@@ -52,7 +54,32 @@ export function createPushSubscriptionRepository(): PushSubscriptionRepository {
         endpoint: row.endpoint,
         expirationTime: row.expirationTime?.getTime() ?? null,
         keys: { p256dh: row.p256dh, auth: row.auth },
+        preferences: {
+          "event-assignment": row.eventAssignmentEnabled,
+          "event-setlist": row.eventSetlistEnabled,
+        },
       }));
+    },
+    async findForUser(userId, endpoint) {
+      const rows = await database.select().from(pushSubscriptions).where(and(
+        eq(pushSubscriptions.userId, userId),
+        eq(pushSubscriptions.endpoint, endpoint),
+      )).limit(1);
+      const row = rows[0];
+      return row ? {
+        id: row.id, userId: row.userId, endpoint: row.endpoint,
+        expirationTime: row.expirationTime?.getTime() ?? null,
+        keys: { p256dh: row.p256dh, auth: row.auth },
+        preferences: { "event-assignment": row.eventAssignmentEnabled, "event-setlist": row.eventSetlistEnabled },
+      } : null;
+    },
+    async updatePreferences(userId, endpoint, preferences) {
+      await database.update(pushSubscriptions).set({
+        eventAssignmentEnabled: preferences["event-assignment"],
+        eventSetlistEnabled: preferences["event-setlist"],
+        updatedAt: new Date(),
+      }).where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.endpoint, endpoint)));
+      return this.findForUser(userId, endpoint);
     },
   };
 }

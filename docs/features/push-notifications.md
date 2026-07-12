@@ -2,14 +2,24 @@
 
 ## Périmètre livré
 
-Un utilisateur connecté peut activer les notifications depuis « Réglages » sur
-chaque appareil compatible. Lorsqu’il est nouvellement ajouté à l’équipe d’un
-événement, tous ses appareils abonnés reçoivent une notification. Un toucher
-ouvre directement la fiche de l’événement.
+Un utilisateur connecté se voit proposer l’activation des notifications sur
+chaque nouvel appareil compatible. Il peut aussi les activer ou les désactiver
+depuis « Réglages ». L’autorisation et l’abonnement restent propres à l’appareil
+: le même compte peut donc être abonné à la fois sur son téléphone et son iPad.
 
-La notification n’est pas renvoyée lors d’une simple modification de
-l’événement ou du rôle d’une personne déjà affectée. Un échec du fournisseur
-push ne bloque jamais l’enregistrement de l’événement.
+Les catégories suivantes sont activées par défaut sur chaque nouvel abonnement :
+
+- ajout à l’équipe d’un événement ;
+- ajout, remplacement ou retrait de la setlist d’un événement auquel
+  l’utilisateur est affecté.
+
+Chaque catégorie peut être désactivée indépendamment dans « Réglages ». Un
+toucher ouvre directement la fiche de l’événement.
+
+La notification d’affectation n’est pas renvoyée lors d’une simple modification
+de l’événement ou du rôle d’une personne déjà affectée. La personne qui crée ou
+modifie l’événement n’est pas notifiée par cette modification. Un échec du
+fournisseur push ne bloque jamais l’enregistrement de l’événement.
 
 ## Sécurité et données
 
@@ -26,5 +36,5 @@ Push hors mode installé.
 
 ## Hors périmètre
 
-Les rappels programmés, notifications de modification/annulation, préférences
-par type, e-mails et centre de notifications seront ajoutés ultérieurement.
+Les rappels programmés, notifications de modification/annulation hors setlist,
+e-mails et centre de notifications seront ajoutés ultérieurement.
