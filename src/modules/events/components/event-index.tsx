@@ -7,18 +7,16 @@ import { AppTopBar } from "@/src/components/app-top-bar";
 
 import type { EventSummary } from "../types/event";
 
-const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
-  timeZone: "Europe/Paris",
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-});
-
 const timeFormatter = new Intl.DateTimeFormat("fr-FR", {
   timeZone: "Europe/Paris",
   hour: "2-digit",
   minute: "2-digit",
+});
+
+const cardDateFormatter = new Intl.DateTimeFormat("fr-FR", {
+  timeZone: "Europe/Paris",
+  day: "numeric",
+  month: "short",
 });
 
 function PlusIcon() {
@@ -86,7 +84,10 @@ function EventCard({ canManage, event }: { canManage: boolean; event: EventSumma
     <article className={`song-card event-card${event.isCurrentUserAssigned ? " event-card--assigned" : ""}${isMenuOpen ? " song-card--menu-open event-card--menu-open" : ""}`}>
       <Link className="song-card__open event-card__open" href={`/events/${event.id}`}>
         <time className="event-card__time" dateTime={new Date(event.startsAt).toISOString()}>
-          {timeFormatter.format(new Date(event.startsAt))}
+          <span className="event-card__date">
+            {cardDateFormatter.format(new Date(event.startsAt))}
+          </span>
+          <span>{timeFormatter.format(new Date(event.startsAt))}</span>
         </time>
         <span className="song-card__content event-card__content">
           <span className="song-card__title event-card__title">{event.title}{event.isCurrentUserAssigned ? <span aria-label="Je suis de service" className="event-card__service-icon" role="img"><ServiceIcon /></span> : null}</span>
@@ -136,7 +137,7 @@ export function EventIndex({ canFilterMine, canManage, currentTime, initialEvent
     <main className="event-page"><div className="event-shell">
       <AppTopBar actions={canManage ? <Link aria-label="Créer un événement" className="icon-button icon-button--primary" href="/events/nouveau" title="Créer un événement"><PlusIcon /><span className="sr-only">Créer un événement</span></Link> : undefined} mode="public" />
       <div className="event-hero"><div><p className="eyebrow">Agenda</p><h1>Événements</h1></div>{canFilterMine ? <div className="event-scope" role="group" aria-label="Filtrer les événements"><button aria-pressed={scope === "all"} onClick={() => setScope("all")} type="button">Tous</button><button aria-pressed={scope === "mine"} onClick={() => setScope("mine")} type="button">Mes services</button></div> : null}</div>
-      {eventGroups.length ? eventGroups.map((group, index) => <Fragment key={group.dateKey}>{group.isPast && !eventGroups[index - 1]?.isPast ? <div className="event-past-divider"><span>Événements passés</span></div> : null}<section className="event-section"><h2>{group.label}</h2><div className="event-list">{group.events.map((event) => <EventCard canManage={canManage} event={event} key={event.id} />)}</div></section></Fragment>) : <section className="event-section"><div className="empty-state"><p>Aucun événement.</p></div></section>}
+      {eventGroups.length ? <div className="event-list">{eventGroups.map((group, index) => <Fragment key={group.dateKey}>{group.isPast && !eventGroups[index - 1]?.isPast ? <div className="event-past-divider"><span>Événements passés</span></div> : null}{group.events.map((event) => <EventCard canManage={canManage} event={event} key={event.id} />)}</Fragment>)}</div> : <section className="event-section"><div className="empty-state"><p>Aucun événement.</p></div></section>}
     </div></main>
   );
 }
@@ -161,7 +162,6 @@ function groupEventsByDate(events: EventSummary[], currentTime: number) {
       (a, b) => +new Date(a.startsAt) - +new Date(b.startsAt),
     ),
     isPast,
-    label: dayFormatter.format(new Date(groupEvents[0].startsAt)),
   });
 
   return [

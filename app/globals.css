@@ -5181,7 +5181,7 @@ a {
 }
 
 .event-card__open {
-  grid-template-columns: minmax(4.5rem, auto) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(4.75rem, auto) minmax(0, 1fr) auto;
 }
 
 .event-card__metadata {
@@ -5192,6 +5192,8 @@ a {
 }
 
 .event-card__time {
+  display: grid;
+  gap: 2px;
   align-self: center;
   color: var(--muted);
   font-size: 1.08rem;
@@ -5202,6 +5204,15 @@ a {
 
 .event-card__title {
   font-size: clamp(1.75rem, 3.4vw, 2.7rem);
+}
+
+.event-card__date {
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: capitalize;
+  white-space: nowrap;
 }
 
 .event-section h2 {
