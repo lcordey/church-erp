@@ -775,6 +775,18 @@ a {
   line-height: 1.7;
 }
 
+.settings-section > div > .info-tooltip,
+.song-render-preferences__group-copy > .info-tooltip {
+  margin-top: 7px;
+}
+
+.info-tooltip { position: relative; display: inline-flex; vertical-align: middle; }
+.info-tooltip__trigger { display: inline-grid; width: 21px; height: 21px; place-items: center; border: 0; padding: 0; color: var(--muted); background: transparent; cursor: help; }
+.info-tooltip__trigger svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-width: 1.8; }
+.info-tooltip__trigger:focus-visible { border-radius: 50%; outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.info-tooltip__content { position: absolute; z-index: 20; bottom: calc(100% + 9px); left: 50%; width: min(280px, calc(100vw - 40px)); padding: 10px 12px; transform: translateX(-50%); border-radius: 8px; color: var(--on-accent); background: var(--ink); box-shadow: 0 10px 24px rgb(var(--shadow-rgb) / 22%); font-size: .79rem; font-weight: 550; line-height: 1.45; opacity: 0; pointer-events: none; transition: opacity 140ms ease; }
+.info-tooltip:hover .info-tooltip__content, .info-tooltip:focus-within .info-tooltip__content { opacity: 1; pointer-events: auto; }
+
 .settings-section--placeholder {
   align-items: flex-start;
 }
@@ -3363,17 +3375,13 @@ a {
 }
 
 .song-render-preferences__priority-item {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
+  padding: 10px 16px;
 }
 
 .song-render-preferences__priority-main {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
+  align-items: center;
   gap: 12px;
   min-width: 0;
 }
@@ -3409,6 +3417,8 @@ a {
   line-height: 1.5;
   text-transform: none;
 }
+
+.song-render-preferences__priority-main .reorderable-item__actions { margin-left: 2px; }
 
 .song-render-preferences__priority-help {
   margin: 10px 0 0;

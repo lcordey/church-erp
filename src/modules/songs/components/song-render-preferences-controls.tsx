@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import { ReorderItemActions } from "@/src/components/reorder-item-actions";
+import { InfoTooltip } from "@/src/components/info-tooltip";
 
 import {
   chordColorOptions,
@@ -32,13 +33,6 @@ const sourceLabels: Record<SongSourceView, string> = {
   lyrics: "Paroles",
   musicxml: "Partition",
   pdf: "PDF",
-};
-
-const sourceDescriptions: Record<SongSourceView, string> = {
-  chordpro: "Paroles avec accords intégrés.",
-  lyrics: "Texte seul, sans notation.",
-  musicxml: "Partition générée depuis MusicXML.",
-  pdf: "Document importé tel quel.",
 };
 
 type SongRenderPreferencesControlsProps = {
@@ -216,13 +210,7 @@ export function SongRenderPreferencesControls({
     <div className="song-render-preferences">
       {showDescription ? (
         <div className="song-render-preferences__intro">
-          <div>
-            <h3>Rendu par défaut</h3>
-            <p>
-              Ces préférences sont mémorisées sur cet appareil et réutilisées
-              dans toutes les vues de lecture des chants.
-            </p>
-          </div>
+          <InfoTooltip label="Informations sur les préférences de lecture">Ces préférences sont mémorisées sur cet appareil et réutilisées dans toutes les vues de lecture des chants.</InfoTooltip>
           <button
             className="admin-button admin-button--quiet"
             onClick={resetPreferences}
@@ -240,11 +228,7 @@ export function SongRenderPreferencesControls({
           <div className="song-render-preferences__group">
             <div className="song-render-preferences__group-copy">
               <h4>Source d’ouverture</h4>
-              <p>
-                Glissez les 4 sources pour définir l’ordre utilisé quand un
-                chant s’ouvre. Si une source manque, l’application choisit la
-                suivante.
-              </p>
+              <InfoTooltip label="Aide sur l’ordre des sources">Glissez les quatre sources pour définir l’ordre utilisé à l’ouverture d’un chant. Si une source manque, l’application choisit la suivante.</InfoTooltip>
             </div>
             <div
               aria-label="Ordre de priorité des sources"
@@ -289,27 +273,19 @@ export function SongRenderPreferencesControls({
                     </span>
                     <div className="song-render-preferences__priority-copy">
                       <strong>{sourceLabels[source]}</strong>
-                      <p>{sourceDescriptions[source]}</p>
                     </div>
+                    <ReorderItemActions
+                      downLabel={`Descendre ${sourceLabels[source]}`}
+                      isDownDisabled={index === preferences.sourcePriority.length - 1}
+                      isUpDisabled={index === 0}
+                      onMoveDown={() => moveSource(source, 1)}
+                      onMoveUp={() => moveSource(source, -1)}
+                      upLabel={`Monter ${sourceLabels[source]}`}
+                    />
                   </div>
-
-                  <ReorderItemActions
-                    downLabel={`Descendre ${sourceLabels[source]}`}
-                    isDownDisabled={
-                      index === preferences.sourcePriority.length - 1
-                    }
-                    isUpDisabled={index === 0}
-                    onMoveDown={() => moveSource(source, 1)}
-                    onMoveUp={() => moveSource(source, -1)}
-                    upLabel={`Monter ${sourceLabels[source]}`}
-                  />
                 </div>
               ))}
             </div>
-            <p className="song-render-preferences__priority-help">
-              Astuce: fais glisser la carte directement. Sur mobile, maintiens
-              la carte puis déplace-la. Les flèches restent disponibles.
-            </p>
           </div>
         ) : null}
 

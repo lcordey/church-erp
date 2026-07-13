@@ -1,4 +1,5 @@
 import { AppThemeToggle } from "@/src/components/app-theme-toggle";
+import { InfoTooltip } from "@/src/components/info-tooltip";
 import { PwaInstallSettings } from "@/src/components/pwa-install-settings";
 import { PushNotificationSettings } from "@/src/components/push-notification-settings";
 import { MusicNotationToggle } from "@/src/modules/songs/components/music-notation-toggle";
@@ -10,18 +11,11 @@ export default function SettingsPage() {
       <section className="app-panel">
         <p className="eyebrow">Réglages</p>
         <h1>Préférences de lecture et d’affichage.</h1>
-        <p className="app-panel__lead">
-          Les réglages globaux de l’application seront centralisés ici au fur et
-          à mesure de l’évolution du produit.
-        </p>
 
         <div className="settings-section">
           <div>
             <h2>Thème</h2>
-            <p>
-              Choisissez l’ambiance générale de l’application. Le thème est
-              conservé localement sur l’appareil.
-            </p>
+            <InfoTooltip>Choisissez l’ambiance générale de l’application. Le thème est conservé localement sur cet appareil.</InfoTooltip>
           </div>
           <AppThemeToggle />
         </div>
@@ -29,10 +23,7 @@ export default function SettingsPage() {
         <div className="settings-section">
           <div>
             <h2>Notation musicale</h2>
-            <p>
-              Choisissez la convention utilisée pour les tonalités et les
-              accords dans les chants.
-            </p>
+            <InfoTooltip>Choisissez la convention utilisée pour les tonalités et les accords dans les chants.</InfoTooltip>
           </div>
           <MusicNotationToggle />
         </div>
@@ -40,10 +31,7 @@ export default function SettingsPage() {
         <div className="settings-section settings-section--stacked">
           <div>
             <h2>Lecture des chants</h2>
-            <p>
-              Définissez le rendu et la source d’ouverture par défaut des
-              chants. Ces préférences sont conservées localement sur l’appareil.
-            </p>
+            <InfoTooltip>Définissez le rendu et la source d’ouverture par défaut des chants. Ces préférences sont conservées localement sur cet appareil.</InfoTooltip>
           </div>
           <SongRenderPreferencesControls showDescription />
         </div>
@@ -51,7 +39,7 @@ export default function SettingsPage() {
         <section className="settings-section settings-section--stacked">
           <div>
             <h2>Notifications</h2>
-            <p>Choisissez les alertes reçues sur cet appareil. Les types sont activés par défaut.</p>
+            <InfoTooltip>Choisissez les alertes reçues sur cet appareil. Les types sont activés par défaut.</InfoTooltip>
           </div>
           <PushNotificationSettings />
         </section>
