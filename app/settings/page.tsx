@@ -10,8 +10,6 @@ export default function SettingsPage() {
     <main className="app-panel-page">
       <section className="app-panel">
         <p className="eyebrow">Réglages</p>
-        <h1>Préférences de lecture et d’affichage.</h1>
-
         <div className="settings-section">
           <div className="settings-section__heading">
             <h2>Thème</h2>
