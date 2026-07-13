@@ -5208,7 +5208,6 @@ a {
 
 .event-card__date {
   color: var(--muted);
-  font-size: .72rem;
   font-weight: 700;
   letter-spacing: .02em;
   text-transform: capitalize;
