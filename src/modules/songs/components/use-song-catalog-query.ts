@@ -492,7 +492,7 @@ export function useSongCatalogQuery({
   }
 
   async function loadMore() {
-    if (isLoadingMore || isFetching) {
+    if (isLoadingMore || isFetching || !catalog.hasMore) {
       return;
     }
 

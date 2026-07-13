@@ -1560,34 +1560,20 @@ a {
   }
 }
 
-.catalog-pagination {
+.catalog-infinite-scroll {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  min-height: 56px;
+  gap: 10px;
   padding: 26px 0 4px;
-}
-
-.catalog-pagination button {
-  min-height: 44px;
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  padding: 0 18px;
-  color: var(--on-accent);
-  background: var(--accent);
-  cursor: pointer;
-  font: 800 0.78rem/1 var(--sans);
-  text-transform: uppercase;
-}
-
-.catalog-pagination button:disabled {
-  cursor: default;
-  opacity: 0.62;
-}
-
-.catalog-pagination span {
   color: var(--muted);
   font-size: 0.82rem;
+}
+
+.catalog-infinite-scroll .catalog-loading__spinner {
+  width: 18px;
+  height: 18px;
 }
 
 .song-card {

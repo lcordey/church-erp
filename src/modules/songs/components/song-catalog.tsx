@@ -133,6 +133,7 @@ export function SongCatalog({
   const [mobileFilterPanelTop, setMobileFilterPanelTop] = useState<number | null>(
     null,
   );
+  const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null);
   const filterSummaryRefs = useRef<
     Record<CatalogFilterKey, HTMLElement | null>
   >({
@@ -140,7 +141,6 @@ export function SongCatalog({
     themes: null,
     labels: null,
   });
-  const pageSize = catalog.limit;
   const loadedCount = catalog.songs.length;
   const shouldBlockStaleCatalog = hasStaleCatalog;
   const isCatalogLoading = isInitialLoading || isFetching || shouldBlockStaleCatalog;
@@ -196,6 +196,27 @@ export function SongCatalog({
       window.removeEventListener("scroll", handleViewportChange);
     };
   }, [areFiltersVisible, openFilter]);
+
+  useEffect(() => {
+    const trigger = loadMoreTriggerRef.current;
+
+    if (!trigger || !shouldShowPagination || isLoadingMore) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void loadMore();
+        }
+      },
+      { rootMargin: "240px 0px" },
+    );
+
+    observer.observe(trigger);
+
+    return () => observer.disconnect();
+  }, [catalog.songs.length, isLoadingMore, loadMore, shouldShowPagination]);
 
   function getMobileFilterPanelStyle(filter: CatalogFilterKey): CSSProperties | undefined {
     if (
@@ -494,17 +515,21 @@ export function SongCatalog({
       ) : null}
 
       {shouldShowPagination ? (
-        <div className="catalog-pagination">
-          <button
-            disabled={isCatalogLoading}
-            onClick={() => void loadMore()}
-            type="button"
-          >
-            {isLoadingMore ? "Chargement..." : `Afficher ${pageSize} chants de plus`}
-          </button>
-          <span>
-            {loadedCount} sur {catalog.total}
-          </span>
+        <div
+          aria-live="polite"
+          className="catalog-infinite-scroll"
+          ref={loadMoreTriggerRef}
+        >
+          {isLoadingMore ? (
+            <>
+              <span aria-hidden="true" className="catalog-loading__spinner" />
+              <span>Chargement de chants supplémentaires…</span>
+            </>
+          ) : (
+            <span>
+              {loadedCount} sur {catalog.total} chants affichés
+            </span>
+          )}
         </div>
       ) : null}
     </>
