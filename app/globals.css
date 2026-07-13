@@ -5279,6 +5279,11 @@ a {
 .event-list {
   display: flex;
   flex-direction: column;
+  gap: 0;
+}
+
+.event-month-divider {
+  margin: 0;
 }
 
 .event-card {
