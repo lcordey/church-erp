@@ -2,21 +2,21 @@ import { redirect } from "next/navigation";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
 import { getCurrentActor } from "@/src/infrastructure/auth/require-admin";
-import { SongTaxonomyAdmin } from "@/src/modules/songs/components/song-taxonomy-admin";
-import { listAdminSongTaxonomies } from "@/src/modules/songs/services/song-taxonomy-management";
+import { EventTypeAdmin } from "@/src/modules/events/components/event-type-admin";
+import { listAdminEventTypes } from "@/src/modules/events/services/event-type-management";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminTaxonomiesPage() {
+export default async function AdminEventTypesPage() {
   const actor = await getCurrentActor();
 
   if (!actor) {
-    redirect("/login?redirectTo=/admin/referentiels");
+    redirect("/login?redirectTo=/admin/evenements");
   }
-  if (actor.mustChangePassword) redirect("/password-change?redirectTo=/admin/referentiels");
+  if (actor.mustChangePassword) redirect("/password-change?redirectTo=/admin/evenements");
   if (!actor.permissions.includes("taxonomy.manage")) redirect("/worship");
 
-  const taxonomies = await listAdminSongTaxonomies();
+  const eventTypes = await listAdminEventTypes();
 
 
   return (
@@ -28,12 +28,12 @@ export default async function AdminTaxonomiesPage() {
           mode="admin"
         />
         <div className="admin-hero">
-          <h1>Chants</h1>
+          <h1>Événements</h1>
           <p>
-            Gère les thèmes et labels disponibles pour classer et filtrer les chants.
+            Gère les types disponibles pour classer et filtrer les événements.
           </p>
         </div>
-        <SongTaxonomyAdmin initialTaxonomies={taxonomies} />
+        <div className="taxonomy-admin__grid"><EventTypeAdmin initialEventTypes={eventTypes} /></div>
       </div>
     </main>
   );

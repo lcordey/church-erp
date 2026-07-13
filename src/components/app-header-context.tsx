@@ -47,6 +47,10 @@ function ArrowLeftIcon() {
 }
 
 function currentSection(pathname: string) {
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    return "Admin";
+  }
+
   if (
     pathname === "/worship" ||
     pathname.startsWith("/chants/") ||
@@ -75,6 +79,10 @@ function currentSection(pathname: string) {
 }
 
 function currentSectionHref(pathname: string) {
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    return "/admin";
+  }
+
   if (
     pathname === "/worship" ||
     pathname.startsWith("/chants/") ||
