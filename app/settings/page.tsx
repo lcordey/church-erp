@@ -15,15 +15,13 @@ export default function SettingsPage() {
         <div className="settings-section">
           <div className="settings-section__heading">
             <h2>Thème</h2>
-            <InfoTooltip>Choisissez l’ambiance générale de l’application. Le thème est conservé localement sur cet appareil.</InfoTooltip>
           </div>
           <AppThemeToggle />
         </div>
 
-        <div className="settings-section">
+        <div className="settings-section settings-section--notation">
           <div className="settings-section__heading">
             <h2>Notation musicale</h2>
-            <InfoTooltip>Choisissez la convention utilisée pour les tonalités et les accords dans les chants.</InfoTooltip>
           </div>
           <MusicNotationToggle />
         </div>

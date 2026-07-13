@@ -4448,6 +4448,21 @@ a {
     flex-direction: column;
   }
 
+  .settings-section--notation {
+    align-items: center;
+    flex-direction: row;
+    gap: 12px;
+  }
+
+  .settings-section--notation h2 {
+    font-size: clamp(1.15rem, 5vw, 1.5rem);
+    white-space: nowrap;
+  }
+
+  .settings-section--notation .notation-toggle button {
+    padding-inline: 8px;
+  }
+
   .song-render-preferences__intro {
     flex-direction: column;
     padding-right: 0;
@@ -5216,7 +5231,7 @@ a {
 }
 
 .event-card__title {
-  font-size: clamp(1.75rem, 3.4vw, 2.7rem);
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
 }
 
 .event-card__date {
