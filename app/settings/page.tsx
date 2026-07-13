@@ -19,9 +19,9 @@ export default function SettingsPage() {
           <AppThemeToggle />
         </div>
 
-        <div className="settings-section">
+        <div className="settings-section settings-section--notation">
           <div className="settings-section__heading">
-            <h2>Notation musicale</h2>
+            <h2>Notation</h2>
           </div>
           <MusicNotationToggle />
         </div>
@@ -34,7 +34,7 @@ export default function SettingsPage() {
           <SongRenderPreferencesControls showDescription />
         </div>
 
-        <section className="settings-section settings-section--stacked">
+        <section className="settings-section settings-section--notification">
           <div className="settings-section__heading">
             <h2>Notifications</h2>
           </div>

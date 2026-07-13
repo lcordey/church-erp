@@ -2662,6 +2662,10 @@ a {
 }
 
 .notification-settings { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.settings-section--notification { align-items: center; flex-wrap: wrap; }
+.settings-section--notification .notification-settings { display: contents; }
+.settings-section--notification .notification-settings__switch { margin-left: auto; }
+.settings-section--notification .notification-preferences { flex-basis: 100%; }
 .notification-settings__switch { position: relative; width: 48px; height: 28px; border: 1px solid var(--border-medium); border-radius: 999px; padding: 0; background: var(--surface-muted); cursor: pointer; transition: background 160ms ease, border-color 160ms ease; }
 .notification-settings__switch > span { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--paper-strong); box-shadow: 0 2px 5px rgb(var(--shadow-rgb) / 20%); transition: transform 160ms ease; }
 .notification-settings__switch[aria-checked="true"] { border-color: var(--accent); background: var(--accent); }
@@ -4456,6 +4460,25 @@ a {
     flex-direction: column;
   }
 
+  .settings-section--notation,
+  .settings-section--notification {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .settings-section--notation h2 {
+    font-size: clamp(1.15rem, 5vw, 1.5rem);
+    white-space: nowrap;
+  }
+
+  .settings-section--notation .notation-toggle button {
+    padding-inline: 8px;
+  }
+
+  .settings-section--notification .notification-preferences {
+    flex-basis: 100%;
+  }
+
   .song-render-preferences__intro {
     flex-direction: column;
     padding-right: 0;
@@ -4567,6 +4590,22 @@ a {
     text-align: left;
   }
 
+  .song-render-preferences__section .sheet-controls__field,
+  .song-render-preferences__section--compact .sheet-controls__field {
+    grid-template-columns: minmax(0, 1fr) minmax(96px, 1.2fr) auto;
+    gap: 10px;
+  }
+
+  .song-render-preferences__section .sheet-controls__field strong,
+  .song-render-preferences__section--compact .sheet-controls__field strong {
+    min-width: 3.4ch;
+    text-align: right;
+  }
+
+  .song-render-preferences__section--compact {
+    grid-template-columns: 1fr;
+  }
+
   .song-render-preferences__intro {
     flex-direction: column;
     align-items: stretch;
@@ -4607,22 +4646,22 @@ a {
   }
 
   .song-render-preferences__section--compact {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .song-render-preferences__section--compact .sheet-controls__field {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 12px;
+    grid-template-columns: minmax(0, 1fr) minmax(96px, 1.2fr) auto;
+    gap: 10px;
+    padding: 14px 16px;
   }
 
   .song-render-preferences__section--compact .sheet-controls__field strong {
-    min-width: 0;
-    text-align: left;
+    min-width: 3.4ch;
+    text-align: right;
   }
 
   .song-render-preferences__section--compact .sheet-controls__field:nth-child(2n) {
-    border-left: 1px solid var(--border-soft);
+    border-left: 0;
   }
 
   .song-render-preferences__section--compact .sheet-controls__field:nth-child(n + 3) {
