@@ -8,12 +8,14 @@ export type EventAssignment = {
 };
 
 export type EventSetlist = { id: string; title: string };
+export type EventType = { id: string; name: string };
 
 export type EventSummary = {
   id: string;
   title: string;
   startsAt: Date;
   endsAt: Date | null;
+  eventType: EventType | null;
   setlist: EventSetlist | null;
   assignmentCount: number;
   isCurrentUserAssigned: boolean;
@@ -32,6 +34,7 @@ export type EventInput = {
   endsAt: Date | null;
   notes: string | null;
   setlistId: string | null;
+  eventTypeId: string | null;
   assignments: Array<{ userId: string; role: string | null }>;
 };
 

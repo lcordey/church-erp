@@ -1,6 +1,6 @@
 import { authorizationBoundaryResponse } from "@/src/infrastructure/auth/require-admin";
 
-import { EventAssigneeInvalidError, EventSetlistNotFoundError } from "../services/event-management";
+import { EventAssigneeInvalidError, EventSetlistNotFoundError, EventTypeNotFoundError } from "../services/event-management";
 
 export function invalidEventResponse(fields: Record<string, string>) {
   return Response.json({ error: { code: "INVALID_EVENT", message: "Certains champs doivent être corrigés.", fields } }, { status: 400 });
@@ -13,6 +13,7 @@ export function eventErrorResponse(error: unknown) {
   if (authorizationResponse) return authorizationResponse;
   if (error instanceof EventSetlistNotFoundError) return invalidEventResponse({ setlistId: "La setlist sélectionnée n’existe plus." });
   if (error instanceof EventAssigneeInvalidError) return invalidEventResponse({ assignments: "Une personne sélectionnée n’est plus disponible." });
+  if (error instanceof EventTypeNotFoundError) return invalidEventResponse({ eventTypeId: "Le type d’événement sélectionné n’existe plus." });
   console.error(error);
   return Response.json({ error: { code: "INTERNAL_ERROR", message: "Impossible d’enregistrer l’événement." } }, { status: 500 });
 }

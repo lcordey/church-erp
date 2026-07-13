@@ -7,6 +7,7 @@ import type { EventInput, EventScope } from "../types/event";
 
 export class EventSetlistNotFoundError extends Error {}
 export class EventAssigneeInvalidError extends Error {}
+export class EventTypeNotFoundError extends Error {}
 
 async function assertRelations(
   input: EventInput,
@@ -16,6 +17,7 @@ async function assertRelations(
   if (input.setlistId && !(await repository.setlistExists(input.setlistId))) {
     throw new EventSetlistNotFoundError();
   }
+  if (input.eventTypeId && !(await repository.eventTypeExists(input.eventTypeId))) throw new EventTypeNotFoundError();
   const userIds = input.assignments.map((assignment) => assignment.userId);
   const activeIds = await repository.listActiveUserIds(userIds);
   const existingIds = new Set(existingAssignedUserIds);

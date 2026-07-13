@@ -17,6 +17,7 @@ export function validateEventInput(input: unknown): EventValidationResult {
   const startsAt = new Date(startsAtText);
   const endsAt = endsAtText ? new Date(endsAtText) : null;
   const setlistId = typeof values.setlistId === "string" && values.setlistId ? values.setlistId : null;
+  const eventTypeId = typeof values.eventTypeId === "string" && values.eventTypeId ? values.eventTypeId : null;
   const rawAssignments = Array.isArray(values.assignments) ? values.assignments : [];
   const assignments = rawAssignments.map((value) => {
     const assignment = (value ?? {}) as Record<string, unknown>;
@@ -32,10 +33,11 @@ export function validateEventInput(input: unknown): EventValidationResult {
   if (endsAtText && (!zonedDatePattern.test(endsAtText) || Number.isNaN(endsAt?.getTime()))) errors.endsAt = "La date et l’heure de fin sont invalides.";
   if (endsAt && !Number.isNaN(startsAt.getTime()) && endsAt <= startsAt) errors.endsAt = "La fin doit être postérieure au début.";
   if (setlistId && !uuidPattern.test(setlistId)) errors.setlistId = "La setlist sélectionnée est invalide.";
+  if (eventTypeId && !uuidPattern.test(eventTypeId)) errors.eventTypeId = "Le type d’événement sélectionné est invalide.";
   if (assignments.some((assignment) => !uuidPattern.test(assignment.userId) || (assignment.role?.length ?? 0) > 120)) errors.assignments = "Une affectation est invalide.";
   if (new Set(assignments.map((assignment) => assignment.userId)).size !== assignments.length) errors.assignments = "Une personne ne peut être affectée qu’une fois.";
 
   return Object.keys(errors).length
     ? { success: false, errors }
-    : { success: true, data: { title, startsAt, endsAt, notes, setlistId, assignments } };
+    : { success: true, data: { title, startsAt, endsAt, notes, setlistId, eventTypeId, assignments } };
 }

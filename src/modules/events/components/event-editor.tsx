@@ -11,7 +11,7 @@ import type { SetlistSummary } from "@/src/modules/setlists/types/setlist";
 import { useUnsavedChangesGuard } from "@/src/shared/hooks/use-unsaved-changes-guard";
 import { useViewModeNavigation } from "@/src/shared/hooks/use-view-mode-navigation";
 
-import type { EventDetail } from "../types/event";
+import type { EventDetail, EventType } from "../types/event";
 import { DateTimePicker } from "./date-time-picker";
 import { EventDescription } from "./event-description";
 
@@ -40,7 +40,7 @@ function localDateTimeValue(value: Date | string | null) {
   return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}`;
 }
 
-export function EventEditor({ canManage, canOpenSetlist = false, canViewAssignments = false, currentUserId, event, isEditing = false, setlists, users }: { canManage: boolean; canOpenSetlist?: boolean; canViewAssignments?: boolean; currentUserId?: string; event?: EventDetail; isEditing?: boolean; setlists: SetlistSummary[]; users: AssignableUser[] }) {
+export function EventEditor({ canManage, canOpenSetlist = false, canViewAssignments = false, currentUserId, event, eventTypes, isEditing = false, setlists, users }: { canManage: boolean; canOpenSetlist?: boolean; canViewAssignments?: boolean; currentUserId?: string; event?: EventDetail; eventTypes: EventType[]; isEditing?: boolean; setlists: SetlistSummary[]; users: AssignableUser[] }) {
   const router = useRouter();
   const [title, setTitle] = useState(event?.title ?? "");
   const [startsAt, setStartsAt] = useState(event ? localDateTimeValue(event.startsAt) : "");
@@ -48,6 +48,7 @@ export function EventEditor({ canManage, canOpenSetlist = false, canViewAssignme
   const [notes, setNotes] = useState(event?.notes ?? (event ? "" : defaultDescription));
   const [isDescriptionPreview, setIsDescriptionPreview] = useState(false);
   const [setlistId, setSetlistId] = useState(event?.setlist?.id ?? "");
+  const [eventTypeId, setEventTypeId] = useState(event?.eventType?.id ?? "");
   const allUsers = [...users];
   for (const assignment of event?.assignments ?? []) {
     if (!allUsers.some((user) => user.id === assignment.userId)) {
@@ -68,6 +69,7 @@ export function EventEditor({ canManage, canOpenSetlist = false, canViewAssignme
       endsAt,
       notes,
       setlistId,
+      eventTypeId,
       startsAt,
       title,
     }),
@@ -81,10 +83,11 @@ export function EventEditor({ canManage, canOpenSetlist = false, canViewAssignme
         endsAt,
         notes,
         setlistId,
+        eventTypeId,
         startsAt,
         title,
       }),
-    [assignments, endsAt, notes, setlistId, startsAt, title],
+    [assignments, endsAt, eventTypeId, notes, setlistId, startsAt, title],
   );
   const isDirty = currentSnapshot !== savedSnapshot;
   const { navigateToViewMode, pendingViewMode, transitionStatus } = useViewModeNavigation({
@@ -105,7 +108,7 @@ export function EventEditor({ canManage, canOpenSetlist = false, canViewAssignme
     try {
       const response = await fetch(event ? `/api/events/${event.id}` : "/api/events", {
         method: event ? "PUT" : "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ title, startsAt: startsAt ? new Date(startsAt).toISOString() : "", endsAt: endsAt ? new Date(endsAt).toISOString() : null, notes, setlistId: setlistId || null, assignments: assignments.filter((item) => item.active).map((item) => ({ userId: item.userId, role: item.role || null })) }),
+        body: JSON.stringify({ title, startsAt: startsAt ? new Date(startsAt).toISOString() : "", endsAt: endsAt ? new Date(endsAt).toISOString() : null, notes, setlistId: setlistId || null, eventTypeId: eventTypeId || null, assignments: assignments.filter((item) => item.active).map((item) => ({ userId: item.userId, role: item.role || null })) }),
       });
       const payload = await response.json().catch(() => null) as { data?: EventDetail; error?: { message?: string; fields?: Record<string, string> } } | null;
       if (!response.ok || !payload?.data) {
@@ -120,7 +123,7 @@ export function EventEditor({ canManage, canOpenSetlist = false, canViewAssignme
     } finally {
       setIsSaving(false);
     }
-  }, [assignments, currentSnapshot, endsAt, event, navigateToViewMode, notes, router, setlistId, startsAt, title]);
+  }, [assignments, currentSnapshot, endsAt, event, eventTypeId, navigateToViewMode, notes, router, setlistId, startsAt, title]);
 
   const { confirmNavigation, dialog } = useUnsavedChangesGuard({
     isDirty,
@@ -139,5 +142,5 @@ export function EventEditor({ canManage, canOpenSetlist = false, canViewAssignme
 
   const headerActions = <button className={isDirty ? "admin-button admin-button--primary admin-button--dirty" : "admin-button"} disabled={isSaving} onClick={() => { void save(); }} type="button"><span className="button-label">{isSaving ? <span aria-hidden="true" className="button-spinner button-spinner--on-accent" /> : null}<span>{isSaving ? "Enregistrement…" : isDirty ? "Enregistrer •" : "Enregistrer"}</span></span></button>;
 
-  return <main className="event-page"><div className="event-shell"><AppTopBar activeViewMode={event ? "edition" : undefined} actions={headerActions} backHref="/events" backIconOnly backLabel="Retour aux événements" mode="admin" onViewModeChange={event ? (mode) => { if (mode === "selection") void confirmNavigation(() => navigateToViewMode(mode, () => router.push(`/events/${event.id}`))); } : undefined} pendingViewMode={pendingViewMode} showViewModeToggle={Boolean(event)} /><form className="event-form" onSubmit={(formEvent) => { formEvent.preventDefault(); void save(); }}><div><p className="eyebrow">Agenda</p><h1>{event ? "Modifier l’événement" : "Nouvel événement"}</h1></div><label><span>Titre</span><input maxLength={160} onChange={(input) => setTitle(input.target.value)} required value={title} /></label><div className="event-form__dates"><DateTimePicker defaultTime="10:00" label="Début" onChange={setStartsAt} required value={startsAt} /><DateTimePicker defaultTime="10:00" label="Fin (optionnelle)" onChange={setEndsAt} value={endsAt} /></div><fieldset className="event-description-editor"><legend>Description (facultative)</legend><p>Utilisez <code># titre</code>, <code>## sous-titre</code>, <code>**gras**</code>, <code>*italique*</code>, les listes <code>- élément</code> et les liens <code>[texte](https://…)</code>.</p><div className="event-description-editor__tabs"><button aria-pressed={!isDescriptionPreview} className="admin-button admin-button--quiet" onClick={() => setIsDescriptionPreview(false)} type="button">Écrire</button><button aria-pressed={isDescriptionPreview} className="admin-button admin-button--quiet" onClick={() => setIsDescriptionPreview(true)} type="button">Prévisualiser</button></div>{isDescriptionPreview ? <div className="event-description-editor__preview"><EventDescription content={notes || "Aucune description."} /></div> : <textarea maxLength={5000} onChange={(input) => setNotes(input.target.value)} rows={9} value={notes} />}</fieldset><label><span>Setlist</span><select onChange={(input) => setSetlistId(input.target.value)} value={setlistId}><option value="">Aucune setlist</option>{setlists.map((setlist) => <option key={setlist.id} value={setlist.id}>{setlist.title}</option>)}</select></label><fieldset className="event-assignees"><legend>Équipe de service</legend>{assignments.map((assignment, index) => <div className="event-assignee" key={assignment.userId}><label className="checkbox-row"><input checked={assignment.active} onChange={(input) => setAssignments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, active: input.target.checked } : item))} type="checkbox" /><span>{assignment.displayName} <small>@{assignment.username}</small></span></label>{assignment.active ? <input aria-label={`Rôle de ${assignment.displayName}`} maxLength={120} onChange={(input) => setAssignments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, role: input.target.value } : item))} placeholder="Rôle (optionnel)" value={assignment.role} /> : null}</div>)}</fieldset>{message ? <p className="form-message form-message--error">{message}</p> : null}<div className="admin-form__actions">{event ? <button className="admin-button admin-button--danger" disabled={isSaving} onClick={() => { void remove(); }} type="button">Supprimer</button> : null}</div></form></div>{dialog}{transitionStatus}<PageTransitionStatus detail="Les informations de l’événement sont en cours d’enregistrement." isVisible={isSaving} label="Enregistrement de l’événement…" /></main>;
+  return <main className="event-page"><div className="event-shell"><AppTopBar activeViewMode={event ? "edition" : undefined} actions={headerActions} backHref="/events" backIconOnly backLabel="Retour aux événements" mode="admin" onViewModeChange={event ? (mode) => { if (mode === "selection") void confirmNavigation(() => navigateToViewMode(mode, () => router.push(`/events/${event.id}`))); } : undefined} pendingViewMode={pendingViewMode} showViewModeToggle={Boolean(event)} /><form className="event-form" onSubmit={(formEvent) => { formEvent.preventDefault(); void save(); }}><div><p className="eyebrow">Agenda</p><h1>{event ? "Modifier l’événement" : "Nouvel événement"}</h1></div><label><span>Titre</span><input maxLength={160} onChange={(input) => setTitle(input.target.value)} required value={title} /></label><label><span>Type d’événement</span><select onChange={(input) => setEventTypeId(input.target.value)} value={eventTypeId}><option value="">Aucun type</option>{eventTypes.map((eventType) => <option key={eventType.id} value={eventType.id}>{eventType.name}</option>)}</select></label><div className="event-form__dates"><DateTimePicker defaultTime="10:00" label="Début" onChange={setStartsAt} required value={startsAt} /><DateTimePicker defaultTime="10:00" label="Fin (optionnelle)" onChange={setEndsAt} value={endsAt} /></div><fieldset className="event-description-editor"><legend>Description (facultative)</legend><p>Utilisez <code># titre</code>, <code>## sous-titre</code>, <code>**gras**</code>, <code>*italique*</code>, les listes <code>- élément</code> et les liens <code>[texte](https://…)</code>.</p><div className="event-description-editor__tabs"><button aria-pressed={!isDescriptionPreview} className="admin-button admin-button--quiet" onClick={() => setIsDescriptionPreview(false)} type="button">Écrire</button><button aria-pressed={isDescriptionPreview} className="admin-button admin-button--quiet" onClick={() => setIsDescriptionPreview(true)} type="button">Prévisualiser</button></div>{isDescriptionPreview ? <div className="event-description-editor__preview"><EventDescription content={notes || "Aucune description."} /></div> : <textarea maxLength={5000} onChange={(input) => setNotes(input.target.value)} rows={9} value={notes} />}</fieldset><label><span>Setlist</span><select onChange={(input) => setSetlistId(input.target.value)} value={setlistId}><option value="">Aucune setlist</option>{setlists.map((setlist) => <option key={setlist.id} value={setlist.id}>{setlist.title}</option>)}</select></label><fieldset className="event-assignees"><legend>Équipe de service</legend>{assignments.map((assignment, index) => <div className="event-assignee" key={assignment.userId}><label className="checkbox-row"><input checked={assignment.active} onChange={(input) => setAssignments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, active: input.target.checked } : item))} type="checkbox" /><span>{assignment.displayName} <small>@{assignment.username}</small></span></label>{assignment.active ? <input aria-label={`Rôle de ${assignment.displayName}`} maxLength={120} onChange={(input) => setAssignments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, role: input.target.value } : item))} placeholder="Rôle (optionnel)" value={assignment.role} /> : null}</div>)}</fieldset>{message ? <p className="form-message form-message--error">{message}</p> : null}<div className="admin-form__actions">{event ? <button className="admin-button admin-button--danger" disabled={isSaving} onClick={() => { void remove(); }} type="button">Supprimer</button> : null}</div></form></div>{dialog}{transitionStatus}<PageTransitionStatus detail="Les informations de l’événement sont en cours d’enregistrement." isVisible={isSaving} label="Enregistrement de l’événement…" /></main>;
 }

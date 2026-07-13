@@ -5,6 +5,7 @@ import { EventEditor } from "@/src/modules/events/components/event-editor";
 import { getEvent } from "@/src/modules/events/services/event-management";
 import { listAssignableUsers } from "@/src/modules/identity/services/user-management";
 import { listSetlists } from "@/src/modules/setlists/services/setlist-management";
+import { listEventTypes } from "@/src/modules/events/services/event-type-management";
 
 export const dynamic = "force-dynamic";
 export default async function EventPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ mode?: string }> }) {
@@ -20,7 +21,7 @@ export default async function EventPage({ params, searchParams }: { params: Prom
   if (isEditing && !actor) redirect(`/login?redirectTo=${encodeURIComponent(`/events/${id}?mode=edition`)}`);
   if (isEditing && actor?.mustChangePassword) redirect(`/password-change?redirectTo=${encodeURIComponent(`/events/${id}?mode=edition`)}`);
   if (isEditing && !canManage) redirect(`/events/${id}`);
-  const [setlists, users] = canManage ? await Promise.all([listSetlists(), listAssignableUsers()]) : [[], []];
+  const [setlists, users, eventTypes] = canManage ? await Promise.all([listSetlists(), listAssignableUsers(), listEventTypes()]) : [[], [], []];
   const visibleEvent = canViewAssignments || isEditing ? event : { ...event, assignments: [] };
   return (
     <EventEditor
@@ -29,6 +30,7 @@ export default async function EventPage({ params, searchParams }: { params: Prom
       canOpenSetlist={usableActor?.permissions.includes("setlist.manage") ?? false}
       canViewAssignments={canViewAssignments}
       event={visibleEvent}
+      eventTypes={eventTypes}
       isEditing={isEditing}
       setlists={setlists}
       users={users}

@@ -5,7 +5,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 import { AppTopBar } from "@/src/components/app-top-bar";
 
-import type { EventSummary } from "../types/event";
+import type { EventSummary, EventType } from "../types/event";
 
 const timeFormatter = new Intl.DateTimeFormat("fr-FR", {
   timeZone: "Europe/Paris",
@@ -91,6 +91,7 @@ function EventCard({ canManage, event }: { canManage: boolean; event: EventSumma
         </time>
         <span className="song-card__content event-card__content">
           <span className="song-card__title event-card__title">{event.title}{event.isCurrentUserAssigned ? <span aria-label="Je suis de service" className="event-card__service-icon" role="img"><ServiceIcon /></span> : null}</span>
+          {event.eventType ? <span className="event-card__type">{event.eventType.name}</span> : null}
         </span>
         {canManage ? <span className="song-card__action-space event-card__action-space" aria-hidden="true" /> : null}
       </Link>
@@ -128,15 +129,16 @@ function EventCard({ canManage, event }: { canManage: boolean; event: EventSumma
   );
 }
 
-export function EventIndex({ canFilterMine, canManage, currentTime, initialEvents }: { canFilterMine: boolean; canManage: boolean; currentTime: number; initialEvents: EventSummary[] }) {
-  const [scope, setScope] = useState<"all" | "mine">("all");
-  const visible = useMemo(() => scope === "mine" ? initialEvents.filter((event) => event.isCurrentUserAssigned) : initialEvents, [initialEvents, scope]);
+export function EventIndex({ canFilterMine, canManage, currentTime, eventTypes, initialEvents }: { canFilterMine: boolean; canManage: boolean; currentTime: number; eventTypes: EventType[]; initialEvents: EventSummary[] }) {
+  const [showMine, setShowMine] = useState(false);
+  const [selectedTypeIds, setSelectedTypeIds] = useState<string[]>([]);
+  const visible = useMemo(() => initialEvents.filter((event) => (!showMine || event.isCurrentUserAssigned) && (!selectedTypeIds.length || (event.eventType && selectedTypeIds.includes(event.eventType.id)))), [initialEvents, selectedTypeIds, showMine]);
   const eventGroups = useMemo(() => groupEventsByDate(visible, currentTime), [currentTime, visible]);
 
   return (
     <main className="event-page"><div className="event-shell">
       <AppTopBar actions={canManage ? <Link aria-label="Créer un événement" className="icon-button icon-button--primary" href="/events/nouveau" title="Créer un événement"><PlusIcon /><span className="sr-only">Créer un événement</span></Link> : undefined} mode="public" />
-      <div className="event-hero"><div><p className="eyebrow">Agenda</p><h1>Événements</h1></div>{canFilterMine ? <div className="event-scope" role="group" aria-label="Filtrer les événements"><button aria-pressed={scope === "all"} onClick={() => setScope("all")} type="button">Tous</button><button aria-pressed={scope === "mine"} onClick={() => setScope("mine")} type="button">Mes services</button></div> : null}</div>
+      <section className="event-filters" aria-label="Filtrer les événements">{eventTypes.length ? <fieldset><legend>Types d’événements</legend><div className="event-filters__types">{eventTypes.map((eventType) => <label className="checkbox-row" key={eventType.id}><input checked={selectedTypeIds.includes(eventType.id)} onChange={(input) => setSelectedTypeIds((current) => input.target.checked ? [...current, eventType.id] : current.filter((id) => id !== eventType.id))} type="checkbox" /><span>{eventType.name}</span></label>)}</div></fieldset> : null}{canFilterMine ? <label className="event-filters__service"><span>Je suis de service</span><button aria-pressed={showMine} onClick={() => setShowMine((current) => !current)} type="button">{showMine ? "Oui" : "Non"}</button></label> : null}</section>
       {eventGroups.length ? <div className="event-list">{eventGroups.map((group, index) => <Fragment key={group.dateKey}>{group.isPast && !eventGroups[index - 1]?.isPast ? <div className="event-past-divider"><span>Événements passés</span></div> : null}{group.events.map((event) => <EventCard canManage={canManage} event={event} key={event.id} />)}</Fragment>)}</div> : <section className="event-section"><div className="empty-state"><p>Aucun événement.</p></div></section>}
     </div></main>
   );

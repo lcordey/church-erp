@@ -18,6 +18,7 @@ function detail(input: EventInput): EventDetail {
     title: input.title,
     startsAt: input.startsAt,
     endsAt: input.endsAt,
+    eventType: null,
     notes: input.notes,
     setlist: null,
     assignmentCount: input.assignments.length,
@@ -43,6 +44,7 @@ function repository(existing: EventDetail | null = null): EventRepository {
     async update(_id, input) { return detail(input); },
     async delete() { return true; },
     async setlistExists() { return true; },
+    async eventTypeExists() { return true; },
     async listActiveUserIds(ids) { return new Set(ids); },
   };
 }
@@ -53,6 +55,7 @@ const baseInput: EventInput = {
   endsAt: null,
   notes: null,
   setlistId: null,
+  eventTypeId: null,
   assignments: [{ userId: "alice", role: "Chant" }],
 };
 

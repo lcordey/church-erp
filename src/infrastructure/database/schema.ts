@@ -421,6 +421,9 @@ export const events = pgTable(
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
     endsAt: timestamp("ends_at", { withTimezone: true }),
     notes: text("notes"),
+    eventTypeId: uuid("event_type_id").references(() => eventTypes.id, {
+      onDelete: "set null",
+    }),
     setlistId: uuid("setlist_id").references(() => setlists.id, {
       onDelete: "set null",
     }),
@@ -434,11 +437,30 @@ export const events = pgTable(
   (table) => [
     index("events_starts_at_index").on(table.startsAt),
     index("events_setlist_id_index").on(table.setlistId),
+    index("events_event_type_id_index").on(table.eventTypeId),
     check("events_title_not_blank", sql`btrim(${table.title}) <> ''`),
     check(
       "events_ends_after_start",
       sql`${table.endsAt} is null or ${table.endsAt} > ${table.startsAt}`,
     ),
+  ],
+);
+
+export const eventTypes = pgTable(
+  "event_types",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("event_types_name_unique").on(sql`lower(${table.name})`),
+    check("event_types_name_not_blank", sql`btrim(${table.name}) <> ''`),
   ],
 );
 
@@ -488,4 +510,5 @@ export type AuthSession = typeof authSessions.$inferSelect;
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type Event = typeof events.$inferSelect;
 export type NewEvent = typeof events.$inferInsert;
+export type EventType = typeof eventTypes.$inferSelect;
 export type EventAssignment = typeof eventAssignments.$inferSelect;
