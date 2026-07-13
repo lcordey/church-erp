@@ -36,7 +36,6 @@ const sourceLabels: Record<SongSourceView, string> = {
 };
 
 type SongRenderPreferencesControlsProps = {
-  showDescription?: boolean;
   showSourcePriority?: boolean;
 };
 
@@ -45,11 +44,30 @@ type DropIndicator = {
   target: SongSourceView;
 };
 
+export function SongRenderPreferencesResetButton() {
+  const { resetPreferences } = useSongRenderPreferences();
+
+  return (
+    <button
+      aria-label="Réinitialiser les préférences de lecture"
+      className="settings-section__reset-button"
+      onClick={resetPreferences}
+      title="Réinitialiser"
+      type="button"
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M20 11a8 8 0 1 1-2.35-5.65" />
+        <path d="M20 4v7h-7" />
+      </svg>
+      <span className="sr-only">Réinitialiser</span>
+    </button>
+  );
+}
+
 export function SongRenderPreferencesControls({
-  showDescription = false,
   showSourcePriority = true,
 }: SongRenderPreferencesControlsProps) {
-  const { preferences, resetPreferences, setPreferences } =
+  const { preferences, setPreferences } =
     useSongRenderPreferences();
   const [draggedSource, setDraggedSource] = useState<SongSourceView | null>(
     null,
@@ -208,28 +226,11 @@ export function SongRenderPreferencesControls({
 
   return (
     <div className="song-render-preferences">
-      {showDescription ? (
-        <div className="song-render-preferences__intro">
-          <InfoTooltip label="Informations sur les préférences de lecture">Ces préférences sont mémorisées sur cet appareil et réutilisées dans toutes les vues de lecture des chants.</InfoTooltip>
-          <button
-            className="admin-button admin-button--quiet"
-            onClick={resetPreferences}
-            type="button"
-          >
-            Réinitialiser
-          </button>
-        </div>
-      ) : null}
-
       <div
         className={`song-render-preferences__section${showSourcePriority ? "" : " song-render-preferences__section--compact"}`}
       >
         {showSourcePriority ? (
           <div className="song-render-preferences__group">
-            <div className="song-render-preferences__group-copy">
-              <h4>Source d’ouverture</h4>
-              <InfoTooltip label="Aide sur l’ordre des sources">Glissez les quatre sources pour définir l’ordre utilisé à l’ouverture d’un chant. Si une source manque, l’application choisit la suivante.</InfoTooltip>
-            </div>
             <div
               aria-label="Ordre de priorité des sources"
               className="reorderable-list song-render-preferences__priority-list"
@@ -289,7 +290,7 @@ export function SongRenderPreferencesControls({
           </div>
         ) : null}
 
-        <label className="sheet-controls__field">
+        <label className="sheet-controls__field sheet-controls__field--color">
           <span>Couleur des accords</span>
           <select
             aria-label="Couleur des accords"
@@ -306,7 +307,6 @@ export function SongRenderPreferencesControls({
               </option>
             ))}
           </select>
-          <strong>{chordColorLabels[preferences.chordColor]}</strong>
         </label>
 
         <label className="sheet-controls__field">

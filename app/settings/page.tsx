@@ -3,7 +3,7 @@ import { InfoTooltip } from "@/src/components/info-tooltip";
 import { PwaInstallSettings } from "@/src/components/pwa-install-settings";
 import { PushNotificationSettings } from "@/src/components/push-notification-settings";
 import { MusicNotationToggle } from "@/src/modules/songs/components/music-notation-toggle";
-import { SongRenderPreferencesControls } from "@/src/modules/songs/components/song-render-preferences-controls";
+import { SongRenderPreferencesControls, SongRenderPreferencesResetButton } from "@/src/modules/songs/components/song-render-preferences-controls";
 
 export default function SettingsPage() {
   return (
@@ -30,8 +30,9 @@ export default function SettingsPage() {
           <div className="settings-section__heading">
             <h2>Lecture des chants</h2>
             <InfoTooltip>Définissez le rendu et la source d’ouverture par défaut des chants. Ces préférences sont conservées localement sur cet appareil.</InfoTooltip>
+            <SongRenderPreferencesResetButton />
           </div>
-          <SongRenderPreferencesControls showDescription />
+          <SongRenderPreferencesControls />
         </div>
 
         <section className="settings-section settings-section--notification">
