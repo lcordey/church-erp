@@ -5163,14 +5163,28 @@ a {
 }
 
 .event-page {
+  position: relative;
   min-height: 100vh;
   padding: 0 0 80px;
+  overflow-x: hidden;
   background:
-    linear-gradient(125deg, var(--surface-selected), transparent 36rem),
+    linear-gradient(90deg, transparent 0 49.9%, var(--surface-grid-line) 50% 50.1%, transparent 50.2%),
     var(--paper);
 }
 
+.event-page__glow {
+  position: absolute;
+  top: -18rem;
+  right: -10rem;
+  width: 40rem;
+  height: 40rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--surface-glow) 0, transparent 68%);
+  pointer-events: none;
+}
+
 .event-shell {
+  position: relative;
   width: min(1120px, calc(100% - 40px));
   margin: 0 auto;
 }
@@ -5270,6 +5284,7 @@ a {
 .event-card {
   min-height: 132px;
   border: 0;
+  border-bottom: 1px solid var(--line);
   border-radius: 0;
   padding: 0;
   color: var(--ink);
