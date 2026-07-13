@@ -147,30 +147,18 @@ export function PushNotificationSettings() {
     if (!response.ok) setPreferences(preferences);
   };
   return (
-    <div className="settings-section settings-section--stacked">
-      <div>
-        <h3>Sur cet appareil</h3>
-        <p aria-live="polite">{descriptions[state]}</p>
-      </div>
+    <div className="notification-settings">
       <button
-        className={`admin-button ${state === "enabled" ? "admin-button--quiet" : "admin-button--primary"}`}
+        aria-checked={state === "enabled"}
+        aria-label={state === "enabled" ? "Désactiver les notifications" : "Activer les notifications"}
+        className="notification-settings__switch"
         disabled={!canEnable && state !== "enabled"}
         onClick={() => void (state === "enabled" ? disable() : enable())}
+        role="switch"
         type="button"
       >
-        {state === "enabled" ? "Désactiver" : state === "working" ? "Mise à jour…" : "Activer les notifications"}
+        <span aria-hidden="true" />
       </button>
-      <fieldset className="notification-preferences">
-        <legend>Types de notifications</legend>
-        <label className="checkbox-row">
-          <input checked={preferences["event-assignment"]} disabled={state !== "enabled"} onChange={(event) => void updatePreference("event-assignment", event.target.checked)} type="checkbox" />
-          <span><strong>Ajout à un événement</strong><small>Quand tu es ajouté(e) à une équipe de service.</small></span>
-        </label>
-        <label className="checkbox-row">
-          <input checked={preferences["event-setlist"]} disabled={state !== "enabled"} onChange={(event) => void updatePreference("event-setlist", event.target.checked)} type="checkbox" />
-          <span><strong>Setlist d’un événement</strong><small>Quand la setlist d’un de tes services est ajoutée, remplacée ou retirée.</small></span>
-        </label>
-      </fieldset>
     </div>
   );
 }

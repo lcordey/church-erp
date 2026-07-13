@@ -19,7 +19,7 @@ export default function SettingsPage() {
           <AppThemeToggle />
         </div>
 
-        <div className="settings-section settings-section--notation">
+        <div className="settings-section">
           <div className="settings-section__heading">
             <h2>Notation musicale</h2>
           </div>
@@ -34,10 +34,9 @@ export default function SettingsPage() {
           <SongRenderPreferencesControls showDescription />
         </div>
 
-        <section className="settings-section settings-section--stacked">
+        <section className="settings-section">
           <div className="settings-section__heading">
             <h2>Notifications</h2>
-            <InfoTooltip>Choisissez les alertes reçues sur cet appareil. Les types sont activés par défaut.</InfoTooltip>
           </div>
           <PushNotificationSettings />
         </section>
