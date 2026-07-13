@@ -40,6 +40,7 @@ async function saveSubscription(subscription: PushSubscription) {
 
 export function PushNotificationSettings() {
   const [state, setState] = useState<NotificationState>("checking");
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [publicKey, setPublicKey] = useState("");
   const [endpoint, setEndpoint] = useState("");
   const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
@@ -68,6 +69,7 @@ export function PushNotificationSettings() {
       if (!cancelled) {
         setPublicKey(payload.data.publicKey);
         setEndpoint(subscription?.endpoint ?? "");
+        setNotificationsEnabled(Boolean(subscription));
         setState(Notification.permission === "denied" ? "denied" : subscription ? "enabled" : "available");
       }
     };
@@ -76,10 +78,12 @@ export function PushNotificationSettings() {
   }, []);
 
   const enable = async () => {
+    setNotificationsEnabled(true);
     setState("working");
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
+        setNotificationsEnabled(false);
         setState(permission === "denied" ? "denied" : "available");
         return;
       }
@@ -91,6 +95,7 @@ export function PushNotificationSettings() {
       const response = await saveSubscription(subscription);
       if (response.status === 401 || response.status === 403) {
         await subscription.unsubscribe();
+        setNotificationsEnabled(false);
         setState("login-required");
         return;
       }
@@ -98,11 +103,13 @@ export function PushNotificationSettings() {
       setEndpoint(subscription.endpoint);
       setState("enabled");
     } catch {
+      setNotificationsEnabled(false);
       setState("error");
     }
   };
 
   const disable = async () => {
+    setNotificationsEnabled(false);
     setState("working");
     try {
       const registration = await navigator.serviceWorker.ready;
@@ -118,6 +125,7 @@ export function PushNotificationSettings() {
       setState("available");
       setEndpoint("");
     } catch {
+      setNotificationsEnabled(true);
       setState("error");
     }
   };
@@ -149,11 +157,11 @@ export function PushNotificationSettings() {
   return (
     <div className="notification-settings">
       <button
-        aria-checked={state === "enabled"}
-        aria-label={state === "enabled" ? "Désactiver les notifications" : "Activer les notifications"}
+        aria-checked={notificationsEnabled}
+        aria-label={notificationsEnabled ? "Désactiver les notifications" : "Activer les notifications"}
         className="notification-settings__switch"
         disabled={!canEnable && state !== "enabled"}
-        onClick={() => void (state === "enabled" ? disable() : enable())}
+        onClick={() => void (notificationsEnabled ? disable() : enable())}
         role="switch"
         type="button"
       >
