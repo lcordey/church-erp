@@ -159,6 +159,17 @@ export function PushNotificationSettings() {
       >
         <span aria-hidden="true" />
       </button>
+      <fieldset className="notification-preferences">
+        <legend>Types de notifications</legend>
+        <label className="checkbox-row">
+          <input checked={preferences["event-assignment"]} disabled={state !== "enabled"} onChange={(event) => void updatePreference("event-assignment", event.target.checked)} type="checkbox" />
+          <span><strong>Ajout à un événement</strong><small>Quand tu es ajouté(e) à une équipe de service.</small></span>
+        </label>
+        <label className="checkbox-row">
+          <input checked={preferences["event-setlist"]} disabled={state !== "enabled"} onChange={(event) => void updatePreference("event-setlist", event.target.checked)} type="checkbox" />
+          <span><strong>Setlist d’un événement</strong><small>Quand la setlist d’un de tes services est ajoutée, remplacée ou retirée.</small></span>
+        </label>
+      </fieldset>
     </div>
   );
 }

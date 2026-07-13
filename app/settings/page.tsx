@@ -34,7 +34,7 @@ export default function SettingsPage() {
           <SongRenderPreferencesControls showDescription />
         </div>
 
-        <section className="settings-section">
+        <section className="settings-section settings-section--stacked">
           <div className="settings-section__heading">
             <h2>Notifications</h2>
           </div>
