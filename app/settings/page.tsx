@@ -13,7 +13,7 @@ export default function SettingsPage() {
         <h1>Préférences de lecture et d’affichage.</h1>
 
         <div className="settings-section">
-          <div>
+          <div className="settings-section__heading">
             <h2>Thème</h2>
             <InfoTooltip>Choisissez l’ambiance générale de l’application. Le thème est conservé localement sur cet appareil.</InfoTooltip>
           </div>
@@ -21,7 +21,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="settings-section">
-          <div>
+          <div className="settings-section__heading">
             <h2>Notation musicale</h2>
             <InfoTooltip>Choisissez la convention utilisée pour les tonalités et les accords dans les chants.</InfoTooltip>
           </div>
@@ -29,7 +29,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="settings-section settings-section--stacked">
-          <div>
+          <div className="settings-section__heading">
             <h2>Lecture des chants</h2>
             <InfoTooltip>Définissez le rendu et la source d’ouverture par défaut des chants. Ces préférences sont conservées localement sur cet appareil.</InfoTooltip>
           </div>
@@ -37,7 +37,7 @@ export default function SettingsPage() {
         </div>
 
         <section className="settings-section settings-section--stacked">
-          <div>
+          <div className="settings-section__heading">
             <h2>Notifications</h2>
             <InfoTooltip>Choisissez les alertes reçues sur cet appareil. Les types sont activés par défaut.</InfoTooltip>
           </div>
