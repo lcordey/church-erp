@@ -25,7 +25,6 @@ export default async function AdminPage() {
         <AppTopBar mode="admin" />
         <nav aria-label="Sections d’administration" className="admin-hub-grid">
           <Link className="admin-hub-card" href="/admin/comptes">
-            <span className="admin-hub-card__index">01</span>
             <span className="admin-hub-card__content">
               <strong>Comptes</strong>
               <small>Utilisateurs, groupes et mots de passe temporaires</small>
@@ -33,7 +32,6 @@ export default async function AdminPage() {
             <ArrowIcon />
           </Link>
           <Link className="admin-hub-card" href="/admin/referentiels">
-            <span className="admin-hub-card__index">02</span>
             <span className="admin-hub-card__content">
               <strong>Chants</strong>
               <small>Thèmes et labels disponibles pour les chants</small>
@@ -41,7 +39,6 @@ export default async function AdminPage() {
             <ArrowIcon />
           </Link>
           <Link className="admin-hub-card" href="/admin/evenements">
-            <span className="admin-hub-card__index">03</span>
             <span className="admin-hub-card__content">
               <strong>Événements</strong>
               <small>Types disponibles pour les événements</small>
