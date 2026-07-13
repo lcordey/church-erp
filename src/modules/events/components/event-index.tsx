@@ -19,6 +19,12 @@ const cardDateFormatter = new Intl.DateTimeFormat("fr-FR", {
   month: "short",
 });
 
+const monthFormatter = new Intl.DateTimeFormat("fr-FR", {
+  timeZone: "Europe/Paris",
+  month: "long",
+  year: "numeric",
+});
+
 function PlusIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -138,7 +144,7 @@ export function EventIndex({ canFilterMine, canManage, currentTime, eventTypes, 
     <main className="event-page"><div aria-hidden="true" className="event-page__glow" /><div className="event-shell">
       <AppTopBar actions={canManage ? <Link aria-label="Créer un événement" className="icon-button icon-button--primary" href="/events/nouveau" title="Créer un événement"><PlusIcon /><span className="sr-only">Créer un événement</span></Link> : undefined} mode="public" />
       <section className="event-filters" aria-label="Filtrer les événements">{eventTypes.length ? <details className="catalog-filter-dropdown event-filters__types-dropdown"><summary className={selectedTypeIds.length ? "catalog-filter-dropdown__summary catalog-filter-dropdown__summary--active" : "catalog-filter-dropdown__summary"}><span>Types</span>{selectedTypeIds.length ? <small>{selectedTypeIds.length}</small> : null}</summary><fieldset><legend className="sr-only">Types d’événements</legend><div className="event-filters__types">{eventTypes.map((eventType) => <label className="checkbox-row" key={eventType.id}><input checked={selectedTypeIds.includes(eventType.id)} onChange={(input) => setSelectedTypeIds((current) => input.target.checked ? [...current, eventType.id] : current.filter((id) => id !== eventType.id))} type="checkbox" /><span>{eventType.name}</span></label>)}</div></fieldset></details> : null}{canFilterMine ? <div className="event-filters__service"><button aria-label={showMine ? "Afficher tous les événements" : "Afficher uniquement mes services"} aria-pressed={showMine} onClick={() => setShowMine((current) => !current)} title={showMine ? "Tous les événements" : "Je suis de service"} type="button"><ServiceIcon /><span className="sr-only">{showMine ? "Tous les événements" : "Je suis de service"}</span></button></div> : null}</section>
-      {eventGroups.length ? <div className="event-list">{eventGroups.map((group, index) => <Fragment key={group.dateKey}>{group.isPast && !eventGroups[index - 1]?.isPast ? <div className="event-past-divider"><span>Événements passés</span></div> : null}{group.events.map((event) => <EventCard canManage={canManage} event={event} key={event.id} />)}</Fragment>)}</div> : <section className="event-section"><div className="empty-state"><p>Aucun événement.</p></div></section>}
+      {eventGroups.length ? <div className="event-list">{eventGroups.map((group, index) => <Fragment key={group.dateKey}>{index > 0 && eventGroups[index - 1]?.dateKey.slice(0, 7) !== group.dateKey.slice(0, 7) ? <div className="event-past-divider event-month-divider"><span>{monthFormatter.format(new Date(group.events[0].startsAt))}</span></div> : null}{group.isPast && !eventGroups[index - 1]?.isPast ? <div className="event-past-divider"><span>Événements passés</span></div> : null}{group.events.map((event) => <EventCard canManage={canManage} event={event} key={event.id} />)}</Fragment>)}</div> : <section className="event-section"><div className="empty-state"><p>Aucun événement.</p></div></section>}
     </div></main>
   );
 }
