@@ -2740,7 +2740,7 @@ a {
   border: 1px solid var(--border-medium);
   border-radius: 14px;
   color: var(--ink);
-  background: var(--surface);
+  background: var(--paper-strong);
   box-shadow: 0 16px 40px rgb(0 0 0 / 16%);
 }
 
