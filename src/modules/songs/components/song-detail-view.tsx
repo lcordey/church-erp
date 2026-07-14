@@ -599,6 +599,7 @@ export function SongDetailView({
           <div className="song-document-viewer__actions">
             <button
               aria-expanded={areDetailsVisible}
+              aria-pressed={areDetailsVisible}
               aria-label={
                 areDetailsVisible
                   ? "Masquer les informations du chant"
@@ -634,6 +635,7 @@ export function SongDetailView({
             {notesPanel ? (
               <button
                 aria-expanded={areNotesVisible}
+                aria-pressed={areNotesVisible}
                 aria-label={areNotesVisible ? "Masquer les notes" : "Afficher les notes"}
                 className="icon-button song-document-viewer__icon-button"
                 onClick={() => setAreNotesVisible((current) => !current)}
