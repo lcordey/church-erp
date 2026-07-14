@@ -26,7 +26,6 @@ export function SetlistPlayer({
 }: SetlistPlayerProps) {
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
   const [notesByItemId, setNotesByItemId] = useState(
     () => new Map(initialNotes.map((notes) => [notes.setlistItemId, notes])),
   );
@@ -99,23 +98,7 @@ export function SetlistPlayer({
   }
 
   return (
-    <main
-      className="song-page song-page--immersive setlist-player"
-      onTouchEnd={(event) => {
-        if (touchStart === null) {
-          return;
-        }
-
-        const delta = event.changedTouches[0].clientX - touchStart;
-
-        if (Math.abs(delta) > 52) {
-          goTo(delta > 0 ? currentIndex - 1 : currentIndex + 1);
-        }
-
-        setTouchStart(null);
-      }}
-      onTouchStart={(event) => setTouchStart(event.touches[0].clientX)}
-    >
+    <main className="song-page song-page--immersive setlist-player">
       <div className="song-page__shell song-page__shell--immersive">
         <AppTopBar
           activeViewMode="selection"
