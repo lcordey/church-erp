@@ -178,7 +178,7 @@ export function EventIndex({ canFilterMine, canManage, currentTime, eventTypes, 
           <summary aria-expanded={isTypeFilterOpen} className={selectedTypeIds.length ? "catalog-filter-dropdown__summary catalog-filter-dropdown__summary--active" : "catalog-filter-dropdown__summary"} onClick={(event) => { event.preventDefault(); typeFilterTriggerRef.current = event.currentTarget; setIsTypeFilterOpen((current) => { const nextValue = !current; if (nextValue) window.requestAnimationFrame(updateTypeFilterPanelPosition); return nextValue; }); }} ref={typeFilterTriggerRef}>
             <span>Types</span>{selectedTypeIds.length ? <small>{selectedTypeIds.length}</small> : null}
           </summary>
-          <fieldset style={typeFilterPanelTop === null ? undefined : { top: typeFilterPanelTop + "px", maxHeight: "calc(100vh - " + (typeFilterPanelTop + 14) + "px)" }}>
+          <fieldset style={typeFilterPanelTop === null ? undefined : { top: typeFilterPanelTop + "px", bottom: "auto", maxHeight: "calc(100vh - " + (typeFilterPanelTop + 14) + "px)" }}>
             <legend className="sr-only">Types d’événements</legend>
             <div className="event-filters__types">{eventTypes.map((eventType) => <label className="checkbox-row" key={eventType.id}><input checked={selectedTypeIds.includes(eventType.id)} onChange={(input) => setSelectedTypeIds((current) => input.target.checked ? [...current, eventType.id] : current.filter((id) => id !== eventType.id))} type="checkbox" /><span>{eventType.name}</span></label>)}</div>
           </fieldset>
