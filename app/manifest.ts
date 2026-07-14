@@ -9,8 +9,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/worship",
     scope: "/",
     display: "standalone",
-    background_color: "#fbf2ee",
-    theme_color: "#a05d6d",
+    background_color: "#f7f4ec",
+    theme_color: "#315b78",
     icons: [
       {
         src: "/icons/churcherp-192.png",

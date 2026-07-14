@@ -20,7 +20,7 @@ export const appThemeOptions = [
 
 export type AppTheme = (typeof appThemeOptions)[number];
 
-const appThemeColors: Record<AppTheme, string> = {
+export const appThemeColors: Record<AppTheme, string> = {
   sand: "#315b78",
   night: "#0f141c",
   forest: "#486953",
@@ -71,16 +71,23 @@ function getServerSnapshot(): AppTheme {
   return "sand";
 }
 
+function applyThemeColor(theme: AppTheme) {
+  const color = appThemeColors[theme];
+
+  document
+    .querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')
+    .forEach((themeColor) => {
+      if (themeColor.content !== color) {
+        themeColor.setAttribute("content", color);
+      }
+    });
+}
+
 function applyTheme(theme: AppTheme) {
   document.documentElement.dataset.appTheme = theme;
   document.documentElement.style.colorScheme =
     theme === "night" ? "dark" : "light";
-
-  const themeColor = document.querySelector<HTMLMetaElement>(
-    'meta[name="theme-color"]',
-  );
-
-  themeColor?.setAttribute("content", appThemeColors[theme]);
+  applyThemeColor(theme);
 }
 
 export function AppThemeProvider({ children }: { children: ReactNode }) {
@@ -88,6 +95,16 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     applyTheme(theme);
+
+    const observer = new MutationObserver(() => applyThemeColor(theme));
+    observer.observe(document.head, {
+      attributes: true,
+      attributeFilter: ["content"],
+      childList: true,
+      subtree: true,
+    });
+
+    return () => observer.disconnect();
   }, [theme]);
 
   function setTheme(nextTheme: AppTheme) {

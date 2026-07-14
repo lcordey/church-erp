@@ -8,6 +8,8 @@ describe("web app manifest", () => {
 
     expect(webManifest.start_url).toBe("/worship");
     expect(webManifest.display).toBe("standalone");
+    expect(webManifest.background_color).toBe("#f7f4ec");
+    expect(webManifest.theme_color).toBe("#315b78");
     expect(webManifest.icons).toContainEqual({
       src: "/icons/churcherp-192.png",
       sizes: "192x192",

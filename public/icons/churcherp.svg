@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
   <title>ChurchERP</title>
-  <rect width="512" height="512" rx="112" fill="#fbf2ee"/>
-  <g fill="#a05d6d">
+  <rect width="512" height="512" rx="112" fill="#f7f4ec"/>
+  <g fill="#315b78">
     <rect x="126" y="286" width="68" height="104" rx="34"/>
     <rect x="222" y="122" width="68" height="268" rx="34"/>
     <rect x="318" y="202" width="68" height="188" rx="34"/>

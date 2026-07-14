@@ -11,11 +11,19 @@ import "./globals.css";
 const themeBootstrapScript = `
   (() => {
     try {
-      const theme = localStorage.getItem("church-erp-app-theme");
-      if (["sand", "night", "forest", "dawn"].includes(theme)) {
-        document.documentElement.dataset.appTheme = theme;
-        document.documentElement.style.colorScheme = theme === "night" ? "dark" : "light";
-      }
+      const colors = {
+        sand: "#315b78",
+        night: "#0f141c",
+        forest: "#486953",
+        dawn: "#a05d6d",
+      };
+      const savedTheme = localStorage.getItem("church-erp-app-theme");
+      const theme = Object.hasOwn(colors, savedTheme) ? savedTheme : "sand";
+      document.documentElement.dataset.appTheme = theme;
+      document.documentElement.style.colorScheme = theme === "night" ? "dark" : "light";
+      document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+        meta.setAttribute("content", colors[theme]);
+      });
     } catch {}
   })();
 `;
@@ -54,7 +62,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#a05d6d",
+  themeColor: "#315b78",
 };
 
 export default async function RootLayout({
