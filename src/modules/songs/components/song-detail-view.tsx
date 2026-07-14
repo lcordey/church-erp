@@ -52,7 +52,6 @@ const TEXT_LYRICS_MIN_ZOOM = 0.9;
 const TEXT_LYRICS_MAX_ZOOM = 1.28;
 const TEXT_CHORD_MIN_ZOOM = 0.68;
 const TEXT_CHORD_MAX_ZOOM = 1.24;
-const FOCUS_ZOOM_STEP = 0.1;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, Math.round(value * 100) / 100));
@@ -476,9 +475,6 @@ export function SongDetailView({
     return preferences.lyricsFontScale;
   }
 
-  function getFocusZoomBounds() {
-    return getFocusZoomBoundsForSource(resolvedSourceView);
-  }
 
   function setFocusZoomValue(nextZoom: number) {
     const source = resolvedSourceViewRef.current;
@@ -513,14 +509,8 @@ export function SongDetailView({
     });
   }
 
-  function changeFocusZoom(step: number) {
-    setFocusZoomValue(focusZoomValueRef.current + step);
-  }
 
   const focusZoomValue = getFocusZoomValue();
-  const focusZoomBounds = getFocusZoomBounds();
-  const isFocusZoomOutDisabled = focusZoomValue <= focusZoomBounds.min;
-  const isFocusZoomInDisabled = focusZoomValue >= focusZoomBounds.max;
 
   useEffect(() => {
     resolvedSourceViewRef.current = resolvedSourceView;
@@ -742,30 +732,6 @@ export function SongDetailView({
 
         {isFocusMode ? (
           <div className="song-document-viewer__focus-controls">
-            <div
-              aria-label="Zoom du document"
-              className="song-document-viewer__focus-zoom"
-            >
-              <button
-                aria-label="Réduire le zoom du document"
-                disabled={isFocusZoomOutDisabled}
-                onClick={() => changeFocusZoom(-FOCUS_ZOOM_STEP)}
-                type="button"
-              >
-                −
-              </button>
-              <output aria-label="Zoom actuel">
-                {Math.round(focusZoomValue * 100)}%
-              </output>
-              <button
-                aria-label="Augmenter le zoom du document"
-                disabled={isFocusZoomInDisabled}
-                onClick={() => changeFocusZoom(FOCUS_ZOOM_STEP)}
-                type="button"
-              >
-                +
-              </button>
-            </div>
             <button
               aria-label="Quitter le mode focus"
               className="icon-button song-document-viewer__focus-exit-button"
