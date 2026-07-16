@@ -2720,6 +2720,20 @@ a {
   white-space: nowrap;
 }
 
+.setlist-share-status {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 80;
+  margin: 0;
+  border: 1px solid var(--accent-border);
+  padding: 12px 16px;
+  color: var(--ink);
+  background: var(--surface-panel-start);
+  box-shadow: 0 12px 28px rgb(var(--shadow-rgb) / 24%);
+  font: 700 0.82rem/1.35 var(--sans);
+}
+
 .site-footer {
   display: flex;
   justify-content: space-between;

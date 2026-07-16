@@ -302,7 +302,7 @@ export function SetlistIndex({
                       void deleteSetlist(nextSetlist);
                     });
                   }}
-                  onEdit={(nextSetlist) => router.push(`/setlist/${nextSetlist.id}`)}
+                  onEdit={(nextSetlist) => router.push(`/setlist/${nextSetlist.id}?mode=edition`)}
                   setlist={setlist}
                 />
               ))}

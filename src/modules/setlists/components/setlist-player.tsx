@@ -9,6 +9,7 @@ import { SongNavigationActions } from "@/src/modules/songs/components/song-navig
 import { useViewModeNavigation } from "@/src/shared/hooks/use-view-mode-navigation";
 
 import type { SetlistDetail, SetlistItemNotes, SetlistTeamNote } from "../types/setlist";
+import { SetlistShareActions } from "./setlist-share-actions";
 import { SetlistSongNotes } from "./setlist-song-notes";
 
 type SetlistPlayerProps = {
@@ -59,16 +60,19 @@ export function SetlistPlayer({
 
   const headerActions = useMemo(
     () => (
-      <SongNavigationActions
-        nextDisabled={currentIndex === setlist.items.length - 1}
-        onNext={() => goTo(currentIndex + 1)}
-        onPrevious={() => goTo(currentIndex - 1)}
-        position={currentIndex + 1}
-        previousDisabled={currentIndex === 0}
-        total={setlist.items.length}
-      />
+      <>
+        <SetlistShareActions setlistId={setlist.id} setlistTitle={setlist.title} />
+        <SongNavigationActions
+          nextDisabled={currentIndex === setlist.items.length - 1}
+          onNext={() => goTo(currentIndex + 1)}
+          onPrevious={() => goTo(currentIndex - 1)}
+          position={currentIndex + 1}
+          previousDisabled={currentIndex === 0}
+          total={setlist.items.length}
+        />
+      </>
     ),
-    [currentIndex, goTo, setlist.items.length],
+    [currentIndex, goTo, setlist.id, setlist.items.length, setlist.title],
   );
 
   if (!currentItem) {
@@ -80,6 +84,7 @@ export function SetlistPlayer({
             backIconOnly
             backLabel="Retour aux setlists"
             mode="public"
+            actions={headerActions}
             activeViewMode="selection"
             onViewModeChange={canManage ? (mode) => {
               if (mode === "edition") {

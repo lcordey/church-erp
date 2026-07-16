@@ -37,7 +37,7 @@ export const defaultSongRenderPreferences: SongRenderPreferences = {
   chordFontScale: 0.82,
   lyricsFontScale: 1,
   lineHeight: 1.18,
-  sourcePriority: ["chordpro", "lyrics", "pdf", "musicxml"],
+  sourcePriority: ["chordpro", "pdf", "lyrics", "musicxml"],
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -57,7 +57,7 @@ function normalizeSourcePriority(value: unknown): SongSourceView[] {
 
   return [
     ...uniqueValidValues,
-    ...songSourceViewOptions.filter((option) => !uniqueValidValues.includes(option)),
+    ...defaultSongRenderPreferences.sourcePriority.filter((option) => !uniqueValidValues.includes(option)),
   ];
 }
 

@@ -32,7 +32,7 @@ describe("song render preferences", () => {
       chordFontScale: 1.24,
       lyricsFontScale: 0.9,
       lineHeight: 1.5,
-      sourcePriority: ["pdf", "lyrics", "chordpro", "musicxml"],
+      sourcePriority: ["pdf", "chordpro", "lyrics", "musicxml"],
     });
   });
 
