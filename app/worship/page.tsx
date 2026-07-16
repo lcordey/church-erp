@@ -3,7 +3,7 @@ import { getCurrentActor } from "@/src/infrastructure/auth/require-admin";
 import { PUBLIC_SONG_PAGE_SIZE } from "@/src/modules/songs/services/public-song-catalog";
 import type { PublicSongCatalogPage } from "@/src/modules/songs/types/public-song";
 
-const defaultVisibleCollections = ["JEM", "JEMK", "LeMont", "Glorious"];
+const defaultVisibleCollections = ["JEM", "JEMK", "LeMont", "MDS", "Glorious"];
 const emptyCatalog: PublicSongCatalogPage = {
   songs: [],
   total: 0,
