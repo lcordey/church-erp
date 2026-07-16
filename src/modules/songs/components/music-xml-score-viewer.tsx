@@ -37,6 +37,7 @@ type MusicXmlScoreViewerProps = {
 
 type ScoreLayout = "pages" | "continuous";
 type ScoreStatus = "loading" | "ready" | "error";
+type MeasuresPerLine = 4 | 5 | 6;
 
 export type MusicXmlScoreViewerHandle = {
   changeZoom: (step: number) => void;
@@ -50,6 +51,16 @@ const SCORE_RENDER_WIDTH = 920;
 const MIN_SCORE_ZOOM = 0.2;
 const MAX_SCORE_ZOOM = 1.8;
 const SCORE_ZOOM_STEP = 0.1;
+const MEASURE_DENSITY: Record<
+  MeasuresPerLine,
+  {
+    spacing: number;
+  }
+> = {
+  4: { spacing: 1 },
+  5: { spacing: 0.84 },
+  6: { spacing: 0.72 },
+};
 
 function clampScoreZoom(value: number) {
   return Math.min(
@@ -204,6 +215,8 @@ export const MusicXmlScoreViewer = forwardRef<
   const transposeByRef = useRef(0);
   const isAutoFitRef = useRef(true);
   const [layout, setLayout] = useState<ScoreLayout>("pages");
+  const [measuresPerLine, setMeasuresPerLine] =
+    useState<MeasuresPerLine>(5);
   const [status, setStatus] = useState<ScoreStatus>("loading");
   const [renderRevision, setRenderRevision] = useState(0);
   const [zoom, setZoom] = useState(1);
@@ -545,10 +558,29 @@ export const MusicXmlScoreViewer = forwardRef<
           osmd.Sheet.CopyrightString = copyright;
         }
 
+        const { spacing } = MEASURE_DENSITY[measuresPerLine];
+
+        osmd.EngravingRules.RenderXMeasuresPerLineAkaSystem = measuresPerLine;
         osmd.EngravingRules.TitleBottomDistance = 5;
         osmd.EngravingRules.LyricsUseXPaddingForLongLyrics = true;
-        osmd.EngravingRules.MaximumLyricsElongationFactor = 2.4;
-        osmd.EngravingRules.LastSystemMaxScalingFactor = 1.1;
+        osmd.EngravingRules.LyricsXPaddingFactorForLongLyrics =
+          1.05 * spacing;
+        osmd.EngravingRules.BetweenSyllableMinimumDistance = 0.7 * spacing;
+        osmd.EngravingRules.ChordSymbolXSpacing = Math.max(
+          0.48,
+          0.9 * spacing,
+        );
+        osmd.EngravingRules.MinNoteDistance = Math.max(1.15, 2 * spacing);
+        osmd.EngravingRules.VoiceSpacingAddendVexflow = Math.max(
+          1,
+          2 * spacing,
+        );
+        osmd.EngravingRules.VoiceSpacingMultiplierVexflow = Math.max(
+          0.44,
+          0.65 * spacing,
+        );
+        osmd.EngravingRules.MaximumLyricsElongationFactor = 2.2;
+        osmd.EngravingRules.LastSystemMaxScalingFactor = 1.15;
 
         osmdRef.current = osmd;
         renderTransposedScore(
@@ -585,7 +617,14 @@ export const MusicXmlScoreViewer = forwardRef<
         container.innerHTML = "";
       }
     };
-  }, [copyright, layout, renderRevision, sourceUrl, title]);
+  }, [
+    copyright,
+    layout,
+    measuresPerLine,
+    renderRevision,
+    sourceUrl,
+    title,
+  ]);
 
   useEffect(() => {
     const osmd = osmdRef.current;
@@ -645,6 +684,22 @@ export const MusicXmlScoreViewer = forwardRef<
               >
                 Continu
               </button>
+            </div>
+          </fieldset>
+          <fieldset className="song-score-viewer__density-setting">
+            <legend>Mesures par ligne</legend>
+            <div className="song-score-viewer__segmented-control song-score-viewer__segmented-control--three">
+              {([4, 5, 6] as const).map((value) => (
+                <button
+                  aria-label={`Afficher ${value} mesures par ligne`}
+                  aria-pressed={measuresPerLine === value}
+                  key={value}
+                  onClick={() => setMeasuresPerLine(value)}
+                  type="button"
+                >
+                  {value}
+                </button>
+              ))}
             </div>
           </fieldset>
           <div className="song-score-viewer__transpose-setting">

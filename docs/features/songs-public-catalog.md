@@ -122,7 +122,7 @@ Implementation actuelle :
 - la vue `PDF` propose le telechargement du fichier source
 - la vue `Partition` propose le telechargement d'un PDF genere cote client
 - la vue `Partition` s'appuie sur la gravure standard d'OpenSheetMusicDisplay et propose par defaut de vraies pages A4; un mode continu reste disponible
-- les reglages de la partition se concentrent sur la presentation pages/continu et la transposition, sans exposer les parametres internes de gravure
+- les reglages de la partition se concentrent sur la presentation pages/continu, la transposition et un choix direct de 4, 5 ou 6 mesures par ligne; 5 mesures avec un espacement compact sont utilisees par defaut
 - la partition conserve une largeur de gravure stable et son zoom initial s'ajuste au viewport actif sur ordinateur comme sur mobile
 - une commande flottante permet de reduire, agrandir ou reajuster la partition a la largeur disponible entre 20 % et 180 %
 - le nom du PDF genere pour la partition reutilise le titre du chant et, si disponible, son recueil et numero

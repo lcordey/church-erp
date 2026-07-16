@@ -4628,7 +4628,7 @@ a {
   position: relative;
   z-index: 3;
   display: grid;
-  grid-template-columns: minmax(220px, 0.8fr) minmax(320px, 1.2fr);
+  grid-template-columns: 0.75fr 0.85fr 1.2fr;
   gap: 18px;
   flex: 0 0 auto;
   padding: 14px clamp(16px, 2.5vw, 28px);
@@ -4638,7 +4638,8 @@ a {
   backdrop-filter: blur(16px);
 }
 
-.song-score-viewer__layout-setting {
+.song-score-viewer__layout-setting,
+.song-score-viewer__density-setting {
   min-width: 0;
   margin: 0;
   border: 0;
@@ -4646,6 +4647,7 @@ a {
 }
 
 .song-score-viewer__layout-setting legend,
+.song-score-viewer__density-setting legend,
 .song-score-viewer__transpose-setting > span {
   display: block;
   margin-bottom: 7px;
@@ -4665,6 +4667,10 @@ a {
   border-radius: 12px;
   padding: 3px;
   background: var(--surface-muted);
+}
+
+.song-score-viewer__segmented-control--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .song-score-viewer__segmented-control button {
@@ -4890,6 +4896,7 @@ a {
   }
 
   .song-score-viewer__layout-setting legend,
+  .song-score-viewer__density-setting legend,
   .song-score-viewer__transpose-setting > span {
     margin-bottom: 5px;
   }
