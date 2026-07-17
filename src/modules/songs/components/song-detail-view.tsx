@@ -165,8 +165,6 @@ type FocusPinchGesture = {
   contentX: number;
   contentY: number;
   distance: number;
-  pdfContentOffsetX: number | null;
-  pdfContentOffsetY: number | null;
   focalX: number;
   focalY: number;
   paddingLeft: number;
@@ -258,6 +256,14 @@ export function SongDetailView({
   const pdfViewerRef = useRef<SongPdfViewerHandle>(null);
   const textViewerRef = useRef<TransposableSongSheetHandle>(null);
   const focusPinchGestureRef = useRef<FocusPinchGesture | null>(null);
+  const focusPinchFrameRef = useRef<number | null>(null);
+  const focusPinchUpdateRef = useRef<{
+    gesture: FocusPinchGesture;
+    localCenterX: number;
+    localCenterY: number;
+    nextZoom: number;
+    viewport: HTMLElement;
+  } | null>(null);
   const resolvedSourceViewRef = useRef(resolvedSourceView);
   const preferencesRef = useRef(preferences);
   const focusZoomValueRef = useRef(1);
@@ -364,10 +370,6 @@ export function SongDetailView({
       const focalX = viewport.scrollLeft + center.x - viewportBounds.left;
       const focalY = viewport.scrollTop + center.y - viewportBounds.top;
       const viewportStyle = getComputedStyle(viewport);
-      const pdfPages = viewport.querySelector<HTMLElement>(
-        ".song-pdf-viewer__pages",
-      );
-      const pdfPageBounds = pdfPages?.getBoundingClientRect();
       const paddingLeft = Number.parseFloat(viewportStyle.paddingLeft) || 0;
       const paddingTop = Number.parseFloat(viewportStyle.paddingTop) || 0;
       const zoom = focusZoomValueRef.current;
@@ -376,8 +378,6 @@ export function SongDetailView({
         contentX: (focalX - paddingLeft) / zoom,
         contentY: (focalY - paddingTop) / zoom,
         distance,
-        pdfContentOffsetX: pdfPageBounds ? center.x - pdfPageBounds.left : null,
-        pdfContentOffsetY: pdfPageBounds ? center.y - pdfPageBounds.top : null,
         focalX,
         focalY,
         paddingLeft,
@@ -417,33 +417,34 @@ export function SongDetailView({
 
       setFocusZoomValueRef.current(nextZoom);
 
-      window.requestAnimationFrame(() => {
-        if (
-          resolvedSourceViewRef.current === "pdf" &&
-          gesture.pdfContentOffsetX !== null &&
-          gesture.pdfContentOffsetY !== null
-        ) {
-          const pdfPages = viewport.querySelector<HTMLElement>(
-            ".song-pdf-viewer__pages",
-          );
-          const pdfPageBounds = pdfPages?.getBoundingClientRect();
+      focusPinchUpdateRef.current = {
+        gesture,
+        localCenterX,
+        localCenterY,
+        nextZoom,
+        viewport,
+      };
 
-          if (pdfPageBounds) {
-            const scale = nextZoom / gesture.zoom;
-            const targetLeft =
-              viewportBounds.left + localCenterX - gesture.pdfContentOffsetX * scale;
-            const targetTop =
-              viewportBounds.top + localCenterY - gesture.pdfContentOffsetY * scale;
+      if (focusPinchFrameRef.current !== null) {
+        return;
+      }
 
-            viewport.scrollLeft += pdfPageBounds.left - targetLeft;
-            viewport.scrollTop += pdfPageBounds.top - targetTop;
-            return;
-          }
+      focusPinchFrameRef.current = window.requestAnimationFrame(() => {
+        focusPinchFrameRef.current = null;
+        const update = focusPinchUpdateRef.current;
+
+        if (!update) {
+          return;
         }
-        viewport.scrollLeft =
-          gesture.paddingLeft + gesture.contentX * nextZoom - localCenterX;
-        viewport.scrollTop =
-          gesture.paddingTop + gesture.contentY * nextZoom - localCenterY;
+
+        update.viewport.scrollLeft =
+          update.gesture.paddingLeft +
+          update.gesture.contentX * update.nextZoom -
+          update.localCenterX;
+        update.viewport.scrollTop =
+          update.gesture.paddingTop +
+          update.gesture.contentY * update.nextZoom -
+          update.localCenterY;
       });
     }
 
@@ -500,6 +501,13 @@ export function SongDetailView({
     return () => {
       focusPinchGestureRef.current = null;
       container.removeEventListener("touchstart", startPinch);
+      focusPinchUpdateRef.current = null;
+
+      if (focusPinchFrameRef.current !== null) {
+        window.cancelAnimationFrame(focusPinchFrameRef.current);
+        focusPinchFrameRef.current = null;
+      }
+
       container.removeEventListener("touchmove", updatePinch);
       container.removeEventListener("touchend", stopPinch);
       container.removeEventListener("touchcancel", stopPinch);

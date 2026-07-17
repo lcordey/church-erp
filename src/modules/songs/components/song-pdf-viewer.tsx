@@ -45,6 +45,8 @@ function applyPdfCanvasZoom(container: HTMLElement | null, zoom: number) {
     return;
   }
 
+  let widestPage = 0;
+
   container.querySelectorAll("canvas").forEach((canvas) => {
     const baseWidth = Number(canvas.dataset.baseWidth);
     const baseHeight = Number(canvas.dataset.baseHeight);
@@ -53,9 +55,18 @@ function applyPdfCanvasZoom(container: HTMLElement | null, zoom: number) {
       return;
     }
 
+    widestPage = Math.max(widestPage, baseWidth);
     canvas.style.width = `${Math.round(baseWidth * zoom)}px`;
     canvas.style.height = `${Math.round(baseHeight * zoom)}px`;
   });
+
+  if (!widestPage) {
+    return;
+  }
+
+  const width = `${Math.round(widestPage * zoom)}px`;
+  container.style.width = width;
+  container.style.minWidth = width;
 }
 
 function clampPdfZoom(zoom: number) {
