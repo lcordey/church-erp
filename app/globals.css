@@ -2204,13 +2204,6 @@ a {
   padding: clamp(14px, 2.5vw, 28px);
 }
 
-.song-document-viewer__stage--pdf {
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-  touch-action: pan-x pan-y;
-}
-
 .song-document-viewer__stage--text {
   overflow: auto;
   background: var(--paper);
@@ -2219,7 +2212,8 @@ a {
   touch-action: pan-x pan-y;
 }
 
-.song-document-viewer--musicxml .song-document-viewer__stage {
+.song-document-viewer--musicxml .song-document-viewer__stage,
+.song-document-viewer--pdf .song-document-viewer__stage {
   display: flex;
   overflow: hidden;
   flex-direction: column;
@@ -4635,8 +4629,9 @@ a {
   }
 }
 
-/* MusicXML score reader */
-.song-document-viewer--musicxml .song-document-viewer__stage {
+/* MusicXML and PDF readers */
+.song-document-viewer--musicxml .song-document-viewer__stage,
+.song-document-viewer--pdf .song-document-viewer__stage {
   position: relative;
   gap: 0;
   padding: 0;
@@ -4740,7 +4735,8 @@ a {
     linear-gradient(145deg, var(--surface-muted), var(--paper));
 }
 
-.song-document-viewer--musicxml .song-score-viewer__viewport {
+.song-document-viewer--musicxml .song-score-viewer__viewport,
+.song-document-viewer--pdf .song-score-viewer__viewport {
   --score-viewport-gutter: clamp(24px, 4vw, 54px);
   width: 100%;
   height: 100%;
@@ -4925,7 +4921,8 @@ a {
     margin-bottom: 5px;
   }
 
-  .song-document-viewer--musicxml .song-score-viewer__viewport {
+  .song-document-viewer--musicxml .song-score-viewer__viewport,
+  .song-document-viewer--pdf .song-score-viewer__viewport {
     --score-viewport-gutter: 20px;
     padding:
       var(--score-viewport-gutter)

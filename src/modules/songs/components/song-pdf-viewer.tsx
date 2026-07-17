@@ -299,31 +299,35 @@ function SongPdfViewer({
   const fallbackDownloadUrl = `${sourceUrl}${sourceUrl.includes("?") ? "&" : "?"}download=1`;
 
   return (
-    <div
-      ref={stageRef}
-      className="song-document-viewer__stage song-document-viewer__stage--pdf"
-    >
-      {status ? (
-        <div className="song-document-viewer__status-row">
-          <p className="song-document-viewer__status">
-            {status}
-            {status.startsWith("Impossible") ? (
-              <>
-                {" "}
-                <a href={fallbackDownloadUrl}>Télécharger le PDF</a>
-              </>
-            ) : null}
-          </p>
+    <div className="song-document-viewer__stage song-document-viewer__stage--pdf">
+      <div className="song-score-viewer__canvas">
+        <div
+          ref={stageRef}
+          className="song-pdf-viewer__viewport song-score-viewer__viewport"
+        >
+          {status ? (
+            <div className="song-document-viewer__status-row">
+              <p className="song-document-viewer__status">
+                {status}
+                {status.startsWith("Impossible") ? (
+                  <>
+                    {" "}
+                    <a href={fallbackDownloadUrl}>Télécharger le PDF</a>
+                  </>
+                ) : null}
+              </p>
+            </div>
+          ) : null}
+          <div
+            ref={containerRef}
+            aria-label={`Partition PDF de ${title}`}
+            className="song-pdf-viewer__pages"
+          />
+          {copyright ? (
+            <footer className="song-document-sheet__footer">{copyright}</footer>
+          ) : null}
         </div>
-      ) : null}
-      <div
-        ref={containerRef}
-        aria-label={`Partition PDF de ${title}`}
-        className="song-pdf-viewer__pages"
-      />
-      {copyright ? (
-        <footer className="song-document-sheet__footer">{copyright}</footer>
-      ) : null}
+      </div>
     </div>
   );
 });

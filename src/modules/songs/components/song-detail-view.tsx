@@ -310,7 +310,7 @@ export function SongDetailView({
 
       if (resolvedSourceViewRef.current === "pdf") {
         return currentContainer.querySelector<HTMLElement>(
-          ".song-document-viewer__stage--pdf",
+          ".song-pdf-viewer__viewport",
         );
       }
 
