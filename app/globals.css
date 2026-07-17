@@ -206,6 +206,11 @@ body:has(.app-shell) {
   overflow-x: hidden;
 }
 
+html:has(.song-page--immersive),
+body:has(.song-page--immersive) {
+  overflow: hidden;
+}
+
 .app-shell {
   min-height: 100vh;
 }

@@ -119,6 +119,37 @@ function SongPageWorkspaceContent({
     [collectionKey, collectionSongState],
   );
 
+  useEffect(() => {
+    function resetPageScroll() {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+
+    function resetPageScrollWhenVisible() {
+      if (document.visibilityState === "visible") {
+        resetPageScroll();
+      }
+    }
+
+    resetPageScroll();
+    const animationFrame = window.requestAnimationFrame(resetPageScroll);
+    const timeout = window.setTimeout(resetPageScroll, 200);
+
+    window.addEventListener("pageshow", resetPageScroll);
+    document.addEventListener("visibilitychange", resetPageScrollWhenVisible);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(timeout);
+      window.removeEventListener("pageshow", resetPageScroll);
+      document.removeEventListener(
+        "visibilitychange",
+        resetPageScrollWhenVisible,
+      );
+    };
+  }, [song.id]);
+
   const updateMode = useCallback(
     (nextMode: "selection" | "edition") => {
       if (nextMode === "edition") {
