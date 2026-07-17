@@ -7,15 +7,22 @@ const MAX_PDF_CANVAS_PIXELS = 4_194_304;
 
 type SongPdfViewerProps = {
   copyright: string | null;
+  onZoomChange?: (zoom: number) => void;
   sourceUrl: string;
   title: string;
   zoom: number;
 };
 
 export type SongPdfViewerHandle = {
+  changeZoom: (step: number) => void;
   commitZoom: () => number | null;
+  fitToWidth: () => void;
   previewZoom: (zoom: number) => void;
 };
+
+const MIN_PDF_ZOOM = 0.6;
+const MAX_PDF_ZOOM = 2;
+const PDF_ZOOM_STEP = 0.1;
 
 type PdfRenderScaleOptions = {
   devicePixelRatio: number;
@@ -51,6 +58,21 @@ function applyPdfCanvasZoom(container: HTMLElement | null, zoom: number) {
   });
 }
 
+function clampPdfZoom(zoom: number) {
+  return Math.min(
+    MAX_PDF_ZOOM,
+    Math.max(MIN_PDF_ZOOM, Math.round(zoom * 100) / 100),
+  );
+}
+
+function FitIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4" />
+    </svg>
+  );
+}
+
 export function resolvePdfRenderScale({
   devicePixelRatio,
   displayScale,
@@ -78,6 +100,7 @@ export function resolvePdfRenderScale({
 export const SongPdfViewer = forwardRef<SongPdfViewerHandle, SongPdfViewerProps>(
 function SongPdfViewer({
   copyright,
+  onZoomChange,
   sourceUrl,
   title,
   zoom,
@@ -128,7 +151,20 @@ function SongPdfViewer({
     return nextZoom;
   }
 
-  useImperativeHandle(ref, () => ({ commitZoom, previewZoom }));
+  function changeZoom(step: number) {
+    onZoomChange?.(clampPdfZoom(zoomRef.current + step));
+  }
+
+  function fitToWidth() {
+    onZoomChange?.(1);
+  }
+
+  useImperativeHandle(ref, () => ({
+    changeZoom,
+    commitZoom,
+    fitToWidth,
+    previewZoom,
+  }));
 
   useEffect(() => {
     return () => {
@@ -327,6 +363,41 @@ function SongPdfViewer({
             <footer className="song-document-sheet__footer">{copyright}</footer>
           ) : null}
         </div>
+
+        {!status ? (
+          <div
+            aria-label="Zoom de la partition PDF"
+            className="song-score-viewer__zoom-toolbar"
+            role="group"
+          >
+            <button
+              aria-label="Réduire la partition PDF"
+              disabled={zoom <= MIN_PDF_ZOOM}
+              onClick={() => changeZoom(-PDF_ZOOM_STEP)}
+              type="button"
+            >
+              −
+            </button>
+            <button
+              aria-label="Ajuster la partition PDF à la largeur disponible"
+              className="song-score-viewer__fit-button"
+              onClick={fitToWidth}
+              title="Ajuster à la largeur"
+              type="button"
+            >
+              <FitIcon />
+              <span>{Math.round(zoom * 100)} %</span>
+            </button>
+            <button
+              aria-label="Agrandir la partition PDF"
+              disabled={zoom >= MAX_PDF_ZOOM}
+              onClick={() => changeZoom(PDF_ZOOM_STEP)}
+              type="button"
+            >
+              +
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

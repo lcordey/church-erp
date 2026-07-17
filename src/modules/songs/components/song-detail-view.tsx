@@ -808,6 +808,7 @@ export function SongDetailView({
               ref={pdfViewerRef}
               copyright={song.copyright}
               sourceUrl={song.pdfSource.downloadUrl}
+              onZoomChange={setPdfZoom}
               title={song.title}
               zoom={pdfZoom}
             />
