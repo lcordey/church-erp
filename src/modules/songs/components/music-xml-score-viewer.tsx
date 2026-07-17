@@ -41,9 +41,11 @@ type MeasuresPerLine = 4 | 5 | 6;
 
 export type MusicXmlScoreViewerHandle = {
   changeZoom: (step: number) => void;
+  commitZoom: () => void;
   downloadPdf: () => Promise<void>;
   openDocument: () => void;
   openFullscreen: () => void;
+  previewZoom: (zoom: number) => void;
   setZoom: (zoom: number) => void;
 };
 
@@ -212,6 +214,8 @@ export const MusicXmlScoreViewer = forwardRef<
     sourceUrl: string;
   } | null>(null);
   const zoomRef = useRef(1);
+  const previewZoomFrameRef = useRef<number | null>(null);
+  const previewZoomRef = useRef<number | null>(null);
   const transposeByRef = useRef(0);
   const isAutoFitRef = useRef(true);
   const [layout, setLayout] = useState<ScoreLayout>("pages");
@@ -240,10 +244,45 @@ export const MusicXmlScoreViewer = forwardRef<
 
       isAutoFitRef.current = keepAutoFit;
       zoomRef.current = clampedZoom;
+      applyScoreZoom(containerRef.current, clampedZoom);
       setZoom(clampedZoom);
     },
     [],
   );
+
+  const previewZoom = useCallback((nextZoom: number) => {
+    const clampedZoom = clampScoreZoom(nextZoom);
+
+    isAutoFitRef.current = false;
+    zoomRef.current = clampedZoom;
+    previewZoomRef.current = clampedZoom;
+
+    if (previewZoomFrameRef.current !== null) {
+      return;
+    }
+
+    previewZoomFrameRef.current = window.requestAnimationFrame(() => {
+      previewZoomFrameRef.current = null;
+
+      if (previewZoomRef.current !== null) {
+        applyScoreZoom(containerRef.current, previewZoomRef.current);
+      }
+    });
+  }, []);
+
+  const commitZoom = useCallback(() => {
+    if (previewZoomFrameRef.current !== null) {
+      window.cancelAnimationFrame(previewZoomFrameRef.current);
+      previewZoomFrameRef.current = null;
+    }
+
+    if (previewZoomRef.current !== null) {
+      applyScoreZoom(containerRef.current, previewZoomRef.current);
+      previewZoomRef.current = null;
+    }
+
+    setZoom(zoomRef.current);
+  }, []);
 
   const fitScore = useCallback(() => {
     const viewport = viewportRef.current;
@@ -400,6 +439,7 @@ export const MusicXmlScoreViewer = forwardRef<
     ref,
     () => ({
       changeZoom,
+      commitZoom,
       downloadPdf: downloadRenderedScore,
       openDocument: openRenderedDocument,
       openFullscreen() {
@@ -411,12 +451,15 @@ export const MusicXmlScoreViewer = forwardRef<
           void target.requestFullscreen();
         }
       },
+      previewZoom,
       setZoom: updateZoom,
     }),
     [
       changeZoom,
+      commitZoom,
       downloadRenderedScore,
       openRenderedDocument,
+      previewZoom,
       updateZoom,
     ],
   );
@@ -426,16 +469,20 @@ export const MusicXmlScoreViewer = forwardRef<
   }, [onZoomChange, zoom]);
 
   useEffect(() => {
+    return () => {
+      if (previewZoomFrameRef.current !== null) {
+        window.cancelAnimationFrame(previewZoomFrameRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     zoomRef.current = zoom;
   }, [zoom]);
 
   useEffect(() => {
     transposeByRef.current = transposeBy;
   }, [transposeBy]);
-
-  useEffect(() => {
-    applyScoreZoom(containerRef.current, zoom);
-  }, [zoom]);
 
   useEffect(() => {
     const viewport = viewportRef.current;

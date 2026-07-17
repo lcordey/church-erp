@@ -403,6 +403,7 @@ export function SongDetailView({
     function stopPinch(event: TouchEvent) {
       if (event.touches.length < 2) {
         focusPinchGestureRef.current = null;
+        musicXmlViewerRef.current?.commitZoom();
       }
     }
 
@@ -487,7 +488,7 @@ export function SongDetailView({
     }
 
     if (source === "musicxml") {
-      musicXmlViewerRef.current?.setZoom(clampedZoom);
+      musicXmlViewerRef.current?.previewZoom(clampedZoom);
       return;
     }
 
