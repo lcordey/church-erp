@@ -4741,13 +4741,18 @@ a {
 }
 
 .song-document-viewer--musicxml .song-score-viewer__viewport {
+  --score-viewport-gutter: clamp(24px, 4vw, 54px);
   width: 100%;
   height: 100%;
   min-height: 0;
   flex: 1;
   overflow: auto;
   border-radius: 0;
-  padding: clamp(20px, 3vw, 38px) clamp(20px, 4vw, 54px) 92px;
+  padding:
+    var(--score-viewport-gutter)
+    var(--score-viewport-gutter)
+    calc(var(--score-viewport-gutter) + 54px);
+  scroll-padding: var(--score-viewport-gutter);
   background: transparent;
   box-shadow: none;
   scrollbar-gutter: stable;
@@ -4921,7 +4926,11 @@ a {
   }
 
   .song-document-viewer--musicxml .song-score-viewer__viewport {
-    padding: 12px 12px 78px;
+    --score-viewport-gutter: 20px;
+    padding:
+      var(--score-viewport-gutter)
+      var(--score-viewport-gutter)
+      calc(var(--score-viewport-gutter) + 58px);
     scrollbar-gutter: auto;
   }
 
