@@ -162,13 +162,13 @@ type SongDetailViewProps = {
 };
 
 type FocusPinchGesture = {
+  contentX: number;
+  contentY: number;
   distance: number;
   focalX: number;
   focalY: number;
-  scoreContentX?: number;
-  scoreContentY?: number;
-  scorePaddingLeft?: number;
-  scorePaddingTop?: number;
+  paddingLeft: number;
+  paddingTop: number;
   zoom: number;
 };
 
@@ -361,24 +361,19 @@ export function SongDetailView({
       const viewportBounds = viewport.getBoundingClientRect();
       const focalX = viewport.scrollLeft + center.x - viewportBounds.left;
       const focalY = viewport.scrollTop + center.y - viewportBounds.top;
-      const isScore = resolvedSourceViewRef.current === "musicxml";
-      const viewportStyle = isScore ? getComputedStyle(viewport) : null;
-      const scorePaddingLeft = viewportStyle
-        ? Number.parseFloat(viewportStyle.paddingLeft) || 0
-        : 0;
-      const scorePaddingTop = viewportStyle
-        ? Number.parseFloat(viewportStyle.paddingTop) || 0
-        : 0;
+      const viewportStyle = getComputedStyle(viewport);
+      const paddingLeft = Number.parseFloat(viewportStyle.paddingLeft) || 0;
+      const paddingTop = Number.parseFloat(viewportStyle.paddingTop) || 0;
       const zoom = focusZoomValueRef.current;
 
       focusPinchGestureRef.current = {
+        contentX: (focalX - paddingLeft) / zoom,
+        contentY: (focalY - paddingTop) / zoom,
         distance,
         focalX,
         focalY,
-        scoreContentX: isScore ? (focalX - scorePaddingLeft) / zoom : undefined,
-        scoreContentY: isScore ? (focalY - scorePaddingTop) / zoom : undefined,
-        scorePaddingLeft: isScore ? scorePaddingLeft : undefined,
-        scorePaddingTop: isScore ? scorePaddingTop : undefined,
+        paddingLeft,
+        paddingTop,
         zoom,
       };
     }
@@ -408,7 +403,6 @@ export function SongDetailView({
         bounds.min,
         bounds.max,
       );
-      const scale = nextZoom / gesture.zoom;
       const viewportBounds = viewport.getBoundingClientRect();
       const localCenterX = center.x - viewportBounds.left;
       const localCenterY = center.y - viewportBounds.top;
@@ -417,17 +411,9 @@ export function SongDetailView({
 
       window.requestAnimationFrame(() => {
         viewport.scrollLeft =
-          gesture.scoreContentX === undefined
-            ? gesture.focalX * scale - localCenterX
-            : (gesture.scorePaddingLeft ?? 0) +
-              gesture.scoreContentX * nextZoom -
-              localCenterX;
+          gesture.paddingLeft + gesture.contentX * nextZoom - localCenterX;
         viewport.scrollTop =
-          gesture.scoreContentY === undefined
-            ? gesture.focalY * scale - localCenterY
-            : (gesture.scorePaddingTop ?? 0) +
-              gesture.scoreContentY * nextZoom -
-              localCenterY;
+          gesture.paddingTop + gesture.contentY * nextZoom - localCenterY;
       });
     }
 
