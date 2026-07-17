@@ -215,8 +215,8 @@ function SongPdfViewer({
           return;
         }
 
-        const pageSpacing = stageWidth < 720 ? 16 : 24;
-        const targetWidth = Math.max(stageWidth - pageSpacing * 2, 220);
+        const viewportPadding = stageWidth < 640 ? 24 : 64;
+        const targetWidth = Math.max(stageWidth - viewportPadding, 220);
 
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
           const page = await pdf.getPage(pageNumber);
@@ -321,7 +321,7 @@ function SongPdfViewer({
           <div
             ref={containerRef}
             aria-label={`Partition PDF de ${title}`}
-            className="song-pdf-viewer__pages"
+            className="song-pdf-viewer__pages song-score-viewer__score"
           />
           {copyright ? (
             <footer className="song-document-sheet__footer">{copyright}</footer>

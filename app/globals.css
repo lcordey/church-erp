@@ -2251,11 +2251,6 @@ a {
 
 .song-pdf-viewer__pages {
   width: max-content;
-  min-width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  align-items: center;
 }
 
 .song-pdf-viewer__page {
