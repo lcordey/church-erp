@@ -165,6 +165,8 @@ type FocusPinchGesture = {
   contentX: number;
   contentY: number;
   distance: number;
+  pdfContentOffsetX: number | null;
+  pdfContentOffsetY: number | null;
   focalX: number;
   focalY: number;
   paddingLeft: number;
@@ -362,6 +364,10 @@ export function SongDetailView({
       const focalX = viewport.scrollLeft + center.x - viewportBounds.left;
       const focalY = viewport.scrollTop + center.y - viewportBounds.top;
       const viewportStyle = getComputedStyle(viewport);
+      const pdfPages = viewport.querySelector<HTMLElement>(
+        ".song-pdf-viewer__pages",
+      );
+      const pdfPageBounds = pdfPages?.getBoundingClientRect();
       const paddingLeft = Number.parseFloat(viewportStyle.paddingLeft) || 0;
       const paddingTop = Number.parseFloat(viewportStyle.paddingTop) || 0;
       const zoom = focusZoomValueRef.current;
@@ -370,6 +376,8 @@ export function SongDetailView({
         contentX: (focalX - paddingLeft) / zoom,
         contentY: (focalY - paddingTop) / zoom,
         distance,
+        pdfContentOffsetX: pdfPageBounds ? center.x - pdfPageBounds.left : null,
+        pdfContentOffsetY: pdfPageBounds ? center.y - pdfPageBounds.top : null,
         focalX,
         focalY,
         paddingLeft,
@@ -410,6 +418,28 @@ export function SongDetailView({
       setFocusZoomValueRef.current(nextZoom);
 
       window.requestAnimationFrame(() => {
+        if (
+          resolvedSourceViewRef.current === "pdf" &&
+          gesture.pdfContentOffsetX !== null &&
+          gesture.pdfContentOffsetY !== null
+        ) {
+          const pdfPages = viewport.querySelector<HTMLElement>(
+            ".song-pdf-viewer__pages",
+          );
+          const pdfPageBounds = pdfPages?.getBoundingClientRect();
+
+          if (pdfPageBounds) {
+            const scale = nextZoom / gesture.zoom;
+            const targetLeft =
+              viewportBounds.left + localCenterX - gesture.pdfContentOffsetX * scale;
+            const targetTop =
+              viewportBounds.top + localCenterY - gesture.pdfContentOffsetY * scale;
+
+            viewport.scrollLeft += pdfPageBounds.left - targetLeft;
+            viewport.scrollTop += pdfPageBounds.top - targetTop;
+            return;
+          }
+        }
         viewport.scrollLeft =
           gesture.paddingLeft + gesture.contentX * nextZoom - localCenterX;
         viewport.scrollTop =
