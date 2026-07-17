@@ -165,6 +165,10 @@ type FocusPinchGesture = {
   distance: number;
   focalX: number;
   focalY: number;
+  scoreContentX?: number;
+  scoreContentY?: number;
+  scorePaddingLeft?: number;
+  scorePaddingTop?: number;
   zoom: number;
 };
 
@@ -355,12 +359,27 @@ export function SongDetailView({
       event.preventDefault();
 
       const viewportBounds = viewport.getBoundingClientRect();
+      const focalX = viewport.scrollLeft + center.x - viewportBounds.left;
+      const focalY = viewport.scrollTop + center.y - viewportBounds.top;
+      const isScore = resolvedSourceViewRef.current === "musicxml";
+      const viewportStyle = isScore ? getComputedStyle(viewport) : null;
+      const scorePaddingLeft = viewportStyle
+        ? Number.parseFloat(viewportStyle.paddingLeft) || 0
+        : 0;
+      const scorePaddingTop = viewportStyle
+        ? Number.parseFloat(viewportStyle.paddingTop) || 0
+        : 0;
+      const zoom = focusZoomValueRef.current;
 
       focusPinchGestureRef.current = {
         distance,
-        focalX: viewport.scrollLeft + center.x - viewportBounds.left,
-        focalY: viewport.scrollTop + center.y - viewportBounds.top,
-        zoom: focusZoomValueRef.current,
+        focalX,
+        focalY,
+        scoreContentX: isScore ? (focalX - scorePaddingLeft) / zoom : undefined,
+        scoreContentY: isScore ? (focalY - scorePaddingTop) / zoom : undefined,
+        scorePaddingLeft: isScore ? scorePaddingLeft : undefined,
+        scorePaddingTop: isScore ? scorePaddingTop : undefined,
+        zoom,
       };
     }
 
@@ -397,8 +416,18 @@ export function SongDetailView({
       setFocusZoomValueRef.current(nextZoom);
 
       window.requestAnimationFrame(() => {
-        viewport.scrollLeft = gesture.focalX * scale - localCenterX;
-        viewport.scrollTop = gesture.focalY * scale - localCenterY;
+        viewport.scrollLeft =
+          gesture.scoreContentX === undefined
+            ? gesture.focalX * scale - localCenterX
+            : (gesture.scorePaddingLeft ?? 0) +
+              gesture.scoreContentX * nextZoom -
+              localCenterX;
+        viewport.scrollTop =
+          gesture.scoreContentY === undefined
+            ? gesture.focalY * scale - localCenterY
+            : (gesture.scorePaddingTop ?? 0) +
+              gesture.scoreContentY * nextZoom -
+              localCenterY;
       });
     }
 
