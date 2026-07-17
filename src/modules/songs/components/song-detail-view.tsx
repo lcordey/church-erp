@@ -11,6 +11,7 @@ import type { AdminSong } from "../types/admin-song";
 import type { PublicSongDetail } from "../types/public-song";
 import { MusicalKeyText } from "./musical-key-text";
 import type { MusicXmlScoreViewerHandle } from "./music-xml-score-viewer";
+import type { SongPdfViewerHandle } from "./song-pdf-viewer";
 import {
   hasChordProChords,
   hasChordProLyrics,
@@ -248,6 +249,7 @@ export function SongDetailView({
     song.collectionNumber,
   );
   const musicXmlViewerRef = useRef<MusicXmlScoreViewerHandle>(null);
+  const pdfViewerRef = useRef<SongPdfViewerHandle>(null);
   const textViewerRef = useRef<TransposableSongSheetHandle>(null);
   const focusPinchGestureRef = useRef<FocusPinchGesture | null>(null);
   const resolvedSourceViewRef = useRef(resolvedSourceView);
@@ -403,7 +405,45 @@ export function SongDetailView({
     function stopPinch(event: TouchEvent) {
       if (event.touches.length < 2) {
         focusPinchGestureRef.current = null;
-        musicXmlViewerRef.current?.commitZoom();
+        const source = resolvedSourceViewRef.current;
+
+        if (source === "pdf") {
+          const nextZoom = pdfViewerRef.current?.commitZoom();
+
+          if (nextZoom !== null && nextZoom !== undefined) {
+            setPdfZoom(nextZoom);
+          }
+
+          return;
+        }
+
+        if (source === "musicxml") {
+          musicXmlViewerRef.current?.commitZoom();
+          return;
+        }
+
+        const nextZoom = textViewerRef.current?.commitZoom();
+
+        if (nextZoom === null || nextZoom === undefined) {
+          return;
+        }
+
+        const currentPreferences = preferencesRef.current;
+        const previousLyricsFontScale = currentPreferences.lyricsFontScale;
+
+        setPreferences({
+          chordFontScale:
+            source === "chordpro"
+              ? clamp(
+                  currentPreferences.chordFontScale +
+                    nextZoom -
+                    previousLyricsFontScale,
+                  TEXT_CHORD_MIN_ZOOM,
+                  TEXT_CHORD_MAX_ZOOM,
+                )
+              : currentPreferences.chordFontScale,
+          lyricsFontScale: nextZoom,
+        });
       }
     }
 
@@ -419,7 +459,7 @@ export function SongDetailView({
       container.removeEventListener("touchend", stopPinch);
       container.removeEventListener("touchcancel", stopPinch);
     };
-  }, [isFocusMode]);
+  }, [isFocusMode, setPreferences]);
 
   function getDownloadHref(sourceUrl: string) {
     const separator = sourceUrl.includes("?") ? "&" : "?";
@@ -483,7 +523,7 @@ export function SongDetailView({
     const clampedZoom = clamp(nextZoom, bounds.min, bounds.max);
 
     if (source === "pdf") {
-      setPdfZoom(clampedZoom);
+      pdfViewerRef.current?.previewZoom(clampedZoom);
       return;
     }
 
@@ -492,22 +532,7 @@ export function SongDetailView({
       return;
     }
 
-    const currentPreferences = preferencesRef.current;
-    const previousLyricsFontScale = currentPreferences.lyricsFontScale;
-
-    setPreferences({
-      chordFontScale:
-        source === "chordpro"
-          ? clamp(
-              currentPreferences.chordFontScale +
-                clampedZoom -
-                previousLyricsFontScale,
-              TEXT_CHORD_MIN_ZOOM,
-              TEXT_CHORD_MAX_ZOOM,
-            )
-          : currentPreferences.chordFontScale,
-      lyricsFontScale: clampedZoom,
-    });
+    textViewerRef.current?.previewZoom(clampedZoom);
   }
 
 
@@ -765,6 +790,7 @@ export function SongDetailView({
           song.pdfSource ? (
           <Suspense fallback={<DocumentViewerLoadingState />}>
             <SongPdfViewer
+              ref={pdfViewerRef}
               copyright={song.copyright}
               sourceUrl={song.pdfSource.downloadUrl}
               title={song.title}

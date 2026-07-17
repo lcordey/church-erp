@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 const MAX_PDF_CANVAS_DIMENSION = 4096;
 const MAX_PDF_CANVAS_PIXELS = 4_194_304;
@@ -10,6 +10,11 @@ type SongPdfViewerProps = {
   sourceUrl: string;
   title: string;
   zoom: number;
+};
+
+export type SongPdfViewerHandle = {
+  commitZoom: () => number | null;
+  previewZoom: (zoom: number) => void;
 };
 
 type PdfRenderScaleOptions = {
@@ -70,22 +75,68 @@ export function resolvePdfRenderScale({
   );
 }
 
-export function SongPdfViewer({
+export const SongPdfViewer = forwardRef<SongPdfViewerHandle, SongPdfViewerProps>(
+function SongPdfViewer({
   copyright,
   sourceUrl,
   title,
   zoom,
-}: SongPdfViewerProps) {
+}, ref) {
   const stageRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState("Chargement du PDF…");
   const [stageWidth, setStageWidth] = useState(0);
   const zoomRef = useRef(zoom);
+  const previewZoomFrameRef = useRef<number | null>(null);
+  const previewZoomRef = useRef<number | null>(null);
 
   useEffect(() => {
     zoomRef.current = zoom;
     applyPdfCanvasZoom(containerRef.current, zoom);
   }, [zoom]);
+
+  function previewZoom(nextZoom: number) {
+    zoomRef.current = nextZoom;
+    previewZoomRef.current = nextZoom;
+
+    if (previewZoomFrameRef.current !== null) {
+      return;
+    }
+
+    previewZoomFrameRef.current = window.requestAnimationFrame(() => {
+      previewZoomFrameRef.current = null;
+
+      if (previewZoomRef.current !== null) {
+        applyPdfCanvasZoom(containerRef.current, previewZoomRef.current);
+      }
+    });
+  }
+
+  function commitZoom() {
+    if (previewZoomFrameRef.current !== null) {
+      window.cancelAnimationFrame(previewZoomFrameRef.current);
+      previewZoomFrameRef.current = null;
+    }
+
+    const nextZoom = previewZoomRef.current;
+
+    if (nextZoom !== null) {
+      applyPdfCanvasZoom(containerRef.current, nextZoom);
+      previewZoomRef.current = null;
+    }
+
+    return nextZoom;
+  }
+
+  useImperativeHandle(ref, () => ({ commitZoom, previewZoom }));
+
+  useEffect(() => {
+    return () => {
+      if (previewZoomFrameRef.current !== null) {
+        window.cancelAnimationFrame(previewZoomFrameRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -275,4 +326,4 @@ export function SongPdfViewer({
       ) : null}
     </div>
   );
-}
+});

@@ -3,7 +3,9 @@
 import {
   forwardRef,
   useCallback,
+  useEffect,
   useImperativeHandle,
+  useRef,
   useState,
 } from "react";
 
@@ -33,8 +35,10 @@ type TransposableSongSheetProps = {
 };
 
 export type TransposableSongSheetHandle = {
+  commitZoom: () => number | null;
   downloadPdf: () => Promise<void>;
   openDocument: () => void;
+  previewZoom: (zoom: number) => void;
 };
 
 type PrintableLine = {
@@ -67,6 +71,10 @@ export const TransposableSongSheet = forwardRef<
 ) {
   const { notation } = useMusicNotation();
   const { preferences, setPreferences } = useSongRenderPreferences();
+  const sheetRef = useRef<HTMLElement>(null);
+  const previewZoomBaseRef = useRef(preferences.lyricsFontScale);
+  const previewZoomFrameRef = useRef<number | null>(null);
+  const previewZoomRef = useRef<number | null>(null);
   const canonicalDefaultKey =
     defaultKey && isMusicalKey(defaultKey) ? defaultKey : null;
   const [selectedKey, setSelectedKey] = useState(canonicalDefaultKey ?? "");
@@ -115,9 +123,69 @@ export const TransposableSongSheet = forwardRef<
     });
   }, [content, displayMode, notation, transposeBy]);
 
+  const applyPreviewZoom = useCallback((nextZoom: number) => {
+    const baseZoom = previewZoomBaseRef.current;
+
+    sheetRef.current?.style.setProperty(
+      "zoom",
+      String(nextZoom / baseZoom),
+    );
+  }, []);
+
+  const previewZoom = useCallback((nextZoom: number) => {
+    if (previewZoomRef.current === null) {
+      previewZoomBaseRef.current = preferences.lyricsFontScale;
+    }
+
+    previewZoomRef.current = nextZoom;
+
+    if (previewZoomFrameRef.current !== null) {
+      return;
+    }
+
+    previewZoomFrameRef.current = window.requestAnimationFrame(() => {
+      previewZoomFrameRef.current = null;
+
+      if (previewZoomRef.current !== null) {
+        applyPreviewZoom(previewZoomRef.current);
+      }
+    });
+  }, [applyPreviewZoom, preferences.lyricsFontScale]);
+
+  const commitZoom = useCallback(() => {
+    if (previewZoomFrameRef.current !== null) {
+      window.cancelAnimationFrame(previewZoomFrameRef.current);
+      previewZoomFrameRef.current = null;
+    }
+
+    const nextZoom = previewZoomRef.current;
+
+    if (nextZoom !== null) {
+      applyPreviewZoom(nextZoom);
+      previewZoomRef.current = null;
+    }
+
+    return nextZoom;
+  }, [applyPreviewZoom]);
+
+  useEffect(() => {
+    if (previewZoomRef.current === null) {
+      sheetRef.current?.style.removeProperty("zoom");
+    }
+  }, [preferences.lyricsFontScale]);
+
+  useEffect(() => {
+    return () => {
+      if (previewZoomFrameRef.current !== null) {
+        window.cancelAnimationFrame(previewZoomFrameRef.current);
+      }
+    };
+  }, []);
+
   useImperativeHandle(
     ref,
     () => ({
+      commitZoom,
       async downloadPdf() {
         const { jsPDF } = await import("jspdf");
         const pdf = new jsPDF({
@@ -247,13 +315,16 @@ export const TransposableSongSheet = forwardRef<
 </html>`);
         popup.document.close();
       },
+      previewZoom,
     }),
     [
+      commitZoom,
       copyright,
       displayMode,
       displayedKey,
       getPrintableLines,
       notation,
+      previewZoom,
       title,
     ],
   );
@@ -414,6 +485,7 @@ export const TransposableSongSheet = forwardRef<
 
       <div className="song-document-viewer__stage song-document-viewer__stage--text">
         <article
+          ref={sheetRef}
           className={`sheet-card ${displayMode === "lyrics" ? "sheet-card--lyrics" : ""}`}
         >
           {displayMode === "chords" ? (
