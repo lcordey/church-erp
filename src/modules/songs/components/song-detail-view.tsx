@@ -46,7 +46,7 @@ const sourceLabels: Record<SongSourceView, string> = {
 };
 
 const PDF_MIN_ZOOM = 0.6;
-const PDF_MAX_ZOOM = 2;
+const PDF_MAX_ZOOM = 2.2;
 const SCORE_MIN_ZOOM = 0.2;
 const SCORE_MAX_ZOOM = 1.8;
 const TEXT_LYRICS_MIN_ZOOM = 0.9;
@@ -165,6 +165,9 @@ type FocusPinchGesture = {
   contentX: number;
   contentY: number;
   distance: number;
+  pdfAnchor: HTMLCanvasElement | null;
+  pdfAnchorOffsetX: number | null;
+  pdfAnchorOffsetY: number | null;
   focalX: number;
   focalY: number;
   paddingLeft: number;
@@ -373,11 +376,24 @@ export function SongDetailView({
       const paddingLeft = Number.parseFloat(viewportStyle.paddingLeft) || 0;
       const paddingTop = Number.parseFloat(viewportStyle.paddingTop) || 0;
       const zoom = focusZoomValueRef.current;
+      const pdfAnchor =
+        resolvedSourceViewRef.current === "pdf"
+          ? (target instanceof HTMLCanvasElement
+              ? target
+              : target instanceof HTMLElement
+                ? target.closest<HTMLCanvasElement>("canvas")
+                : null) ??
+            viewport.querySelector<HTMLCanvasElement>("canvas")
+          : null;
+      const pdfAnchorBounds = pdfAnchor?.getBoundingClientRect();
 
       focusPinchGestureRef.current = {
         contentX: (focalX - paddingLeft) / zoom,
         contentY: (focalY - paddingTop) / zoom,
         distance,
+        pdfAnchor,
+        pdfAnchorOffsetX: pdfAnchorBounds ? center.x - pdfAnchorBounds.left : null,
+        pdfAnchorOffsetY: pdfAnchorBounds ? center.y - pdfAnchorBounds.top : null,
         focalX,
         focalY,
         paddingLeft,
@@ -434,6 +450,29 @@ export function SongDetailView({
         const update = focusPinchUpdateRef.current;
 
         if (!update) {
+          return;
+        }
+
+        if (
+          resolvedSourceViewRef.current === "pdf" &&
+          update.gesture.pdfAnchor &&
+          update.gesture.pdfAnchorOffsetX !== null &&
+          update.gesture.pdfAnchorOffsetY !== null
+        ) {
+          const anchorBounds = update.gesture.pdfAnchor.getBoundingClientRect();
+          const viewportBounds = update.viewport.getBoundingClientRect();
+          const scale = update.nextZoom / update.gesture.zoom;
+          const targetLeft =
+            viewportBounds.left +
+            update.localCenterX -
+            update.gesture.pdfAnchorOffsetX * scale;
+          const targetTop =
+            viewportBounds.top +
+            update.localCenterY -
+            update.gesture.pdfAnchorOffsetY * scale;
+
+          update.viewport.scrollLeft += anchorBounds.left - targetLeft;
+          update.viewport.scrollTop += anchorBounds.top - targetTop;
           return;
         }
 

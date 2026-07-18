@@ -22,7 +22,7 @@ export type SongPdfViewerHandle = {
 };
 
 const MIN_PDF_ZOOM = 0.6;
-const MAX_PDF_ZOOM = 2;
+const MAX_PDF_ZOOM = 2.2;
 const PDF_ZOOM_STEP = 0.1;
 
 type PdfRenderScaleOptions = {
