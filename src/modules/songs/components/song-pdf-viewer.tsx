@@ -4,6 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 
 const MAX_PDF_CANVAS_DIMENSION = 4096;
 const MAX_PDF_CANVAS_PIXELS = 4_194_304;
+const PDF_FIT_WIDTH = 920;
 
 type SongPdfViewerProps = {
   copyright: string | null;
@@ -108,6 +109,13 @@ export function resolvePdfRenderScale({
   );
 }
 
+export function resolvePdfDisplayWidth(viewportWidth: number) {
+  const horizontalPadding = viewportWidth < 640 ? 24 : 64;
+  const availableWidth = Math.max(220, viewportWidth - horizontalPadding);
+
+  return Math.min(PDF_FIT_WIDTH, availableWidth);
+}
+
 export const SongPdfViewer = forwardRef<SongPdfViewerHandle, SongPdfViewerProps>(
 function SongPdfViewer({
   copyright,
@@ -192,14 +200,8 @@ function SongPdfViewer({
       return;
     }
 
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-
-      if (!entry) {
-        return;
-      }
-
-      const nextWidth = Math.floor(entry.contentRect.width);
+    const observer = new ResizeObserver(() => {
+      const nextWidth = Math.floor(stage.clientWidth);
 
       setStageWidth((current) => (current === nextWidth ? current : nextWidth));
     });
@@ -262,8 +264,7 @@ function SongPdfViewer({
           return;
         }
 
-        const viewportPadding = stageWidth < 640 ? 24 : 64;
-        const targetWidth = Math.max(stageWidth - viewportPadding, 220);
+        const targetWidth = resolvePdfDisplayWidth(stageWidth);
 
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
           const page = await pdf.getPage(pageNumber);

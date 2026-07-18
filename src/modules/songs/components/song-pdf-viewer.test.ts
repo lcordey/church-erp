@@ -2,10 +2,22 @@ import { describe, expect, it } from "vitest";
 
 import {
   getPdfDocumentOptions,
+  resolvePdfDisplayWidth,
   resolvePdfRenderScale,
 } from "./song-pdf-viewer";
 
 import { GET as getPdfJsWasm } from "@/app/pdfjs/wasm/[file]/route";
+
+describe("resolvePdfDisplayWidth", () => {
+  it("uses the same desktop reference width as the MusicXML score", () => {
+    expect(resolvePdfDisplayWidth(1440)).toBe(920);
+  });
+
+  it("fits narrow viewports while keeping the reader usable", () => {
+    expect(resolvePdfDisplayWidth(600)).toBe(576);
+    expect(resolvePdfDisplayWidth(180)).toBe(220);
+  });
+});
 
 describe("resolvePdfRenderScale", () => {
   it("keeps the preferred scale for ordinary pages", () => {
