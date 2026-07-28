@@ -3,6 +3,9 @@ import { randomBytes } from "node:crypto";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { apiRequestRequiresAuthentication } from "@/src/infrastructure/auth/api-access-policy";
+import { authSessionCookieName } from "@/src/infrastructure/auth/session";
+
 const safeMethods = new Set(["GET", "HEAD", "OPTIONS"]);
 const defaultMaximumApiBodyBytes = 256 * 1024;
 
@@ -77,6 +80,27 @@ export function proxy(request: NextRequest) {
         },
       },
       { status: 403 },
+    );
+  }
+
+  if (
+    apiRequestRequiresAuthentication(
+      request.method,
+      request.nextUrl.pathname,
+    ) &&
+    !request.cookies.get(authSessionCookieName)?.value
+  ) {
+    return Response.json(
+      {
+        error: {
+          code: "AUTHENTICATION_REQUIRED",
+          message: "Connexion requise.",
+        },
+      },
+      {
+        status: 401,
+        headers: { "cache-control": "private, no-store" },
+      },
     );
   }
 

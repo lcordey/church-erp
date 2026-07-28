@@ -32,6 +32,12 @@ It is not a claim that the application or uploaded documents are risk-free.
 
 - Unsafe cross-site requests to `/api` are rejected from `Origin` and Fetch
   Metadata before reaching route handlers.
+- API access is private by default. Anonymous requests are admitted only for
+  the login/logout entry points, protocol preflight, and the explicit public
+  read routes listed below.
+- A session cookie at the request boundary is only a fast rejection mechanism.
+  Protected services still validate the session and permission server-side, so
+  a forged, expired, or revoked cookie does not authorize an operation.
 - Pages receive a per-request Content Security Policy nonce.
 - The policy denies plugins, framing, foreign form targets, and arbitrary
   script execution.
@@ -39,6 +45,21 @@ It is not a claim that the application or uploaded documents are risk-free.
   production HSTS headers.
 - External input is validated at route boundaries and Drizzle parameterizes
   database queries.
+
+### API access matrix
+
+| Access | Methods and routes |
+| --- | --- |
+| Public read | `GET/HEAD /api/songs`, `/api/songs/:slug` |
+| Public read | `GET/HEAD /api/setlists`, `/api/setlists/:id` |
+| Public read | `GET/HEAD /api/events`, `/api/events/:id` |
+| Public read | `GET/HEAD /api/push/config` |
+| Authentication entry point | `POST /api/auth/login`, `POST /api/auth/logout` |
+| Private by default | Every other current or future `/api` request |
+
+Anonymous event responses omit team assignments. Score files, administrative
+reads, push-subscription preferences, and every write operation require a
+valid session and the corresponding server-side permission.
 
 ### PDF and MusicXML
 

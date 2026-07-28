@@ -26,6 +26,10 @@ successful login. Password errors never reveal whether an identifier exists.
 
 Unsafe cross-site API mutations are rejected before route handling. Pages use
 a nonce-based Content Security Policy and standard browser security headers.
+The API is private by default: only the public song metadata, setlist, event,
+push-configuration reads, and authentication entry points can reach a route
+without a session cookie. This early boundary does not replace the
+authoritative session and permission checks in module services.
 
 Local resets seed `louange / louange` and `admin / CDatalm`; both are temporary.
 They are not inserted by production migrations.

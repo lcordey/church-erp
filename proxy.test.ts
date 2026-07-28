@@ -21,7 +21,7 @@ describe("security proxy", () => {
     });
   });
 
-  it("allows same-origin API mutations", () => {
+  it("allows the login entry point without a session", () => {
     const response = proxy(
       new NextRequest("https://church.example/api/auth/login", {
         method: "POST",
@@ -29,6 +29,55 @@ describe("security proxy", () => {
           origin: "https://church.example",
           "sec-fetch-site": "same-origin",
         },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("rejects anonymous API mutations before route handling", async () => {
+    const response = proxy(
+      new NextRequest("https://church.example/api/events", {
+        method: "POST",
+        headers: {
+          origin: "https://church.example",
+          "sec-fetch-site": "same-origin",
+        },
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    await expect(response.json()).resolves.toMatchObject({
+      error: { code: "AUTHENTICATION_REQUIRED" },
+    });
+  });
+
+  it("rejects anonymous private reads", async () => {
+    const response = proxy(
+      new NextRequest("https://church.example/api/admin/songs"),
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toMatchObject({
+      error: { code: "AUTHENTICATION_REQUIRED" },
+    });
+  });
+
+  it("allows explicitly public reads without a session", () => {
+    const response = proxy(
+      new NextRequest("https://church.example/api/songs/chant-public"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("allows private requests with a session cookie to reach authorization", () => {
+    const response = proxy(
+      new NextRequest("https://church.example/api/admin/songs", {
+        headers: { cookie: "churcherp_session=session-token" },
       }),
     );
 
