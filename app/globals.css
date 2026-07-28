@@ -4126,7 +4126,7 @@ a {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (orientation: landscape) and (max-height: 500px) {
   .app-shell__content {
     padding-left: 0;
   }
@@ -4136,6 +4136,10 @@ a {
   }
 
   .app-sidebar {
+    max-height: 100vh;
+    max-height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     transform: translateX(calc(-100% - 24px));
     transition: transform 220ms ease;
   }
@@ -4153,6 +4157,20 @@ a {
     background: var(--backdrop);
   }
 
+  .app-shell__header-inner {
+    width: min(100% - 28px, 1120px);
+    min-height: 72px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0;
+  }
+
+  .app-top-bar__identity {
+    width: auto;
+  }
+}
+
+@media (max-width: 720px) {
   .catalog-shell,
   .song-page__shell,
   .setlist-shell {
@@ -4161,11 +4179,6 @@ a {
 
   .song-page__shell--immersive {
     width: 100%;
-  }
-
-  .app-shell__header-inner {
-    width: min(100% - 28px, 1120px);
-    min-height: 72px;
   }
 
   .pwa-install-banner {
@@ -4276,16 +4289,6 @@ a {
   .song-score-viewer__transpose-controls button,
   .song-score-viewer__transpose-value {
     min-height: 38px;
-  }
-
-  .app-shell__header-inner {
-    align-items: center;
-    justify-content: space-between;
-    padding: 0;
-  }
-
-  .app-top-bar__identity {
-    width: auto;
   }
 
   .app-panel-page {
