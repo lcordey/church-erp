@@ -32,6 +32,8 @@ Exposer une liste publique des chants publies afin de pouvoir consulter le reper
 - l'acces public est strictement en lecture seule
 - les visiteurs non connectes peuvent consulter uniquement les paroles et accords
 - les routes PDF et MusicXML exigent une session authentifiee cote serveur
+- les réponses PDF et MusicXML privées désactivent le cache et le MIME sniffing et appliquent une politique sandbox
+- le lecteur PDF rend les pages sur canvas sans activer les fonctions de script du viewer PDF
 - les partitions exigent `score.read`; la gestion des chants exige `song.manage`
 - la recherche MVP-1 couvre le titre, le code de recueil, le numero brut et le numero zero-pad
 - la recherche par titre ignore les accents entre formes accentuees et non accentuees d'un meme titre

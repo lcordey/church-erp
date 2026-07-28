@@ -12,6 +12,25 @@ export type IdentityValidationResult<T> =
   | { success: false; errors: Record<string, string> };
 
 const usernamePattern = /^[a-z0-9._-]{3,50}$/;
+export const minimumPasswordLength = 15;
+const maximumPasswordLength = 128;
+const blockedPasswords = new Set([
+  "123456789012345",
+  "azertyuiop123456",
+  "churcherp123456",
+  "motdepasse123456",
+  "password123456",
+]);
+
+export function isPasswordPolicyCompliant(password: string) {
+  const passwordLength = [...password].length;
+
+  return (
+    passwordLength >= minimumPasswordLength &&
+    passwordLength <= maximumPasswordLength &&
+    !blockedPasswords.has(password.normalize("NFKC").toLowerCase())
+  );
+}
 
 function validateUsername(value: unknown, errors: Record<string, string>) {
   const username = typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -36,8 +55,16 @@ function validatePassword(
   errors: Record<string, string>,
 ) {
   const password = typeof value === "string" ? value : "";
-  if (password.length < 8 || password.length > 128) {
-    errors[field] = "Le mot de passe doit contenir entre 8 et 128 caractères.";
+  const passwordLength = [...password].length;
+
+  if (
+    passwordLength < minimumPasswordLength ||
+    passwordLength > maximumPasswordLength
+  ) {
+    errors[field] =
+      `Le mot de passe doit contenir entre ${minimumPasswordLength} et ${maximumPasswordLength} caractères.`;
+  } else if (blockedPasswords.has(password.normalize("NFKC").toLowerCase())) {
+    errors[field] = "Choisis une phrase secrète moins courante.";
   }
   return password;
 }
@@ -63,7 +90,11 @@ export function validateLoginInput(input: unknown): IdentityValidationResult<Log
     ? values.username.trim().toLowerCase()
     : "";
   const password = typeof values?.password === "string" ? values.password : "";
-  if (!username || !password) {
+  if (
+    !usernamePattern.test(username) ||
+    !password ||
+    [...password].length > maximumPasswordLength
+  ) {
     return { success: false, errors: { credentials: "Identifiants invalides." } };
   }
   return { success: true, data: { username, password } };

@@ -67,6 +67,9 @@ describe("GET /api/songs/:slug/musicxml", () => {
     expect(response.headers.get("content-disposition")).toContain(
       "partition.musicxml",
     );
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.headers.get("content-security-policy")).toContain("sandbox");
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
     expect(await response.text()).toContain("<score-partwise");
   });
 
@@ -103,5 +106,24 @@ describe("GET /api/songs/:slug/musicxml", () => {
 
     expect(response.status).toBe(401);
     expect(getPublicSongMusicXmlBySlug).not.toHaveBeenCalled();
+  });
+
+  it("blocks unsafe stored MusicXML", async () => {
+    getPublicSongMusicXmlBySlug.mockResolvedValue({
+      content: `<score-partwise><script>alert(1)</script></score-partwise>`,
+      fileName: "partition.musicxml",
+      mimeType: "application/vnd.recordare.musicxml+xml",
+      fileSizeBytes: 64,
+      downloadUrl: "/api/songs/chant/musicxml",
+    });
+
+    const response = await GET(authenticatedRequest(), {
+      params: Promise.resolve({ slug: "chant" }),
+    });
+
+    expect(response.status).toBe(422);
+    await expect(response.json()).resolves.toMatchObject({
+      error: { code: "UNSAFE_MUSICXML" },
+    });
   });
 });

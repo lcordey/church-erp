@@ -1,3 +1,5 @@
+import { sanitizeMusicXml } from "../music/music-xml-security";
+
 export type MusicXmlLayoutMode = "original" | "custom";
 
 export type MusicXmlDisplayAnalysis = {
@@ -29,8 +31,9 @@ function isArtifactLyricText(text: string) {
 
 export function analyzeMusicXmlDisplay(xml: string): MusicXmlDisplayAnalysis {
   let removedArtifactLyricsCount = 0;
+  const safeXml = sanitizeMusicXml(xml);
 
-  const sanitizedXml = xml.replaceAll(LYRIC_BLOCK_PATTERN, (lyricBlock) => {
+  const sanitizedXml = safeXml.replaceAll(LYRIC_BLOCK_PATTERN, (lyricBlock) => {
     const lyricText = lyricBlock.match(LYRIC_TEXT_PATTERN)?.[1];
 
     if (!lyricText || !isArtifactLyricText(lyricText)) {
@@ -42,8 +45,8 @@ export function analyzeMusicXmlDisplay(xml: string): MusicXmlDisplayAnalysis {
   });
 
   return {
-    hasExplicitPageBreaks: PRINT_NEW_PAGE_PATTERN.test(xml),
-    hasExplicitSystemBreaks: PRINT_NEW_SYSTEM_PATTERN.test(xml),
+    hasExplicitPageBreaks: PRINT_NEW_PAGE_PATTERN.test(safeXml),
+    hasExplicitSystemBreaks: PRINT_NEW_SYSTEM_PATTERN.test(safeXml),
     removedArtifactLyricsCount,
     sanitizedXml,
   };

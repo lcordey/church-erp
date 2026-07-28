@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 import type { AdminUserSummary, GroupCode } from "../types/identity";
+import { minimumPasswordLength } from "../validation/identity-input";
 
 type UserAdminProps = { actorId: string; initialUsers: AdminUserSummary[] };
 type FormState = {
@@ -125,7 +126,7 @@ export function UserAdmin({ actorId, initialUsers }: UserAdminProps) {
             <div className="app-dialog__header"><div><p className="eyebrow">Compte</p><h2>{form.id ? "Modifier le compte" : "Créer un compte"}</h2></div><button aria-label="Fermer" className="icon-button" onClick={() => setForm(null)} type="button">×</button></div>
             <label><span>Nom affiché</span><input maxLength={100} onChange={(event) => setForm({ ...form, displayName: event.target.value })} required value={form.displayName} /></label>
             <label><span>Identifiant</span><input autoCapitalize="none" maxLength={50} onChange={(event) => setForm({ ...form, username: event.target.value.toLowerCase() })} required value={form.username} /></label>
-            {!form.id ? <label><span>Mot de passe temporaire</span><input minLength={8} onChange={(event) => setForm({ ...form, temporaryPassword: event.target.value })} required type="password" value={form.temporaryPassword} /></label> : null}
+            {!form.id ? <label><span>Mot de passe temporaire</span><input minLength={minimumPasswordLength} onChange={(event) => setForm({ ...form, temporaryPassword: event.target.value })} required type="password" value={form.temporaryPassword} /></label> : null}
             <fieldset><legend>Groupes</legend>{(["worship", "admin"] as const).map((code) => <label className="checkbox-row" key={code}><input checked={form.groupCodes.includes(code)} onChange={() => toggleGroup(code)} type="checkbox" /><span>{code === "admin" ? "Admin" : "Louange"}</span></label>)}</fieldset>
             {form.id ? <label className="checkbox-row"><input checked={form.status === "active"} disabled={form.id === actorId} onChange={(event) => setForm({ ...form, status: event.target.checked ? "active" : "disabled" })} type="checkbox" /><span>Compte actif</span></label> : null}
             {message ? <p className="form-message form-message--error">{message}</p> : null}
@@ -141,8 +142,8 @@ export function UserAdmin({ actorId, initialUsers }: UserAdminProps) {
               <button aria-label="Fermer" className="icon-button" onClick={() => setPasswordReset(null)} type="button">×</button>
             </div>
             <p>Définissez un mot de passe temporaire pour {passwordReset.user.displayName}. La personne devra le remplacer à sa prochaine connexion.</p>
-            <label><span>Mot de passe temporaire</span><input autoComplete="new-password" maxLength={128} minLength={8} onChange={(event) => setPasswordReset({ ...passwordReset, temporaryPassword: event.target.value })} required type="password" value={passwordReset.temporaryPassword} /></label>
-            <label><span>Confirmer le mot de passe temporaire</span><input autoComplete="new-password" maxLength={128} minLength={8} onChange={(event) => setPasswordReset({ ...passwordReset, confirmTemporaryPassword: event.target.value })} required type="password" value={passwordReset.confirmTemporaryPassword} /></label>
+            <label><span>Mot de passe temporaire</span><input autoComplete="new-password" maxLength={128} minLength={minimumPasswordLength} onChange={(event) => setPasswordReset({ ...passwordReset, temporaryPassword: event.target.value })} required type="password" value={passwordReset.temporaryPassword} /></label>
+            <label><span>Confirmer le mot de passe temporaire</span><input autoComplete="new-password" maxLength={128} minLength={minimumPasswordLength} onChange={(event) => setPasswordReset({ ...passwordReset, confirmTemporaryPassword: event.target.value })} required type="password" value={passwordReset.confirmTemporaryPassword} /></label>
             {message ? <p className="form-message form-message--error">{message}</p> : null}
             <div className="admin-form__actions"><button className="admin-button" onClick={() => setPasswordReset(null)} type="button">Annuler</button><button className="admin-button admin-button--primary" disabled={isPending} type="submit">Réinitialiser</button></div>
           </form>

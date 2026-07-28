@@ -8,7 +8,7 @@ describe("settings page", () => {
     const markup = renderToStaticMarkup(<SettingsPage />);
 
     expect(markup.indexOf("<h2>Thème</h2>")).toBeLessThan(
-      markup.indexOf("<h2>Notation musicale</h2>"),
+      markup.indexOf("<h2>Notation</h2>"),
     );
     expect(markup.indexOf("<h2>Thème</h2>")).toBeLessThan(
       markup.indexOf("<h2>Lecture des chants</h2>"),

@@ -23,6 +23,12 @@ export class StorageRequestError extends Error {
   }
 }
 
+export class StoragePathError extends Error {
+  constructor() {
+    super("The song PDF storage path is not allowed.");
+  }
+}
+
 type StorageConfig = {
   baseUrl: string;
   serviceRoleKey: string;
@@ -58,7 +64,22 @@ function storageHeaders(config: StorageConfig, contentType?: string) {
 
 function objectUrl(config: StorageConfig, storagePath: string) {
   if (/^https?:\/\//i.test(storagePath)) {
-    return storagePath;
+    const candidate = new URL(storagePath);
+
+    if (!candidate.href.startsWith(`${config.baseUrl}/`)) {
+      throw new StoragePathError();
+    }
+
+    return candidate.href;
+  }
+
+  if (
+    !storagePath ||
+    storagePath.startsWith("/") ||
+    storagePath.includes("\\") ||
+    storagePath.split("/").some((part) => !part || part === "." || part === "..")
+  ) {
+    throw new StoragePathError();
   }
 
   return `${config.baseUrl}/${storagePath

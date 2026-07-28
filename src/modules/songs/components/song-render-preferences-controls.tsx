@@ -7,7 +7,6 @@ import {
 } from "react";
 
 import { ReorderItemActions } from "@/src/components/reorder-item-actions";
-import { InfoTooltip } from "@/src/components/info-tooltip";
 
 import {
   chordColorOptions,

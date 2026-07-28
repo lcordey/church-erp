@@ -130,18 +130,6 @@ export function PushNotificationSettings() {
     }
   };
 
-  const descriptions: Record<NotificationState, string> = {
-    checking: "Vérification de la compatibilité de cet appareil…",
-    available: "Recevez une alerte lorsque vous êtes ajouté à l’équipe d’un événement.",
-    enabled: "Les notifications de service sont actives sur cet appareil.",
-    working: "Mise à jour des notifications…",
-    denied: "Les notifications sont bloquées dans les réglages du navigateur ou du téléphone.",
-    unsupported: "Les notifications push ne sont pas disponibles sur cet appareil. Sur iPhone, installez d’abord l’application sur l’écran d’accueil.",
-    unconfigured: "Les notifications ne sont pas encore configurées sur ce serveur.",
-    "login-required": "Connectez-vous avant d’activer les notifications.",
-    error: "Impossible de mettre à jour les notifications pour le moment.",
-  };
-
   const canEnable = state === "available" || state === "login-required" || state === "error";
   const updatePreference = async (type: keyof NotificationPreferences, enabled: boolean) => {
     if (!endpoint) return;

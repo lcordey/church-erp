@@ -102,6 +102,9 @@ Implementation actuelle :
 - helper d'autorisation explicite et permissif pendant le MVP-1
 - conflits de slug retournes avec un statut HTTP `409`
 - validation cote serveur des identifiants de themes et labels selectionnes
+- validation PDF par type, extension, taille, signatures de fichier et refus des actions actives reconnaissables
+- chemins PDF limites au stockage Supabase configure, sans transfert de la cle de service vers une origine externe
+- nettoyage du DTD MusicXML standard et refus des entites, scripts, gestionnaires d'evenements et ressources externes
 
 ## Structure UI
 

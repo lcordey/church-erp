@@ -49,13 +49,14 @@ export interface IdentityRepository {
   createSession(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
   deleteSession(tokenHash: string): Promise<void>;
   deleteSessionsForUser(userId: string): Promise<void>;
-  recordLoginFailure(userId: string, failedLoginCount: number, lockedUntil: Date | null): Promise<void>;
+  recordLoginFailure(userId: string, maximumFailures: number, lockedUntil: Date): Promise<void>;
   clearLoginFailures(userId: string): Promise<void>;
   listUsers(): Promise<AdminUserSummary[]>;
   listAssignableUsers(): Promise<AssignableUser[]>;
   createUser(input: CreateUserInput, passwordHash: string): Promise<AdminUserSummary>;
   updateUser(id: string, input: UpdateUserInput): Promise<AdminUserSummary | null>;
   updatePassword(userId: string, passwordHash: string): Promise<void>;
+  replacePasswordHash(userId: string, passwordHash: string): Promise<void>;
   markPasswordChangeRequired(userId: string): Promise<void>;
   countActiveAdmins(excludingUserId?: string): Promise<number>;
 }
@@ -121,10 +122,20 @@ export function createIdentityRepository(): IdentityRepository {
       await database.delete(authSessions).where(eq(authSessions.userId, userId));
     },
 
-    async recordLoginFailure(userId, failedLoginCount, lockedUntil) {
+    async recordLoginFailure(userId, maximumFailures, lockedUntil) {
       await database
         .update(users)
-        .set({ failedLoginCount, lockedUntil, updatedAt: new Date() })
+        .set({
+          failedLoginCount: sql`${users.failedLoginCount} + 1`,
+          lockedUntil: sql`
+            CASE
+              WHEN ${users.failedLoginCount} + 1 >= ${maximumFailures}
+              THEN ${lockedUntil}
+              ELSE NULL
+            END
+          `,
+          updatedAt: new Date(),
+        })
         .where(eq(users.id, userId));
     },
 
@@ -215,6 +226,13 @@ export function createIdentityRepository(): IdentityRepository {
           lockedUntil: null,
           updatedAt: new Date(),
         })
+        .where(eq(users.id, userId));
+    },
+
+    async replacePasswordHash(userId, passwordHash) {
+      await database
+        .update(users)
+        .set({ passwordHash, updatedAt: new Date() })
         .where(eq(users.id, userId));
     },
 

@@ -75,4 +75,12 @@ describe("analyzeMusicXmlDisplay", () => {
     expect(analysis.sanitizedXml).not.toContain("<text>m7</text>");
     expect(analysis.sanitizedXml).not.toContain("<text>C#m7</text>");
   });
+
+  it("rejects active MusicXML before it reaches the renderer", () => {
+    expect(() =>
+      analyzeMusicXmlDisplay(
+        `<score-partwise><script>alert(1)</script></score-partwise>`,
+      ),
+    ).toThrow("unsafe construct");
+  });
 });

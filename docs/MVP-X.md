@@ -56,6 +56,7 @@ Likely features:
 - participant-facing event access
 - controlled sharing of songs and documents
 - invitations, recovery, and outbound account activation
+- passkeys or OpenID Connect with MFA and a defined account-recovery workflow
 
 ## MVP-5 Candidates
 

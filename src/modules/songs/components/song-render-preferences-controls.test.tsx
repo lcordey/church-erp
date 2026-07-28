@@ -7,7 +7,7 @@ describe("song render preferences controls", () => {
   it("shows source priority in general settings", () => {
     const markup = renderToStaticMarkup(<SongRenderPreferencesControls />);
 
-    expect(markup).toContain("Source d’ouverture");
+    expect(markup).toContain('aria-label="Ordre de priorité des sources"');
   });
 
   it("hides source priority in chord reading settings", () => {
@@ -15,7 +15,7 @@ describe("song render preferences controls", () => {
       <SongRenderPreferencesControls showSourcePriority={false} />,
     );
 
-    expect(markup).not.toContain("Source d’ouverture");
+    expect(markup).not.toContain('aria-label="Ordre de priorité des sources"');
     expect(markup).toContain("Couleur des accords");
     expect(markup).toContain("Bordeaux");
     expect(markup).toContain("Sauge");

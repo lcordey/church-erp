@@ -14,18 +14,18 @@ if (!databaseUrl || !username || !displayName || !password) {
     "DATABASE_URL, CHURCHERP_BOOTSTRAP_USERNAME, CHURCHERP_BOOTSTRAP_DISPLAY_NAME and CHURCHERP_BOOTSTRAP_PASSWORD are required.",
   );
 }
-if (!/^[a-z0-9._-]{3,50}$/.test(username) || password.length < 8 || password.length > 128) {
+if (!/^[a-z0-9._-]{3,50}$/.test(username) || [...password].length < 15 || [...password].length > 128) {
   throw new Error("The bootstrap username or password does not meet the application policy.");
 }
 
 const salt = randomBytes(16);
 const derivedKey = await scrypt(password, salt, 64, {
-  N: 16_384,
+  N: 32_768,
   r: 8,
-  p: 1,
+  p: 3,
   maxmem: 64 * 1024 * 1024,
 });
-const passwordHash = `scrypt$16384$8$1$${salt.toString("base64url")}$${derivedKey.toString("base64url")}`;
+const passwordHash = `scrypt$32768$8$3$${salt.toString("base64url")}$${derivedKey.toString("base64url")}`;
 const sql = postgres(databaseUrl, { max: 1, prepare: false });
 
 try {

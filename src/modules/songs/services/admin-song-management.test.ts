@@ -186,7 +186,7 @@ describe("admin song management", () => {
 
   it("attaches one PDF source to a song", async () => {
     const repository = createRepository();
-    const file = new File(["pdf"], "partition.pdf", {
+    const file = new File(["%PDF-1.7\n1 0 obj\n<<>>\nendobj\n%%EOF\n"], "partition.pdf", {
       type: "application/pdf",
     });
 
@@ -215,6 +215,26 @@ describe("admin song management", () => {
     ).rejects.toBeInstanceOf(InvalidSongPdfError);
     expect(uploadSongPdf).not.toHaveBeenCalled();
     expect(repository.attachPdf).not.toHaveBeenCalled();
+  });
+
+  it("rejects a spoofed or active PDF before storage", async () => {
+    const repository = createRepository();
+    const spoofedFile = new File(["<script>alert(1)</script>"], "partition.pdf", {
+      type: "application/pdf",
+    });
+    const activeFile = new File(
+      ["%PDF-1.7\n1 0 obj\n<</Java#53cript 2 0 R>>\nendobj\n%%EOF\n"],
+      "partition.pdf",
+      { type: "application/pdf" },
+    );
+
+    await expect(
+      attachSongPdf(draftSong.id, spoofedFile, repository),
+    ).rejects.toBeInstanceOf(InvalidSongPdfError);
+    await expect(
+      attachSongPdf(draftSong.id, activeFile, repository),
+    ).rejects.toBeInstanceOf(InvalidSongPdfError);
+    expect(uploadSongPdf).not.toHaveBeenCalled();
   });
 
   it("deletes an attached PDF source and object", async () => {

@@ -35,6 +35,7 @@ function repository(overrides: Partial<IdentityRepository> = {}): IdentityReposi
     createUser: vi.fn(),
     updateUser: vi.fn(),
     updatePassword: vi.fn(async () => undefined),
+    replacePasswordHash: vi.fn(async () => undefined),
     markPasswordChangeRequired: vi.fn(async () => undefined),
     countActiveAdmins: vi.fn(async () => 1),
     ...overrides,
@@ -52,6 +53,10 @@ describe("authentication service", () => {
     expect(result.actor).toMatchObject({ username: "louange", mustChangePassword: true });
     expect(result.actor.permissions).toContain("event.manage");
     expect(identityRepository.clearLoginFailures).toHaveBeenCalledWith(user.id);
+    expect(identityRepository.replacePasswordHash).toHaveBeenCalledWith(
+      user.id,
+      expect.stringMatching(/^scrypt\$32768\$8\$3\$/),
+    );
     expect(identityRepository.createSession).toHaveBeenCalledOnce();
   });
 
@@ -70,6 +75,26 @@ describe("authentication service", () => {
       user.id,
       5,
       new Date("2026-07-11T10:15:00Z"),
+    );
+  });
+
+  it("requires an existing short password to be replaced after login", async () => {
+    const identityRepository = repository({
+      findAuthenticationUser: vi.fn(async () => ({
+        ...user,
+        mustChangePassword: false,
+      })),
+    });
+
+    const result = await authenticateUser(
+      { username: "louange", password: "louange" },
+      identityRepository,
+      new Date("2026-07-11T10:00:00Z"),
+    );
+
+    expect(result.actor.mustChangePassword).toBe(true);
+    expect(identityRepository.markPasswordChangeRequired).toHaveBeenCalledWith(
+      user.id,
     );
   });
 });

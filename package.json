@@ -36,7 +36,7 @@
   "dependencies": {
     "drizzle-orm": "^0.45.2",
     "jspdf": "^4.2.1",
-    "next": "16.2.9",
+    "next": "16.2.11",
     "opensheetmusicdisplay": "^2.0.0",
     "pdfjs-dist": "^6.0.227",
     "postgres": "^3.4.9",
@@ -52,7 +52,7 @@
     "@types/web-push": "^3.6.4",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
-    "eslint-config-next": "16.2.9",
+    "eslint-config-next": "16.2.11",
     "supabase": "^2.106.0",
     "tailwindcss": "^4",
     "typescript": "^5",

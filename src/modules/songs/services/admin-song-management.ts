@@ -9,6 +9,7 @@ import {
   createAdminSongRepository,
   type AdminSongRepository,
 } from "../repositories/admin-song-repository";
+import { sanitizeMusicXml } from "../music/music-xml-security";
 import { hasLockedOfficialMetadata } from "../song-edit-rules";
 import type {
   AdminSong,
@@ -25,6 +26,7 @@ import {
 
 const songPdfMimeType = "application/pdf";
 const maxSongPdfSizeBytes = 20 * 1024 * 1024;
+const maxSongPdfFileNameLength = 180;
 const acceptedSongMusicXmlMimeTypes = new Set([
   "application/vnd.recordare.musicxml+xml",
   "application/octet-stream",
@@ -121,9 +123,22 @@ export class RestrictedSongMetadataEditError extends Error {
   }
 }
 
-function validateSongPdf(file: File) {
+function normalizePdfNames(content: string) {
+  return content.replace(/#([0-9a-f]{2})/gi, (_match, hex: string) =>
+    String.fromCharCode(Number.parseInt(hex, 16)),
+  );
+}
+
+async function validateSongPdf(file: File) {
   if (file.type !== songPdfMimeType) {
     throw new InvalidSongPdfError("Only PDF files are accepted.");
+  }
+
+  if (
+    !/\.pdf$/i.test(file.name) ||
+    file.name.length > maxSongPdfFileNameLength
+  ) {
+    throw new InvalidSongPdfError("The file must use a valid .pdf name.");
   }
 
   if (file.size <= 0) {
@@ -132,6 +147,20 @@ function validateSongPdf(file: File) {
 
   if (file.size > maxSongPdfSizeBytes) {
     throw new InvalidSongPdfError("The PDF file is too large.");
+  }
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const header = new TextDecoder("latin1").decode(bytes.slice(0, 1024));
+  const trailer = new TextDecoder("latin1").decode(bytes.slice(-2048));
+
+  if (!/^%PDF-\d\.\d/.test(header) || !/%%EOF[\s\0]*$/.test(trailer)) {
+    throw new InvalidSongPdfError("The file does not have a valid PDF signature.");
+  }
+
+  const content = normalizePdfNames(new TextDecoder("latin1").decode(bytes));
+
+  if (/\/(?:JavaScript|JS|Launch|RichMedia|EmbeddedFile)\b/i.test(content)) {
+    throw new InvalidSongPdfError("Active PDF content is not accepted.");
   }
 }
 
@@ -158,16 +187,9 @@ function validateSongMusicXmlFile(file: File) {
 }
 
 function validateSongMusicXmlContent(content: string) {
-  const normalizedContent = content.trim();
-
-  if (!normalizedContent) {
-    throw new InvalidSongMusicXmlError("The MusicXML file is empty.");
-  }
-
-  if (
-    !normalizedContent.includes("<score-partwise") &&
-    !normalizedContent.includes("<score-timewise")
-  ) {
+  try {
+    return sanitizeMusicXml(content);
+  } catch {
     throw new InvalidSongMusicXmlError("The file does not look like MusicXML.");
   }
 }
@@ -184,7 +206,7 @@ export async function attachSongPdf(
     return null;
   }
 
-  validateSongPdf(file);
+  await validateSongPdf(file);
 
   const storagePath = getSongPdfStoragePath(id);
 
@@ -232,9 +254,7 @@ export async function attachSongMusicXml(
 
   validateSongMusicXmlFile(file);
 
-  const content = await file.text();
-
-  validateSongMusicXmlContent(content);
+  const content = validateSongMusicXmlContent(await file.text());
 
   return repository.attachMusicXml(id, {
     content,

@@ -68,16 +68,17 @@ export async function GET(request: Request, { params }: RouteContext) {
     const storageResponse = await downloadSongPdf(pdfSource.storagePath);
     const headers = new Headers();
 
+    headers.set("cache-control", "private, no-store");
     headers.set(
-      "content-type",
-      storageResponse.headers.get("content-type") ||
-        pdfSource.mimeType ||
-        "application/pdf",
+      "content-security-policy",
+      "sandbox; default-src 'none'; base-uri 'none'; form-action 'none'",
     );
+    headers.set("content-type", "application/pdf");
     headers.set(
       "content-disposition",
       contentDisposition(pdfSource.fileName, slug, asAttachment),
     );
+    headers.set("x-content-type-options", "nosniff");
 
     const contentLength = storageResponse.headers.get("content-length");
 

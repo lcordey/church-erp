@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { hashPassword, verifyPassword } from "./password";
+import {
+  hashPassword,
+  passwordHashNeedsUpgrade,
+  verifyPassword,
+} from "./password";
 
 describe("password security", () => {
   it("hashes and verifies a password without storing it", async () => {
     const hash = await hashPassword("mot-de-passe-solide");
-    expect(hash).toMatch(/^scrypt\$16384\$8\$1\$/);
+    expect(hash).toMatch(/^scrypt\$32768\$8\$3\$/);
     expect(hash).not.toContain("mot-de-passe-solide");
     await expect(verifyPassword("mot-de-passe-solide", hash)).resolves.toBe(true);
     await expect(verifyPassword("mauvais", hash)).resolves.toBe(false);
@@ -24,5 +28,18 @@ describe("password security", () => {
         "scrypt$16384$8$1$a_Dj8uLg9qjtQYqxpBp0lg$cTToNCUQ1C9Yt6b6RtxadolxO7loz1wVbO_QlIGWQ2SIAjw4DxlRWMFjZI649w-cnczQFMO4n4Md3sznrdbWGw",
       ),
     ).resolves.toBe(true);
+  });
+
+  it("identifies legacy work factors for transparent upgrades", () => {
+    expect(
+      passwordHashNeedsUpgrade(
+        "scrypt$16384$8$1$salt$hash",
+      ),
+    ).toBe(true);
+    expect(
+      passwordHashNeedsUpgrade(
+        "scrypt$32768$8$3$salt$hash",
+      ),
+    ).toBe(false);
   });
 });

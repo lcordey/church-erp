@@ -132,7 +132,13 @@ reste considéré comme un contexte sécurisé pour le développement sur ordina
 For a production database, bootstrap the first administrator once with
 `pnpm identity:bootstrap-admin` after temporarily setting
 `CHURCHERP_BOOTSTRAP_USERNAME`, `CHURCHERP_BOOTSTRAP_DISPLAY_NAME`, and
-`CHURCHERP_BOOTSTRAP_PASSWORD`. Remove those variables immediately afterward.
+`CHURCHERP_BOOTSTRAP_PASSWORD`. The bootstrap password must contain 15 to 128
+characters. Remove those variables immediately afterward.
+
+Review `docs/security.md` before a production deployment. In particular,
+enable MFA on the hosting, source-control, database, DNS, and recovery-email
+accounts even though application-level MFA is still a deferred identity
+decision.
 
 Local scripts such as `pnpm dev:phone` and `pnpm test:smoke` load `.env.local`
 explicitly so that an exported shell `DATABASE_URL` for a remote Supabase

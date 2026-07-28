@@ -1,8 +1,8 @@
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 const keyLength = 64;
-const cost = 16_384;
+const cost = 32_768;
 const blockSize = 8;
-const parallelization = 1;
+const parallelization = 3;
 
 function deriveKey(password: string, salt: Buffer, length: number, options: { N: number; r: number; p: number }) {
   return new Promise<Buffer>((resolve, reject) => {
@@ -67,4 +67,16 @@ export async function verifyPassword(
   } catch {
     return false;
   }
+}
+
+export function passwordHashNeedsUpgrade(encodedHash: string) {
+  const [algorithm, rawCost, rawBlockSize, rawParallelization] =
+    encodedHash.split("$");
+
+  return (
+    algorithm !== "scrypt" ||
+    Number(rawCost) < cost ||
+    Number(rawBlockSize) < blockSize ||
+    Number(rawParallelization) < parallelization
+  );
 }

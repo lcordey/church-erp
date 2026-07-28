@@ -7,3 +7,8 @@ allowBuilds:
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+overrides:
+  dompurify: 3.4.12
+  postcss: 8.5.18
+  sharp: 0.35.0
+  tar: 7.5.21

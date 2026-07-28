@@ -34,9 +34,13 @@ type PdfRenderScaleOptions = {
 
 export function getPdfDocumentOptions(pdfData: ArrayBuffer) {
   return {
+    canvasMaxAreaInBytes: 64 * 1024 * 1024,
     data: pdfData,
+    enableXfa: false,
     isImageDecoderSupported: false,
     isOffscreenCanvasSupported: false,
+    maxImageSize: 25_000_000,
+    stopAtErrors: true,
     wasmUrl: "/pdfjs/wasm/",
   };
 }

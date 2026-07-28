@@ -5,7 +5,11 @@ import {
 } from "@/src/infrastructure/auth/session";
 
 import { resolvePermissions } from "../permissions";
-import { hashPassword, verifyPassword } from "../password";
+import {
+  hashPassword,
+  passwordHashNeedsUpgrade,
+  verifyPassword,
+} from "../password";
 import {
   createIdentityRepository,
   type IdentityRepository,
@@ -15,9 +19,10 @@ import type {
   ChangePasswordInput,
   LoginInput,
 } from "../types/identity";
+import { isPasswordPolicyCompliant } from "../validation/identity-input";
 
 const dummyPasswordHash =
-  "scrypt$16384$8$1$tsEmePJfvpwLjFz7QtVfkw$sWVrxw9n0Dbu5eZwc2OBNvTiz-Dop5Ow5Gkd41p6CSOXDzidNz6VSxOJI1CY94Kfnjboa9R95LI885exV49TXw";
+  "scrypt$32768$8$3$fQZVOivJTf-GO4yuOEcipg$tlaL4QsSZn6EUptWKaoqBzBVQj9PE9q0Zt0M7JckbYQ9oItt38t275f9sbzDAbt_LOpIbBvwAxxGHNXzk4X2uw";
 const maximumFailedLogins = 5;
 const lockDurationMs = 15 * 60 * 1000;
 
@@ -69,20 +74,33 @@ export async function authenticateUser(
 
   if (!user || user.status !== "active" || locked || !passwordMatches) {
     if (user && user.status === "active" && !locked && !passwordMatches) {
-      const failedLoginCount = user.failedLoginCount + 1;
       await repository.recordLoginFailure(
         user.id,
-        failedLoginCount,
-        failedLoginCount >= maximumFailedLogins
-          ? new Date(now.getTime() + lockDurationMs)
-          : null,
+        maximumFailedLogins,
+        new Date(now.getTime() + lockDurationMs),
       );
     }
     throw new InvalidCredentialsError();
   }
 
   await repository.clearLoginFailures(user.id);
-  const actor = toActor(user);
+  if (passwordHashNeedsUpgrade(user.passwordHash)) {
+    await repository.replacePasswordHash(
+      user.id,
+      await hashPassword(input.password),
+    );
+  }
+  const requiresPasswordChange =
+    user.mustChangePassword || !isPasswordPolicyCompliant(input.password);
+
+  if (requiresPasswordChange && !user.mustChangePassword) {
+    await repository.markPasswordChangeRequired(user.id);
+  }
+
+  const actor = toActor({
+    ...user,
+    mustChangePassword: requiresPasswordChange,
+  });
   if (!actor) throw new InvalidCredentialsError();
   return { actor, token: await issueSession(user.id, repository, now) };
 }

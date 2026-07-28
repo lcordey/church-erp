@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 
 import { AppThemeProvider } from "@/src/components/app-theme-provider";
 import { AppShell } from "@/src/components/app-shell";
@@ -70,14 +71,22 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const actor = await getCurrentActor();
+  const [actor, requestHeaders] = await Promise.all([
+    getCurrentActor(),
+    headers(),
+  ]);
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
 
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+        <script
+          dangerouslySetInnerHTML={{ __html: themeBootstrapScript }}
+          nonce={nonce}
+        />
         <script
           dangerouslySetInnerHTML={{ __html: installPromptBootstrapScript }}
+          nonce={nonce}
         />
       </head>
       <body>
